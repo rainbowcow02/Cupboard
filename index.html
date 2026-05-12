@@ -395,22 +395,22 @@ function ExploreScreen({ cups }) {
     });
   }, [selectedOrigin]);
 
+  const NAV_H        = 84;   // tab bar height — sheet always sits above it
   const PEEK_HEIGHT  = 196;
-  const SHEET_HEIGHT = 490;
+  const MAX_SHEET_H  = Math.floor(852 * 0.4); // 40% of phone height
   const ROW_H        = 82;
   const HEADER_H     = 60;   // handle (20) + list header (40)
-  const MAX_FILTER_H = Math.floor(852 * 0.5); // ~50% of phone height
 
   const sheetHeight = selectedOrigin !== null
-    ? Math.min(HEADER_H + filteredCups.length * ROW_H + 16, MAX_FILTER_H)
-    : sheetExpanded ? SHEET_HEIGHT : PEEK_HEIGHT;
+    ? Math.min(HEADER_H + filteredCups.length * ROW_H + 16, MAX_SHEET_H)
+    : sheetExpanded ? MAX_SHEET_H : PEEK_HEIGHT;
 
   return (
-    <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+    <div style={{ flex: 1, position: 'relative' }}>
 
-      {/* Map — fills the full screen area; explicit zIndex creates a stacking context so
-           Leaflet's internal panes (z 200–700) stay below the bottom sheet */}
-      <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
+      {/* Map — overflow:hidden here clips Leaflet tiles; explicit zIndex creates a stacking
+           context so Leaflet's internal panes (z 200–700) stay below the bottom sheet */}
+      <div style={{ position: 'absolute', inset: 0, zIndex: 0, overflow: 'hidden' }}>
         <div ref={mapContainerRef} style={{ height: '100%' }} />
 
         {/* Title overlay */}
@@ -439,54 +439,55 @@ function ExploreScreen({ cups }) {
             {Object.keys(originGroups).length} {Object.keys(originGroups).length === 1 ? 'country' : 'countries'} · {cups.length} coffees
           </div>
         </div>
+      </div>
 
-        {/* Zoom controls — slide with the sheet */}
-        <div style={{
-          position: 'absolute',
-          bottom: `${sheetHeight + 14}px`,
-          right: '10px',
-          zIndex: 999,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '8px',
-          transition: 'bottom 0.32s cubic-bezier(0.4, 0, 0.2, 1)',
-        }}>
-          {[{ sym: '+', action: () => mapInstanceRef.current?.zoomIn() },
-            { sym: '−', action: () => mapInstanceRef.current?.zoomOut() }].map(({ sym, action }) => (
-            <button
-              key={sym}
-              onClick={action}
-              style={{
-                width: '44px',
-                height: '44px',
-                background: 'rgba(250,247,242,0.95)',
-                backdropFilter: 'blur(10px)',
-                WebkitBackdropFilter: 'blur(10px)',
-                border: '0.5px solid rgba(26,23,20,0.15)',
-                borderRadius: '12px',
-                fontFamily: 'DM Sans, sans-serif',
-                fontSize: '26px',
-                fontWeight: 300,
-                color: '#1A1714',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                lineHeight: 1,
-                boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
-                padding: 0,
-              }}
-            >
-              {sym}
-            </button>
-          ))}
-        </div>
+      {/* Zoom controls — sibling of bottom sheet so they share the same stacking context
+           and both sit above the nav bar */}
+      <div style={{
+        position: 'absolute',
+        bottom: `${sheetHeight + NAV_H + 14}px`,
+        right: '10px',
+        zIndex: 100,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '8px',
+        transition: 'bottom 0.32s cubic-bezier(0.4, 0, 0.2, 1)',
+      }}>
+        {[{ sym: '+', action: () => mapInstanceRef.current?.zoomIn() },
+          { sym: '−', action: () => mapInstanceRef.current?.zoomOut() }].map(({ sym, action }) => (
+          <button
+            key={sym}
+            onClick={action}
+            style={{
+              width: '44px',
+              height: '44px',
+              background: 'rgba(250,247,242,0.95)',
+              backdropFilter: 'blur(10px)',
+              WebkitBackdropFilter: 'blur(10px)',
+              border: '0.5px solid rgba(26,23,20,0.15)',
+              borderRadius: '12px',
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '26px',
+              fontWeight: 300,
+              color: '#1A1714',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              lineHeight: 1,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+              padding: 0,
+            }}
+          >
+            {sym}
+          </button>
+        ))}
       </div>
 
       {/* Bottom sheet */}
       <div style={{
         position: 'absolute',
-        bottom: 0,
+        bottom: `${NAV_H}px`,
         left: 0,
         right: 0,
         height: `${sheetHeight}px`,
@@ -797,6 +798,7 @@ function App() {
             paddingTop: '10px',
             paddingLeft: '8px',
             paddingRight: '8px',
+            zIndex: 50,
           }}>
             {[
               { id: 'home', icon: 'home', label: 'Home' },
