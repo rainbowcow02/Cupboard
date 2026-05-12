@@ -395,7 +395,7 @@ function ExploreScreen({ cups }) {
     });
   }, [selectedOrigin]);
 
-  const NAV_H        = 84;   // tab bar height — sheet always sits above it
+  const NAV_H        = 92;   // 16px bottom + 64px height + 12px gap above nav
   const PEEK_HEIGHT  = 196;
   const MAX_SHEET_H  = Math.floor(852 * 0.4); // 40% of phone height
   const ROW_H        = 82;
@@ -488,14 +488,14 @@ function ExploreScreen({ cups }) {
       <div style={{
         position: 'absolute',
         bottom: `${NAV_H}px`,
-        left: 0,
-        right: 0,
+        left: 12,
+        right: 12,
         height: `${sheetHeight}px`,
         background: 'rgba(250,247,242,0.97)',
         backdropFilter: 'blur(24px)',
         WebkitBackdropFilter: 'blur(24px)',
-        borderRadius: '18px 18px 0 0',
-        boxShadow: '0 -2px 20px rgba(0,0,0,0.10)',
+        borderRadius: '18px',
+        boxShadow: '0 4px 24px rgba(26,23,20,0.12)',
         transition: 'height 0.32s cubic-bezier(0.4, 0, 0.2, 1)',
         display: 'flex',
         flexDirection: 'column',
@@ -557,9 +557,9 @@ function ExploreScreen({ cups }) {
         {/* Scrollable bag list */}
         <div
           className="scrollable"
-          style={{ flex: 1, overflowY: 'auto', padding: selectedOrigin ? '0 20px 16px' : '0 20px 88px' }}
+          style={{ flex: 1, overflowY: 'auto', padding: selectedOrigin ? '0 20px 16px' : '0 20px 20px' }}
         >
-          {filteredCups.map(cup => (
+          {filteredCups.map((cup, i) => (
             <div
               key={cup.id}
               style={{
@@ -567,7 +567,7 @@ function ExploreScreen({ cups }) {
                 alignItems: 'center',
                 gap: '14px',
                 padding: '10px 0',
-                borderBottom: '0.5px solid rgba(26,23,20,0.07)',
+                borderBottom: i < filteredCups.length - 1 ? '0.5px solid rgba(26,23,20,0.07)' : 'none',
               }}
             >
               <div style={{ width: '44px', height: '60px', flexShrink: 0, borderRadius: '3px', overflow: 'hidden' }}>
