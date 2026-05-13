@@ -728,9 +728,9 @@ function TabIcon({ type, active }) {
     <img
       src={TAB_ICONS[type]}
       alt=""
-      width="36"
-      height="36"
-      style={{ opacity: active ? 1 : 0.35, display: 'block' }}
+      width="30"
+      height="30"
+      style={{ display: 'block', width: '30px', height: '30px' }}
     />
   );
 }
@@ -944,69 +944,116 @@ function App() {
           {/* Bottom tab bar */}
           <div style={{
             position: 'absolute',
-            bottom: '20px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            background: 'rgba(255,255,255,0.4)',
-            backdropFilter: 'blur(40px) saturate(180%)',
-            WebkitBackdropFilter: 'blur(40px) saturate(180%)',
-            borderRadius: '30px',
-            border: '1px solid rgba(255,255,255,0.35)',
-            boxShadow: '0 8px 32px rgba(26,23,20,0.18), inset 0 1px 0 rgba(255,255,255,0.5)',
+            bottom: 0,
+            left: 0,
+            width: '393px',
             display: 'flex',
-            alignItems: 'center',
             gap: '16px',
-            padding: '8px 24px',
+            alignItems: 'flex-start',
+            justifyContent: 'flex-end',
+            paddingBottom: '25px',
+            paddingTop: '16px',
+            paddingLeft: '25px',
+            paddingRight: '25px',
+            boxSizing: 'border-box',
             zIndex: 50,
           }}>
-            {/* Specular highlight — top-edge refraction layer */}
+            {/* Tabs pill */}
             <div style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              height: '50%',
-              background: 'linear-gradient(to bottom, rgba(255,255,255,0.25), rgba(255,255,255,0))',
-              borderRadius: '30px 30px 0 0',
-              pointerEvents: 'none',
-              zIndex: 0,
-            }} />
-            {[
-              { id: 'home',   icon: 'home',   label: 'Home' },
-              { id: 'search', icon: 'search', label: 'Explore' },
-              { id: 'add',    icon: 'add',    label: 'Log Cup' },
-              { id: 'beans',  icon: 'beans',  label: 'Beans' },
-            ].map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '8px',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: '8px',
-                  position: 'relative',
-                  zIndex: 1,
-                }}
-              >
-                <TabIcon type={tab.icon} active={activeTab === tab.id} />
-                <span style={{
-                  fontFamily: 'Inter, DM Sans, sans-serif',
-                  fontSize: '14px',
-                  color: '#5d0505',
-                  fontWeight: 600,
-                  lineHeight: 1,
-                  whiteSpace: 'nowrap',
-                  opacity: activeTab === tab.id ? 1 : 0.45,
-                }}>
-                  {tab.label}
-                </span>
-              </button>
-            ))}
+              flex: '1 0 0',
+              minWidth: 0,
+              position: 'relative',
+              padding: '0 2px',
+              display: 'flex',
+              alignItems: 'center',
+            }}>
+              {/* BG: Fill + Shadow + Glass Effect */}
+              <div style={{ position: 'absolute', inset: '-4px', borderRadius: '296px', overflow: 'hidden', boxShadow: '0px 8px 40px 0px rgba(0,0,0,0.12)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', pointerEvents: 'none' }}>
+                <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.5)' }} />
+                <div style={{ position: 'absolute', inset: 0, background: '#ddd', mixBlendMode: 'color-burn' }} />
+                <div style={{ position: 'absolute', inset: 0, background: '#f7f7f7', mixBlendMode: 'darken' }} />
+              </div>
+              {[
+                { id: 'home',   icon: 'home',   label: 'Home' },
+                { id: 'search', icon: 'search', label: 'Explore' },
+                { id: 'add',    icon: 'add',    label: 'Log Cup' },
+                { id: 'beans',  icon: 'beans',  label: 'Beans' },
+              ].map((tab, i) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  style={{
+                    width: '72px',
+                    flexShrink: 0,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    paddingTop: '6px',
+                    paddingBottom: '7px',
+                    paddingLeft: '8px',
+                    paddingRight: '8px',
+                    marginRight: i < 3 ? '-8px' : '0',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    position: 'relative',
+                  }}
+                >
+                  {/* Active selection highlight */}
+                  {activeTab === tab.id && (
+                    <div style={{
+                      position: 'absolute',
+                      inset: '0 -2px',
+                      borderRadius: '100px',
+                      background: 'rgba(252, 153, 155, 0.5)',
+                    }} />
+                  )}
+                  <div style={{ position: 'relative', width: '30px', height: '30px', flexShrink: 0 }}>
+                    <TabIcon type={tab.icon} active={activeTab === tab.id} />
+                  </div>
+                  <span style={{
+                    fontFamily: 'Inter, DM Sans, sans-serif',
+                    fontSize: '10px',
+                    color: activeTab === tab.id ? '#501200' : '#5d1f05',
+                    fontWeight: 600,
+                    lineHeight: '12px',
+                    letterSpacing: '-0.1px',
+                    whiteSpace: 'nowrap',
+                    position: 'relative',
+                    textAlign: 'center',
+                    width: '100%',
+                  }}>
+                    {tab.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            {/* Search button (visual placeholder) */}
+            <div style={{
+              width: '59px',
+              height: '59px',
+              position: 'relative',
+              flexShrink: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              {/* BG: Fill + Shadow + Glass Effect */}
+              <div style={{ position: 'absolute', inset: '-4px', borderRadius: '296px', overflow: 'hidden', boxShadow: '0px 8px 40px 0px rgba(0,0,0,0.12)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', pointerEvents: 'none' }}>
+                <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.5)' }} />
+                <div style={{ position: 'absolute', inset: 0, background: '#ddd', mixBlendMode: 'color-burn' }} />
+                <div style={{ position: 'absolute', inset: 0, background: '#f7f7f7', mixBlendMode: 'darken' }} />
+              </div>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '54px', height: '54px' }}>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="11" cy="11" r="7" stroke="#5d1f05" strokeWidth="2.2" strokeLinecap="round"/>
+                  <path d="M16.5 16.5L21 21" stroke="#5d1f05" strokeWidth="2.2" strokeLinecap="round"/>
+                </svg>
+              </div>
+            </div>
           </div>
         </div>
       </div>
