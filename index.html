@@ -148,6 +148,58 @@ const cups = [
     bagAccent: '#B5895C',
     bagShape: 2,
   },
+  {
+    id: 7,
+    bean: 'Nyeri Peaberry',
+    roaster: 'Ritual Coffee',
+    origin: 'Kenya',
+    process: 'Washed',
+    date: 'Apr 18',
+    rating: 5,
+    notes: 'Blackcurrant, tomato, bright acidity',
+    bagColor: '#2E5B3A',
+    bagAccent: '#4A8A5C',
+    bagShape: 1,
+  },
+  {
+    id: 8,
+    bean: 'Bourbon Natural',
+    roaster: 'Heart Coffee',
+    origin: 'Guatemala',
+    process: 'Natural',
+    date: 'Apr 14',
+    rating: 4,
+    notes: 'Raspberry, caramel, velvety body',
+    bagColor: '#C44B2B',
+    bagAccent: '#E06840',
+    bagShape: 3,
+  },
+  {
+    id: 9,
+    bean: 'Cerrado Pulped',
+    roaster: 'Stumptown',
+    origin: 'Brazil',
+    process: 'Pulped Natural',
+    date: 'Apr 10',
+    rating: 3,
+    notes: 'Dark chocolate, hazelnut, low acid',
+    bagColor: '#1E3A5F',
+    bagAccent: '#2E5A8F',
+    bagShape: 2,
+  },
+  {
+    id: 10,
+    bean: 'Tarrazú Honey',
+    roaster: 'Chromatic Coffee',
+    origin: 'Costa Rica',
+    process: 'Honey',
+    date: 'Apr 6',
+    rating: 4,
+    notes: 'Brown sugar, peach, silky mouthfeel',
+    bagColor: '#D4742A',
+    bagAccent: '#F0944A',
+    bagShape: 1,
+  },
 ];
 
 function BagArt({ cup }) {
@@ -244,54 +296,106 @@ function Stars({ rating, max = 5 }) {
   );
 }
 
-function CupCard({ cup }) {
+function getBagImg(bagColor) {
+  const r = parseInt(bagColor.slice(1, 3), 16);
+  const g = parseInt(bagColor.slice(3, 5), 16);
+  const b = parseInt(bagColor.slice(5, 7), 16);
+  if (g > r && g > b) return 'green';
+  if (b >= r && b >= g) return 'blue';
+  if (r > 140) return 'orange';
+  return 'white';
+}
+
+function ShelfRow({ type, leftCup, rightCup }) {
+  const bagSrc = cup => `assets/bag-${getBagImg(cup.bagColor)}.png`;
+
+  if (type === 'tall') {
+    return (
+      <div style={{ display: 'flex', gap: 32, alignItems: 'center' }}>
+        <div style={{ position: 'relative', width: 143, height: 224, flexShrink: 0 }}>
+          {leftCup && <img src={bagSrc(leftCup)} alt={leftCup.bean}
+            style={{ position: 'absolute', left: 27, top: 41, width: 89, height: 183, objectFit: 'cover' }} />}
+        </div>
+        <div style={{ position: 'relative', width: 145, height: 224, flexShrink: 0 }}>
+          {rightCup && <img src={bagSrc(rightCup)} alt={rightCup.bean}
+            style={{ position: 'absolute', left: 28, top: 43, width: 88, height: 181, objectFit: 'cover' }} />}
+        </div>
+      </div>
+    );
+  }
+
+  if (type === 'normal') {
+    return (
+      <div style={{ display: 'flex', gap: 32, alignItems: 'center' }}>
+        <div style={{ position: 'relative', width: 143, height: 200, flexShrink: 0 }}>
+          {leftCup && <img src={bagSrc(leftCup)} alt={leftCup.bean}
+            style={{ position: 'absolute', left: 27, top: 18, width: 89, height: 183, objectFit: 'cover' }} />}
+        </div>
+        <div style={{ position: 'relative', width: 145, height: 200, flexShrink: 0 }}>
+          {rightCup && <img src={bagSrc(rightCup)} alt={rightCup.bean}
+            style={{ position: 'absolute', left: 29, top: 18, width: 88, height: 183, objectFit: 'cover' }} />}
+        </div>
+      </div>
+    );
+  }
+
+  // open shelf — bags are bottom-aligned, no cubby container
   return (
-    <div style={{ width: '100%', height: '100%' }}>
-      <BagArt cup={cup} />
+    <div style={{ display: 'flex', height: 194, alignItems: 'flex-end', justifyContent: 'space-between', padding: '0 48px' }}>
+      {leftCup
+        ? <img src={bagSrc(leftCup)} alt={leftCup.bean} style={{ width: 88, height: 181, objectFit: 'cover' }} />
+        : <div style={{ width: 88 }} />}
+      {rightCup
+        ? <img src={bagSrc(rightCup)} alt={rightCup.bean} style={{ width: 89, height: 183, objectFit: 'cover' }} />
+        : <div style={{ width: 89 }} />}
     </div>
   );
 }
 
-function CupboardGrid({ cells }) {
+function ShelvesStart({ cells }) {
+  const c = [...cells, ...Array(8).fill(null)].slice(0, 8);
   return (
-    <div>
-      {/* Outer frame — full bleed */}
-      <div style={{
-        background: '#DEC99A',
-        padding: '24px',
-        boxShadow: 'inset 0 3px 0 rgba(255,255,255,0.30), inset 0 -3px 0 rgba(0,0,0,0.10)',
-      }}>
-        {/* Grid — gap becomes the wooden dividers */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: '10px',
-          position: 'relative',
-        }}>
-          {cells.map((cup, i) => (
-            <div
-              key={i}
-              style={{
-                background: '#BFA06A',
-                padding: cup ? '16px' : '0',
-                aspectRatio: '3 / 4',
-                boxShadow: [
-                  'inset 0 10px 18px rgba(0,0,0,0.22)',   /* ceiling shadow falling down */
-                  'inset 6px 0 12px rgba(0,0,0,0.12)',    /* left wall shadow */
-                  'inset -3px 0 8px rgba(0,0,0,0.07)',    /* right wall shadow */
-                  'inset 0 -4px 6px rgba(255,255,255,0.08)', /* floor bounce */
-                ].join(', '),
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                overflow: 'hidden',
-              }}
-            >
-              {cup ? <CupCard cup={cup} /> : null}
-            </div>
-          ))}
-        </div>
+    <div style={{ position: 'relative', width: '100%', height: 998 }}>
+      <img src="assets/shelf-v2-whole.png" alt=""
+        style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', width: 370, height: 998, display: 'block' }} />
+      <div style={{ position: 'absolute', left: 40, top: 37, width: 320, display: 'flex', flexDirection: 'column', gap: 38, zIndex: 2 }}>
+        <ShelfRow type="tall"   leftCup={c[0]} rightCup={c[1]} />
+        <ShelfRow type="normal" leftCup={c[2]} rightCup={c[3]} />
+        <ShelfRow type="open"   leftCup={c[4]} rightCup={c[5]} />
+        <ShelfRow type="normal" leftCup={c[6]} rightCup={c[7]} />
       </div>
+      <img src="assets/shelf-v2-frame.png" alt=""
+        style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', width: 370, height: 998, zIndex: 5, pointerEvents: 'none' }} />
+    </div>
+  );
+}
+
+function ShelfContinued({ cells }) {
+  const c = [...cells, ...Array(6).fill(null)].slice(0, 6);
+  return (
+    <div style={{ position: 'relative', width: '100%', height: 733 }}>
+      <img src="assets/shelfcontinue-v2-whole.png" alt=""
+        style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', width: 370, height: 733, display: 'block' }} />
+      <div style={{ position: 'absolute', left: 36, top: 31, width: 320, display: 'flex', flexDirection: 'column', gap: 38, zIndex: 2 }}>
+        <ShelfRow type="normal" leftCup={c[0]} rightCup={c[1]} />
+        <ShelfRow type="open"   leftCup={c[2]} rightCup={c[3]} />
+        <ShelfRow type="normal" leftCup={c[4]} rightCup={c[5]} />
+      </div>
+      <img src="assets/shelfcontinue-v2-frame.png" alt=""
+        style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', width: 370, height: 733, zIndex: 5, pointerEvents: 'none' }} />
+    </div>
+  );
+}
+
+function CupboardShelves({ cells }) {
+  const startCells = cells.slice(0, 8);
+  const overflow = cells.slice(8);
+  const groups = [];
+  for (let i = 0; i < overflow.length; i += 6) groups.push(overflow.slice(i, i + 6));
+  return (
+    <div style={{ paddingTop: '16px' }}>
+      <ShelvesStart cells={startCells} />
+      {groups.map((group, i) => <ShelfContinued key={i} cells={group} />)}
     </div>
   );
 }
@@ -700,17 +804,7 @@ function LogCupScreen() {
 function App() {
   const [activeTab, setActiveTab] = React.useState('home');
 
-  // 8-slot cell layout: null = empty cubby
-  const cells = [
-    null,     // empty — top left
-    cups[0],  // Yirgacheffe
-    cups[1],  // El Paraíso
-    null,     // empty — row 2 right
-    cups[2],  // Gesha Village
-    cups[3],  // Huila Washed
-    cups[4],  // Kochere
-    cups[5],  // Sidama Honey
-  ];
+  const cells = cups;
 
   return (
     <div className="phone-wrap">
@@ -786,10 +880,10 @@ function App() {
             >
               {/* Header — wordmark only */}
               <div style={{
-                padding: '12px 24px 20px',
+                padding: '16px 24px 8px',
                 display: 'flex',
                 justifyContent: 'space-between',
-                alignItems: 'flex-end',
+                alignItems: 'center',
               }}>
                 <h1 style={{
                   fontFamily: 'DM Serif Display, Georgia, serif',
@@ -797,32 +891,32 @@ function App() {
                   color: '#1A1714',
                   margin: 0,
                   lineHeight: 1,
-                  letterSpacing: '-0.5px',
+                  letterSpacing: '-0.36px',
                 }}>
                   Cupboard
                 </h1>
                 {/* Avatar */}
                 <div style={{
-                  width: '34px',
-                  height: '34px',
-                  borderRadius: '50%',
-                  background: '#6E8B72',
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '24px',
+                  background: '#355C44',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  marginBottom: '3px',
+                  flexShrink: 0,
                 }}>
                   <span style={{
-                    fontFamily: 'DM Serif Display, Georgia, serif',
-                    fontSize: '14px',
-                    color: '#FAF7F2',
+                    fontFamily: 'DM Sans, sans-serif',
+                    fontSize: '20px',
+                    fontWeight: 600,
+                    color: '#F9EDDD',
                     lineHeight: 1,
                   }}>L</span>
                 </div>
               </div>
 
-              {/* Cupboard grid */}
-              <CupboardGrid cells={cells} />
+              <CupboardShelves cells={cells} />
 
               {/* Breathing room at bottom */}
               <div style={{ height: '28px' }} />
