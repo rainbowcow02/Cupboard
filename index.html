@@ -20,6 +20,10 @@
     .scrollable::-webkit-scrollbar { display: none; }
     .scrollable { -ms-overflow-style: none; scrollbar-width: none; }
     .leaflet-container { background: #cfd8dc; }
+    @keyframes slideInFromRight  { from { transform: translateX(100%); } to { transform: translateX(0); } }
+    @keyframes slideInFromLeft   { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+    @keyframes slideOutToLeft    { from { transform: translateX(0); } to { transform: translateX(-100%); } }
+    @keyframes slideOutToRight   { from { transform: translateX(0); } to { transform: translateX(100%); } }
   </style>
   <script>
     tailwind.config = {
@@ -502,8 +506,8 @@ function ExploreScreen({ cups }) {
   const NAV_H        = 118;  // 20px bottom + 90px pill height + 8px clearance
   const PEEK_HEIGHT  = 196;
   const MAX_SHEET_H  = Math.floor(852 * 0.4); // 40% of phone height
-  const ROW_H        = 82;
-  const HEADER_H     = 60;   // handle (20) + list header (40)
+  const ROW_H        = 104;  // 16+16 padding + 72px bag
+  const HEADER_H     = 84;   // grabber ~16px + toolbar 58px + pb 10px
 
   const sheetHeight = selectedOrigin !== null
     ? Math.min(HEADER_H + filteredCups.length * ROW_H + 16, MAX_SHEET_H)
@@ -592,20 +596,21 @@ function ExploreScreen({ cups }) {
       <div style={{
         position: 'absolute',
         bottom: `${NAV_H}px`,
-        left: 12,
-        right: 12,
+        left: 16,
+        right: 16,
         height: `${sheetHeight}px`,
-        background: 'rgba(250,247,242,0.97)',
-        backdropFilter: 'blur(24px)',
-        WebkitBackdropFilter: 'blur(24px)',
-        borderRadius: '18px',
-        boxShadow: '0 4px 24px rgba(26,23,20,0.12)',
+        borderRadius: '34px',
+        boxShadow: '0px 8px 40px rgba(0,0,0,0.12)',
         transition: 'height 0.32s cubic-bezier(0.4, 0, 0.2, 1)',
         display: 'flex',
         flexDirection: 'column',
         zIndex: 100,
         overflow: 'hidden',
+        isolation: 'isolate',
       }}>
+        {/* Liquid glass fill layers */}
+        <div style={{ position: 'absolute', inset: 0, borderRadius: '34px', background: 'rgba(38,38,38,1)', mixBlendMode: 'color-dodge', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', inset: 0, borderRadius: '34px', background: 'rgba(245,245,245,0.6)', pointerEvents: 'none' }} />
 
         {/* Drag handle — tap to toggle */}
         <div
@@ -619,30 +624,49 @@ function ExploreScreen({ cups }) {
             justifyContent: 'center',
           }}
         >
-          <div style={{ width: '36px', height: '4px', borderRadius: '2px', background: '#D5CEC6' }} />
+          <div style={{ width: '36px', height: '5px', borderRadius: '100px', background: '#cccccc' }} />
         </div>
 
-        {/* Sheet header + filter chip */}
+        {/* Sheet header — centered title + subtitle, clear button pinned right */}
         <div style={{
-          padding: '4px 20px 10px',
+          position: 'relative',
+          height: '68px',
           flexShrink: 0,
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
+          justifyContent: 'center',
+          paddingLeft: '16px',
+          paddingRight: '16px',
         }}>
-          <span style={{
-            fontFamily: 'DM Serif Display, Georgia, serif',
-            fontSize: '17px',
-            color: '#1A1714',
-          }}>
-            {selectedOrigin
-              ? `${ORIGIN_FLAGS[selectedOrigin] || ''} ${selectedOrigin}`
-              : 'All coffees'}
-          </span>
+          <div style={{ textAlign: 'center', pointerEvents: 'none' }}>
+            <div style={{
+              fontFamily: 'DM Serif Display, Georgia, serif',
+              fontSize: '24px',
+              color: '#1a1a1a',
+              letterSpacing: '-0.23px',
+              lineHeight: '30px',
+            }}>
+              {selectedOrigin
+                ? `${ORIGIN_FLAGS[selectedOrigin] || ''} ${selectedOrigin}`
+                : 'All coffees'}
+            </div>
+            <div style={{
+              fontFamily: 'DM Sans, sans-serif',
+              fontSize: '12px',
+              fontWeight: 500,
+              color: '#727272',
+              lineHeight: '14px',
+              marginTop: '2px',
+            }}>
+              {filteredCups.length} {filteredCups.length === 1 ? 'result' : 'results'}
+            </div>
+          </div>
           {selectedOrigin && (
             <button
               onClick={() => setSelectedOrigin(null)}
               style={{
+                position: 'absolute',
+                right: '16px',
                 background: 'none',
                 border: '1px solid #C5BDB6',
                 borderRadius: '20px',
@@ -661,7 +685,7 @@ function ExploreScreen({ cups }) {
         {/* Scrollable bag list */}
         <div
           className="scrollable"
-          style={{ flex: 1, overflowY: 'auto', padding: selectedOrigin ? '0 20px 16px' : '0 20px 20px' }}
+          style={{ flex: 1, overflowY: 'auto', paddingBottom: '16px' }}
         >
           {filteredCups.map((cup, i) => (
             <div
@@ -669,43 +693,71 @@ function ExploreScreen({ cups }) {
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '14px',
-                padding: '10px 0',
+                paddingTop: '16px',
+                paddingBottom: '16px',
+                paddingLeft: '4px',
+                paddingRight: '24px',
                 borderBottom: i < filteredCups.length - 1 ? '0.5px solid rgba(26,23,20,0.07)' : 'none',
               }}
             >
-              <div style={{ width: '44px', height: '60px', flexShrink: 0, borderRadius: '3px', overflow: 'hidden' }}>
-                <BagArt cup={cup} />
+              {/* Bag PNG — 72×72 container with narrow center crop */}
+              <div style={{ width: '72px', height: '72px', flexShrink: 0, overflow: 'hidden', position: 'relative' }}>
+                <div style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  width: '31px',
+                  height: '64px',
+                  overflow: 'hidden',
+                }}>
+                  <img
+                    src={`assets/bag-${getBagImg(cup.bagColor)}.png`}
+                    alt=""
+                    style={{
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      transform: 'translate(-50%, -50%)',
+                      width: '36px',
+                      height: '74px',
+                      objectFit: 'cover',
+                    }}
+                  />
+                </div>
               </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 <div style={{
                   fontFamily: 'DM Serif Display, Georgia, serif',
-                  fontSize: '15px',
-                  color: '#1A1714',
-                  lineHeight: 1.2,
-                  marginBottom: '2px',
+                  fontSize: '18px',
+                  color: '#1a1a1a',
+                  letterSpacing: '-0.23px',
+                  lineHeight: '30px',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
                 }}>
                   {cup.bean}
                 </div>
                 <div style={{
                   fontFamily: 'DM Sans, sans-serif',
-                  fontSize: '12px',
-                  color: '#9A918A',
-                  marginBottom: '5px',
+                  fontSize: '13px',
+                  color: '#727272',
+                  lineHeight: '16px',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
                 }}>
                   {cup.roaster}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Stars rating={cup.rating} />
-                  <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '11px', color: '#9A918A' }}>
-                    {ORIGIN_FLAGS[cup.origin] || ''} {cup.origin}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '16px', lineHeight: '16px' }}>{ORIGIN_FLAGS[cup.origin] || ''}</span>
+                  <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '13px', color: '#727272', lineHeight: '16px' }}>
+                    {cup.origin}
                   </span>
                 </div>
               </div>
-              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '11px', color: '#C5BDB6', flexShrink: 0 }}>
+              <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '13px', color: '#727272', flexShrink: 0 }}>
                 {cup.date}
               </div>
             </div>
@@ -803,8 +855,42 @@ function LogCupScreen() {
 
 function App() {
   const [activeTab, setActiveTab] = React.useState('home');
+  const [prevTab, setPrevTab] = React.useState(null);
+  const [direction, setDirection] = React.useState(1);
 
-  const cells = cups;
+  const TAB_ORDER = ['home', 'search', 'add', 'beans'];
+
+  const handleTabChange = (newTab) => {
+    if (newTab === activeTab) return;
+    const oldIdx = TAB_ORDER.indexOf(activeTab);
+    const newIdx = TAB_ORDER.indexOf(newTab);
+    setDirection(newIdx > oldIdx ? 1 : -1);
+    setPrevTab(activeTab);
+    setActiveTab(newTab);
+    setTimeout(() => setPrevTab(null), 320);
+  };
+
+  const renderScreen = (tabId) => {
+    if (tabId === 'home') return (
+      <div className="scrollable" style={{ height: '100%', overflowY: 'auto', paddingBottom: '88px' }}>
+        <div style={{ padding: '16px 24px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h1 style={{ fontFamily: 'DM Serif Display, Georgia, serif', fontSize: '36px', color: '#1A1714', margin: 0, lineHeight: 1, letterSpacing: '-0.36px' }}>
+            Cupboard
+          </h1>
+          <div style={{ width: '48px', height: '48px', borderRadius: '24px', background: '#355C44', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '20px', fontWeight: 600, color: '#F9EDDD', lineHeight: 1 }}>L</span>
+          </div>
+        </div>
+        <CupboardShelves cells={cups} />
+        <div style={{ height: '28px' }} />
+      </div>
+    );
+    if (tabId === 'search') return <ExploreScreen cups={cups} />;
+    if (tabId === 'add') return <LogCupScreen />;
+    return null;
+  };
+
+  const activeIdx = TAB_ORDER.indexOf(activeTab);
 
   return (
     <div className="phone-wrap">
@@ -872,62 +958,25 @@ function App() {
             </div>
           </div>
 
-          {/* Home screen */}
-          {activeTab === 'home' && (
-            <div
-              className="scrollable"
-              style={{ flex: 1, overflowY: 'auto', paddingBottom: '88px' }}
-            >
-              {/* Header — wordmark only */}
+          {/* Screen content with directional slide transitions */}
+          <div style={{ position: 'relative', overflow: 'hidden', flex: 1, minHeight: 0 }}>
+            {prevTab && (
               <div style={{
-                padding: '16px 24px 8px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
+                position: 'absolute', inset: 0, zIndex: 0,
+                display: 'flex', flexDirection: 'column',
+                animation: `${direction > 0 ? 'slideOutToLeft' : 'slideOutToRight'} 300ms cubic-bezier(0.32, 0.72, 0, 1) forwards`,
               }}>
-                <h1 style={{
-                  fontFamily: 'DM Serif Display, Georgia, serif',
-                  fontSize: '36px',
-                  color: '#1A1714',
-                  margin: 0,
-                  lineHeight: 1,
-                  letterSpacing: '-0.36px',
-                }}>
-                  Cupboard
-                </h1>
-                {/* Avatar */}
-                <div style={{
-                  width: '48px',
-                  height: '48px',
-                  borderRadius: '24px',
-                  background: '#355C44',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}>
-                  <span style={{
-                    fontFamily: 'DM Sans, sans-serif',
-                    fontSize: '20px',
-                    fontWeight: 600,
-                    color: '#F9EDDD',
-                    lineHeight: 1,
-                  }}>L</span>
-                </div>
+                {renderScreen(prevTab)}
               </div>
-
-              <CupboardShelves cells={cells} />
-
-              {/* Breathing room at bottom */}
-              <div style={{ height: '28px' }} />
+            )}
+            <div style={{
+              position: 'absolute', inset: 0, zIndex: 1,
+              display: 'flex', flexDirection: 'column',
+              animation: prevTab ? `${direction > 0 ? 'slideInFromRight' : 'slideInFromLeft'} 300ms cubic-bezier(0.32, 0.72, 0, 1) forwards` : 'none',
+            }}>
+              {renderScreen(activeTab)}
             </div>
-          )}
-
-          {/* Explore / Origins screen */}
-          {activeTab === 'search' && <ExploreScreen cups={cups} />}
-
-          {/* Log Cup screen */}
-          {activeTab === 'add' && <LogCupScreen />}
+          </div>
 
           {/* bottomnav-gradient — Figma node 694:64 */}
           <div style={{
@@ -973,6 +1022,19 @@ function App() {
                 <div style={{ position: 'absolute', inset: 0, background: '#ddd', mixBlendMode: 'color-burn' }} />
                 <div style={{ position: 'absolute', inset: 0, background: '#f7f7f7', mixBlendMode: 'darken' }} />
               </div>
+              {/* Sliding active pill */}
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                bottom: 0,
+                left: 0,
+                width: '76px',
+                borderRadius: '100px',
+                background: 'rgba(252, 153, 155, 0.5)',
+                transform: `translateX(${activeIdx * 64 - 2}px)`,
+                transition: 'transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                pointerEvents: 'none',
+              }} />
               {[
                 { id: 'home',   icon: 'home',   label: 'Home' },
                 { id: 'search', icon: 'search', label: 'Explore' },
@@ -981,7 +1043,7 @@ function App() {
               ].map((tab, i) => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => handleTabChange(tab.id)}
                   style={{
                     width: '72px',
                     flexShrink: 0,
@@ -1001,16 +1063,11 @@ function App() {
                     position: 'relative',
                   }}
                 >
-                  {/* Active selection highlight */}
-                  {activeTab === tab.id && (
-                    <div style={{
-                      position: 'absolute',
-                      inset: '0 -2px',
-                      borderRadius: '100px',
-                      background: 'rgba(252, 153, 155, 0.5)',
-                    }} />
-                  )}
-                  <div style={{ position: 'relative', width: '30px', height: '30px', flexShrink: 0 }}>
+                  <div style={{
+                    position: 'relative', width: '30px', height: '30px', flexShrink: 0,
+                    transform: activeTab === tab.id ? 'scale(1.08)' : 'scale(1)',
+                    transition: 'transform 0.2s ease',
+                  }}>
                     <TabIcon type={tab.icon} active={activeTab === tab.id} />
                   </div>
                   <span style={{
@@ -1024,6 +1081,7 @@ function App() {
                     position: 'relative',
                     textAlign: 'center',
                     width: '100%',
+                    transition: 'color 0.2s ease',
                   }}>
                     {tab.label}
                   </span>
