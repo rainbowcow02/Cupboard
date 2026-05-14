@@ -87,6 +87,7 @@ const cups = [
     bagColor: '#C17A3C',
     bagAccent: '#E8A85A',
     bagShape: 2,
+    bagImg: 'orange',
   },
   {
     id: 2,
@@ -100,6 +101,7 @@ const cups = [
     bagColor: '#3D6B55',
     bagAccent: '#5A9474',
     bagShape: 1,
+    bagImg: 'green',
   },
   {
     id: 3,
@@ -113,6 +115,7 @@ const cups = [
     bagColor: '#B5836A',
     bagAccent: '#D4A882',
     bagShape: 3,
+    bagImg: 'white',
   },
   {
     id: 4,
@@ -126,6 +129,7 @@ const cups = [
     bagColor: '#4A5568',
     bagAccent: '#718096',
     bagShape: 1,
+    bagImg: 'blue',
   },
   {
     id: 5,
@@ -139,6 +143,7 @@ const cups = [
     bagColor: '#7C5C8A',
     bagAccent: '#A07AB0',
     bagShape: 3,
+    bagImg: 'white',
   },
   {
     id: 6,
@@ -152,6 +157,7 @@ const cups = [
     bagColor: '#8B6340',
     bagAccent: '#B5895C',
     bagShape: 2,
+    bagImg: 'orange',
   },
   {
     id: 7,
@@ -165,6 +171,7 @@ const cups = [
     bagColor: '#2E5B3A',
     bagAccent: '#4A8A5C',
     bagShape: 1,
+    bagImg: 'green',
   },
   {
     id: 8,
@@ -178,6 +185,7 @@ const cups = [
     bagColor: '#C44B2B',
     bagAccent: '#E06840',
     bagShape: 3,
+    bagImg: 'orange',
   },
   {
     id: 9,
@@ -191,6 +199,7 @@ const cups = [
     bagColor: '#1E3A5F',
     bagAccent: '#2E5A8F',
     bagShape: 2,
+    bagImg: 'blue',
   },
   {
     id: 10,
@@ -204,6 +213,7 @@ const cups = [
     bagColor: '#D4742A',
     bagAccent: '#F0944A',
     bagShape: 1,
+    bagImg: 'orange',
   },
 ];
 
@@ -570,7 +580,7 @@ function ExploreScreen({ cups }) {
             style={{
               width: '44px',
               height: '44px',
-              background: 'rgba(249,237,221,0.95)',
+              background: 'rgba(255,255,255,0.95)',
               backdropFilter: 'blur(10px)',
               WebkitBackdropFilter: 'blur(10px)',
               border: '0.5px solid rgba(0,0,0,0.15)',
@@ -578,7 +588,7 @@ function ExploreScreen({ cups }) {
               fontFamily: 'Avenir, system-ui, sans-serif',
               fontSize: '26px',
               fontWeight: 300,
-              color: '#000000',
+              color: '#cca68c',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -593,178 +603,106 @@ function ExploreScreen({ cups }) {
         ))}
       </div>
 
-      {/* Bottom sheet */}
-      <div style={{
+      {/* bottomsheet */}
+      <div data-name="bottomsheet" style={{
         position: 'absolute',
         bottom: `${NAV_H}px`,
         left: 16,
         right: 16,
         height: `${sheetHeight}px`,
         borderRadius: '34px',
-        boxShadow: '0px 8px 40px rgba(0,0,0,0.12)',
         transition: 'height 0.32s cubic-bezier(0.4, 0, 0.2, 1)',
-        display: 'flex',
-        flexDirection: 'column',
         zIndex: 100,
         overflow: 'hidden',
         isolation: 'isolate',
       }}>
-        {/* Liquid glass fill layers */}
-        <div style={{ position: 'absolute', inset: 0, borderRadius: '34px', background: 'rgba(38,38,38,1)', mixBlendMode: 'color-dodge', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', inset: 0, borderRadius: '34px', background: 'rgba(245,245,245,0.6)', pointerEvents: 'none' }} />
-
-        {/* Drag handle — tap to toggle */}
-        <div
-          onClick={() => setSheetExpanded(e => !e)}
-          style={{
-            paddingTop: '10px',
-            paddingBottom: '6px',
-            cursor: 'pointer',
-            flexShrink: 0,
-            display: 'flex',
-            justifyContent: 'center',
-          }}
-        >
-          <div style={{ width: '36px', height: '5px', borderRadius: '100px', background: '#cccccc' }} />
+        {/* Fill + Shadow */}
+        <div data-name="Fill + Shadow" style={{
+          position: 'absolute',
+          inset: 0,
+          borderRadius: '34px',
+          boxShadow: '0px 8px 40px rgba(0,0,0,0.12)',
+          pointerEvents: 'none',
+        }}>
+          <div style={{ position: 'absolute', inset: 0, borderRadius: '34px', background: 'rgb(255,255,255)', mixBlendMode: 'color-dodge' }} />
+          <div style={{ position: 'absolute', inset: 0, borderRadius: '34px', background: 'rgba(245,245,245,0.6)' }} />
         </div>
 
-        {/* Sheet header — centered title + subtitle, clear button pinned right */}
-        <div style={{
-          position: 'relative',
-          height: '68px',
-          flexShrink: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          paddingLeft: '16px',
-          paddingRight: '16px',
-        }}>
-          <div style={{ textAlign: 'center', pointerEvents: 'none' }}>
-            <div style={{
-              fontFamily: 'DM Serif Display, Georgia, serif',
-              fontSize: '22px',
-              color: '#000000',
-              letterSpacing: '-0.23px',
-              lineHeight: 1.4,
-            }}>
-              {selectedOrigin
-                ? `${ORIGIN_FLAGS[selectedOrigin] || ''} ${selectedOrigin}`
-                : 'All coffees'}
+        {/* Glass Effect */}
+        <div data-name="Glass Effect" style={{
+          position: 'absolute',
+          inset: 0,
+          borderRadius: '34px',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          background: 'linear-gradient(135deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0) 50%)',
+          pointerEvents: 'none',
+        }} />
+
+        {/* Bottomsheet (inner content column) */}
+        <div data-name="Bottomsheet" style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+
+          {/* Header */}
+          <div data-name="Header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingBottom: '10px', flexShrink: 0, width: '100%' }}>
+
+            {/* Grabber */}
+            <div data-name="Grabber" onClick={() => setSheetExpanded(e => !e)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', height: '16px', paddingTop: '5px', flexShrink: 0, cursor: 'pointer' }}>
+              <div data-name="Grabber" style={{ width: '36px', height: '5px', background: '#ccc', borderRadius: '100px', flexShrink: 0 }} />
             </div>
-            <div style={{
-              fontFamily: 'Avenir, system-ui, sans-serif',
-              fontSize: '13px',
-              fontWeight: 500,
-              color: '#6b6b6b',
-              lineHeight: 1.5,
-              marginTop: '2px',
-            }}>
-              {filteredCups.length} {filteredCups.length === 1 ? 'result' : 'results'}
+
+            {/* Title + Controls */}
+            <div data-name="Title + Controls" style={{ display: 'flex', alignItems: 'center', paddingLeft: '24px', paddingRight: '16px', width: '100%', flexShrink: 0, boxSizing: 'border-box' }}>
+              {/* Text */}
+              <div data-name="Text" style={{ display: 'flex', flexDirection: 'column', flex: '1 0 0', height: '58px', justifyContent: 'center', alignItems: 'flex-start', minWidth: 0 }}>
+                <p style={{ fontFamily: 'DM Serif Display, Georgia, serif', fontSize: '22px', color: '#000', letterSpacing: '-0.23px', lineHeight: 1.4, margin: 0 }}>
+                  {selectedOrigin ? `${ORIGIN_FLAGS[selectedOrigin] || ''} ${selectedOrigin}` : 'All coffees'}
+                </p>
+                <p style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontSize: '13px', fontWeight: 500, color: '#6b6b6b', lineHeight: 1.5, margin: 0, whiteSpace: 'nowrap' }}>
+                  {filteredCups.length} {filteredCups.length === 1 ? 'result' : 'results'}
+                </p>
+              </div>
+              {selectedOrigin && (
+                <button onClick={() => setSelectedOrigin(null)} style={{ background: 'none', border: '1px solid #d9d9d9', borderRadius: '20px', padding: '3px 10px', fontFamily: 'Avenir, system-ui, sans-serif', fontSize: '12px', color: '#6b6b6b', cursor: 'pointer', flexShrink: 0 }}>
+                  Clear ×
+                </button>
+              )}
             </div>
           </div>
-          {selectedOrigin && (
-            <button
-              onClick={() => setSelectedOrigin(null)}
-              style={{
-                position: 'absolute',
-                right: '16px',
-                background: 'none',
-                border: '1px solid #d9d9d9',
-                borderRadius: '20px',
-                padding: '3px 10px',
-                fontFamily: 'Avenir, system-ui, sans-serif',
-                fontSize: '12px',
-                color: '#6b6b6b',
-                cursor: 'pointer',
-              }}
-            >
-              Clear ×
-            </button>
-          )}
-        </div>
 
-        {/* Scrollable bag list */}
-        <div
-          className="scrollable"
-          style={{ flex: 1, overflowY: 'auto', paddingBottom: '16px' }}
-        >
-          {filteredCups.map((cup, i) => (
-            <div
-              key={cup.id}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                paddingTop: '16px',
-                paddingBottom: '16px',
-                paddingLeft: '4px',
-                paddingRight: '24px',
-                borderBottom: i < filteredCups.length - 1 ? '0.5px solid #e7e7e7' : 'none',
-              }}
-            >
-              {/* Bag PNG — 72×72 container with narrow center crop */}
-              <div style={{ width: '72px', height: '72px', flexShrink: 0, overflow: 'hidden', position: 'relative' }}>
-                <div style={{
-                  position: 'absolute',
-                  top: '50%',
-                  left: '50%',
-                  transform: 'translate(-50%, -50%)',
-                  width: '31px',
-                  height: '64px',
-                  overflow: 'hidden',
-                }}>
-                  <img
-                    src={`assets/bag-${getBagImg(cup.bagColor)}.png`}
-                    alt=""
-                    style={{
-                      position: 'absolute',
-                      top: '50%',
-                      left: '50%',
-                      transform: 'translate(-50%, -50%)',
-                      width: '36px',
-                      height: '74px',
-                      objectFit: 'cover',
-                    }}
-                  />
-                </div>
-              </div>
-              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                <div style={{
-                  fontFamily: 'Avenir, system-ui, sans-serif',
-                  fontWeight: 800,
-                  fontSize: '17px',
-                  color: '#000000',
-                  letterSpacing: '-0.5px',
-                  lineHeight: 1.4,
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}>
-                  {cup.bean}
-                </div>
-                <div style={{
-                  fontFamily: 'Avenir, system-ui, sans-serif',
-                  fontWeight: 500,
-                  fontSize: '13px',
-                  color: '#6b6b6b',
-                  lineHeight: 1.5,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}>
-                  {cup.roaster}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ fontSize: '16px', lineHeight: '16px' }}>{ORIGIN_FLAGS[cup.origin] || ''}</span>
-                  <span style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: '13px', color: '#6b6b6b', lineHeight: 1.5 }}>
-                    {cup.origin}
-                  </span>
-                </div>
-              </div>
-              <div style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: '13px', color: '#6b6b6b', flexShrink: 0 }}>
-                {cup.date}
+          {/* Content */}
+          <div data-name="Content" style={{ display: 'flex', flexDirection: 'column', flex: 1, width: '100%', overflow: 'hidden', borderBottomLeftRadius: '34px', borderBottomRightRadius: '34px' }}>
+            {/* slot */}
+            <div data-name="slot" className="scrollable" style={{ flex: 1, overflowY: 'auto', paddingBottom: '16px' }}>
+              <div data-name="list-collection" style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                {filteredCups.map((cup, i) => (
+                  <div key={cup.id} data-name="list-item" style={{ display: 'flex', flexDirection: 'column', flexShrink: 0, width: '100%' }}>
+                    <div data-name="item-card" style={{ display: 'flex', alignItems: 'center', paddingTop: '16px', paddingBottom: '16px', paddingLeft: '4px', paddingRight: '24px', boxSizing: 'border-box' }}>
+                      <div data-name="coffeebag-med" style={{ width: '72px', height: '72px', flexShrink: 0, overflow: 'hidden', position: 'relative' }}>
+                        <div data-name="bag-white" style={{ position: 'absolute', top: '50%', left: 'calc(50% - 0.5px)', transform: 'translate(-50%, -50%)', width: '31px', height: '64px', overflow: 'hidden' }}>
+                          <div style={{ position: 'absolute', top: '50%', left: 'calc(50% + 0.49px)', transform: 'translate(-50%, -50%)', width: '36px', height: '74px' }}>
+                            <img src={`assets/bag-${cup.bagImg}.png`} alt={cup.bean} style={{ width: '100%', height: '100%', objectFit: 'contain', pointerEvents: 'none' }} />
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', width: '200px', flexShrink: 0, whiteSpace: 'nowrap' }}>
+                        <p style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 800, fontSize: '17px', color: '#000', letterSpacing: '-0.5px', lineHeight: 1.4, margin: 0 }}>{cup.bean}</p>
+                        <p style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: '13px', color: '#6b6b6b', lineHeight: 1.5, margin: 0 }}>{cup.roaster}</p>
+                        <div data-name="Country" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: '13px', color: '#6b6b6b' }}>
+                          <span>{ORIGIN_FLAGS[cup.origin]}</span>
+                          <span>{cup.origin}</span>
+                        </div>
+                      </div>
+                      <p style={{ flex: '1 0 0', fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: '13px', color: '#6b6b6b', lineHeight: 1.5, textAlign: 'right', margin: 0 }}>{cup.date}</p>
+                    </div>
+                    {i < filteredCups.length - 1 && (
+                      <div data-name="divider" style={{ width: '100%', height: '0.5px', background: '#e7e7e7', flexShrink: 0 }} />
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
-          ))}
+          </div>
+
         </div>
       </div>
     </div>
@@ -873,6 +811,122 @@ function App() {
     setTimeout(() => setPrevTab(null), 320);
   };
 
+  function BeansScreen() {
+    const NAV_H = 118;
+
+    return (
+      <div style={{ position: 'relative', flex: 1, background: '#f9eddd' }}>
+        {/* bottomsheet */}
+        <div data-name="bottomsheet" style={{
+          position: 'absolute',
+          bottom: `${NAV_H}px`,
+          left: 16,
+          right: 16,
+          height: '379px',
+          borderRadius: '34px',
+          zIndex: 100,
+          overflow: 'hidden',
+          isolation: 'isolate',
+        }}>
+          {/* Fill + Shadow */}
+          <div data-name="Fill + Shadow" style={{
+            position: 'absolute',
+            inset: 0,
+            borderRadius: '34px',
+            boxShadow: '0px 8px 40px rgba(0,0,0,0.12)',
+            pointerEvents: 'none',
+          }}>
+            <div style={{ position: 'absolute', inset: 0, borderRadius: '34px', background: 'rgb(255,255,255)', mixBlendMode: 'color-dodge' }} />
+            <div style={{ position: 'absolute', inset: 0, borderRadius: '34px', background: 'rgba(245,245,245,0.6)' }} />
+          </div>
+
+          {/* Glass Effect — Frost:12, Light:-45°/60%, Refraction:100, Depth:16, Dispersion:0, Splay:6 */}
+          <div data-name="Glass Effect" style={{
+            position: 'absolute',
+            inset: 0,
+            borderRadius: '34px',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            background: 'linear-gradient(135deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0) 50%)',
+            pointerEvents: 'none',
+          }} />
+
+          {/* Bottomsheet (inner content column) */}
+          <div data-name="Bottomsheet" style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+
+            {/* Header */}
+            <div data-name="Header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingBottom: '10px', flexShrink: 0, width: '100%' }}>
+
+              {/* Grabber (container) */}
+              <div data-name="Grabber" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', height: '16px', paddingTop: '5px', flexShrink: 0 }}>
+                {/* Grabber (pill) */}
+                <div data-name="Grabber" style={{ width: '36px', height: '5px', background: '#ccc', borderRadius: '100px', flexShrink: 0 }} />
+              </div>
+
+              {/* Title + Controls */}
+              <div data-name="Title + Controls" style={{ display: 'flex', alignItems: 'center', paddingLeft: '24px', paddingRight: '16px', width: '100%', flexShrink: 0 }}>
+                {/* Text */}
+                <div data-name="Text" style={{ display: 'flex', flexDirection: 'column', flex: '1 0 0', height: '58px', justifyContent: 'center', alignItems: 'flex-start', minWidth: 0 }}>
+                  <p style={{ fontFamily: 'DM Serif Display, Georgia, serif', fontSize: '22px', color: '#000', letterSpacing: '-0.23px', lineHeight: 1.4, margin: 0 }}>
+                    All Beans
+                  </p>
+                  <p style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontSize: '13px', fontWeight: 500, color: '#6b6b6b', lineHeight: 1.5, margin: 0, whiteSpace: 'nowrap' }}>
+                    10 beans
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div data-name="Content" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: '0 0 auto', height: '294px', width: '100%', overflow: 'hidden', borderBottomLeftRadius: '34px', borderBottomRightRadius: '34px' }}>
+              {/* slot */}
+              <div data-name="slot" className="scrollable" style={{ flex: '1 0 0', minHeight: 0, width: '100%', overflowY: 'auto' }}>
+                <div data-name="list-collection" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%' }}>
+                  {cups.map((cup, i) => (
+                    <div key={cup.id} data-name="list-item" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', flexShrink: 0, width: '100%' }}>
+                      <div data-name="item-card" style={{ display: 'flex', alignItems: 'center', paddingTop: '16px', paddingBottom: '16px', paddingLeft: '4px', paddingRight: '24px', width: '100%', boxSizing: 'border-box' }}>
+                        {/* coffeebag-med */}
+                        <div data-name="coffeebag-med" style={{ width: '72px', height: '72px', flexShrink: 0, overflow: 'hidden', position: 'relative' }}>
+                          <div data-name="bag-white" style={{ position: 'absolute', top: '50%', left: 'calc(50% - 0.5px)', transform: 'translate(-50%, -50%)', width: '31px', height: '64px', overflow: 'hidden' }}>
+                            <div style={{ position: 'absolute', top: '50%', left: 'calc(50% + 0.49px)', transform: 'translate(-50%, -50%)', width: '36px', height: '74px' }}>
+                              <img src={`assets/bag-${cup.bagImg}.png`} alt={cup.bean} style={{ width: '100%', height: '100%', objectFit: 'contain', pointerEvents: 'none' }} />
+                            </div>
+                          </div>
+                        </div>
+                        {/* Text column */}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '200px', flexShrink: 0, whiteSpace: 'nowrap' }}>
+                          <p style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 800, fontSize: '17px', color: '#000', letterSpacing: '-0.5px', lineHeight: 1.4, margin: 0 }}>
+                            {cup.bean}
+                          </p>
+                          <p style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: '13px', color: '#6b6b6b', lineHeight: 1.5, margin: 0 }}>
+                            {cup.roaster}
+                          </p>
+                          <div data-name="Country" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: '13px', color: '#6b6b6b' }}>
+                            <span>{ORIGIN_FLAGS[cup.origin]}</span>
+                            <span>{cup.origin}</span>
+                          </div>
+                        </div>
+                        {/* Date */}
+                        <p style={{ flex: '1 0 0', fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: '13px', color: '#6b6b6b', lineHeight: 1.5, textAlign: 'right', margin: 0 }}>
+                          {cup.date}
+                        </p>
+                      </div>
+                      {/* divider */}
+                      {i < cups.length - 1 && (
+                        <div data-name="divider" style={{ width: '100%', height: '0.5px', background: '#e7e7e7', flexShrink: 0 }} />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const renderScreen = (tabId) => {
     if (tabId === 'home') return (
       <div className="scrollable" style={{ height: '100%', overflowY: 'auto', paddingBottom: '88px' }}>
@@ -890,6 +944,7 @@ function App() {
     );
     if (tabId === 'search') return <ExploreScreen cups={cups} />;
     if (tabId === 'add') return <LogCupScreen />;
+    if (tabId === 'beans') return <BeansScreen />;
     return null;
   };
 
@@ -989,7 +1044,7 @@ function App() {
             height: '160px',
             background: 'linear-gradient(to bottom, rgba(249,237,221,0), rgba(253,203,136,0.6))',
             pointerEvents: 'none',
-            zIndex: 45,
+            zIndex: 50,
           }} />
 
           {/* Bottom tab bar */}
