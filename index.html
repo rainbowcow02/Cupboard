@@ -65,9 +65,14 @@
 </head>
 <body>
 <div id="root"></div>
+<!-- Local-only dev token override. File is gitignored; 404 in prod is harmless. -->
+<script src="mb-dev-token.js"></script>
 <script type="text/babel">
 
-const MAPBOX_TOKEN = 'pk.eyJ1IjoicmFpbmJvd2NvdzAyIiwiYSI6ImNtcGN0N3pmdjA1MnIyeHB2aDFqa21hdjcifQ.X3TvBj8J2kqQyeRYxzAiAQ';
+const MAPBOX_PROD_TOKEN = 'pk.eyJ1IjoicmFpbmJvd2NvdzAyIiwiYSI6ImNtcGN0N3pmdjA1MnIyeHB2aDFqa21hdjcifQ.X3TvBj8J2kqQyeRYxzAiAQ';
+const MAPBOX_TOKEN = window.MAPBOX_DEV_TOKEN
+  || (typeof localStorage !== 'undefined' && localStorage.getItem('mb_dev_token'))
+  || MAPBOX_PROD_TOKEN;
 
 const ORIGIN_COORDS = {
   'Ethiopia':  [8.6,  39.6],
