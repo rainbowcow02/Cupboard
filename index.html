@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Lock mobile layout to the 393px design width so the mockup fills the phone screen.
+       Desktop browsers ignore this tag, so they keep their normal width. -->
+  <meta name="viewport" content="width=393" />
   <title>Cupboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
@@ -24,6 +26,18 @@
     @keyframes slideInFromLeft   { from { transform: translateX(-100%); } to { transform: translateX(0); } }
     @keyframes slideOutToLeft    { from { transform: translateX(0); } to { transform: translateX(-100%); } }
     @keyframes slideOutToRight   { from { transform: translateX(0); } to { transform: translateX(100%); } }
+    /* Fullscreen on mobile: drop the page padding and frame chrome so the mockup fills the screen. */
+    @media (max-width: 480px) {
+      body { padding: 0; }
+      .phone-shell {
+        border-radius: 0 !important;
+        box-shadow: none !important;
+      }
+      /* Hide the mock island; hide the mock status bar's contents but keep its
+         height as a spacer so the header clears the device's real status bar. */
+      .mock-island { display: none; }
+      .mock-statusbar > * { visibility: hidden; }
+    }
   </style>
   <script>
     tailwind.config = {
@@ -32,6 +46,7 @@
           fontFamily: {
             serif: ['"DM Serif Display"', 'Georgia', 'serif'],
             sans: ['Avenir', 'system-ui', 'sans-serif'],
+            condensed: ['"Avenir Next Condensed"', 'Avenir', 'sans-serif'],
           },
           colors: {
             pearl:           '#f9eddd',
@@ -79,7 +94,7 @@ const ORIGIN_FLAGS = {
 const cups = [
   {
     id: 1,
-    bean: 'Yirgacheffe',
+    bean: 'Yir­ga­cheffe',
     roaster: 'Onyx Coffee Lab',
     origin: 'Ethiopia',
     process: 'Natural',
@@ -93,7 +108,7 @@ const cups = [
   },
   {
     id: 2,
-    bean: 'El Paraíso',
+    bean: 'El Pa­raíso',
     roaster: 'Intelligentsia',
     origin: 'Colombia',
     process: 'Washed',
@@ -107,7 +122,7 @@ const cups = [
   },
   {
     id: 3,
-    bean: 'Gesha Village',
+    bean: 'Ge­sha Vil­lage',
     roaster: 'Verve Coffee',
     origin: 'Panama',
     process: 'Natural',
@@ -121,7 +136,7 @@ const cups = [
   },
   {
     id: 4,
-    bean: 'Huila Washed',
+    bean: 'Hui­la Washed',
     roaster: 'Blue Bottle',
     origin: 'Colombia',
     process: 'Washed',
@@ -135,7 +150,7 @@ const cups = [
   },
   {
     id: 5,
-    bean: 'Kochere',
+    bean: 'Ko­chere',
     roaster: 'Sightglass',
     origin: 'Ethiopia',
     process: 'Washed',
@@ -149,7 +164,7 @@ const cups = [
   },
   {
     id: 6,
-    bean: 'Sidama Honey',
+    bean: 'Si­da­ma Honey',
     roaster: 'Counter Culture',
     origin: 'Ethiopia',
     process: 'Honey',
@@ -163,7 +178,7 @@ const cups = [
   },
   {
     id: 7,
-    bean: 'Nyeri Peaberry',
+    bean: 'Nye­ri Pea­berry',
     roaster: 'Ritual Coffee',
     origin: 'Kenya',
     process: 'Washed',
@@ -177,7 +192,7 @@ const cups = [
   },
   {
     id: 8,
-    bean: 'Bourbon Natural',
+    bean: 'Bour­bon Nat­ural',
     roaster: 'Heart Coffee',
     origin: 'Guatemala',
     process: 'Natural',
@@ -191,7 +206,7 @@ const cups = [
   },
   {
     id: 9,
-    bean: 'Cerrado Pulped',
+    bean: 'Cer­ra­do Pulped',
     roaster: 'Stumptown',
     origin: 'Brazil',
     process: 'Pulped Natural',
@@ -205,7 +220,7 @@ const cups = [
   },
   {
     id: 10,
-    bean: 'Tarrazú Honey',
+    bean: 'Tar­ra­zú Honey',
     roaster: 'Chromatic Coffee',
     origin: 'Costa Rica',
     process: 'Honey',
@@ -317,44 +332,33 @@ function Stars({ rating, max = 5 }) {
 // Sizes are miniature (sub-DS) to fit the bag art; colors are DS tokens.
 function BagLabel({ cup }) {
   const lightBag = cup.bagImg === 'white';
-  const ink     = lightBag ? '#000000' : '#f9eddd';  // DS Black / Pearl
-  const sub     = lightBag ? '#6b6b6b' : '#f9eddd';  // DS Grey Dark / Pearl
-  const divider = lightBag ? '#d9d9d9' : '#f9eddd';  // DS Grey Light / Pearl
+  const ink     = lightBag ? 'text-black' : 'text-pearl';      // DS Black / Pearl
+  const sub     = lightBag ? 'text-grey-dark' : 'text-pearl';  // DS Grey Dark / Pearl
+  const divider = lightBag ? 'bg-black/40' : 'bg-pearl/40';  // DS Black / Pearl @ 40% opacity
   return (
-    <div style={{
-      position: 'absolute', top: '20%', left: '50%', transform: 'translateX(-50%)',
-      width: '72%', display: 'flex', flexDirection: 'column', alignItems: 'center',
-      textAlign: 'center', pointerEvents: 'none',
-    }}>
-      <div style={{
-        fontFamily: 'DM Serif Display, Georgia, serif', fontWeight: 400, fontSize: '11px',
-        lineHeight: 1.4, color: ink, letterSpacing: '0.1px',
-      }}>{cup.bean}</div>
-      <div style={{
-        fontFamily: 'Avenir, system-ui, sans-serif', fontSize: '6px', fontWeight: 500,
-        letterSpacing: '0.9px', color: sub, marginTop: '4px',
-        textTransform: 'uppercase', whiteSpace: 'nowrap',
-      }}>{cup.roaster}</div>
-      <div style={{ width: '18px', height: '1px', background: divider, margin: '5px 0' }} />
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px',
-        fontFamily: 'Avenir, system-ui, sans-serif', fontSize: '6.5px', fontWeight: 500,
-        letterSpacing: '0.5px', color: sub, textTransform: 'uppercase',
-      }}>
-        <span style={{ fontSize: '8px', letterSpacing: 0 }}>{ORIGIN_FLAGS[cup.origin]}</span>
+    <figcaption className="absolute top-[30%] left-1/2 -translate-x-1/2 w-[72%] flex flex-col items-center text-center pointer-events-none">
+      <h3 className={`font-condensed font-semibold text-[17px] leading-[1.2] tracking-[-0.9px] w-full hyphens-none break-words ${ink}`}>
+        {cup.bean}
+      </h3>
+      <p className={`font-sans font-medium text-[6px] tracking-[0.9px] mt-1 uppercase whitespace-nowrap ${sub}`}>
+        {cup.roaster}
+      </p>
+      <hr className={`w-[18px] h-px border-0 my-[12px] ${divider}`} />
+      <p className={`flex items-center justify-center gap-[3px] font-sans font-medium text-[6.5px] tracking-[0.5px] uppercase ${sub}`}>
+        <span className="text-[8px] tracking-normal">{ORIGIN_FLAGS[cup.origin]}</span>
         <span>{cup.origin}</span>
-      </div>
-    </div>
+      </p>
+    </figcaption>
   );
 }
 
 function Bag({ cup, style }) {
   return (
-    <div style={{ position: 'relative', flexShrink: 0, ...style }}>
+    <figure style={{ position: 'relative', flexShrink: 0, margin: 0, ...style }}>
       <img src={`assets/bag-${cup.bagImg}.png`} alt={cup.bean}
         style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
       <BagLabel cup={cup} />
-    </div>
+    </figure>
   );
 }
 
@@ -1033,7 +1037,7 @@ function App() {
   return (
     <div className="phone-wrap">
       {/* Phone shell */}
-      <div style={{
+      <div className="phone-shell" style={{
         width: '393px',
         height: '852px',
         background: '#f9eddd',
@@ -1043,7 +1047,7 @@ function App() {
         boxShadow: '0 24px 60px rgba(0,0,0,0.18), 0 6px 20px rgba(0,0,0,0.10), inset 0 0 0 1px rgba(255,255,255,0.12)',
       }}>
         {/* Dynamic Island */}
-        <div style={{
+        <div className="mock-island" style={{
           position: 'absolute',
           top: '14px',
           left: '50%',
@@ -1064,7 +1068,7 @@ function App() {
           flexDirection: 'column',
         }}>
           {/* Status bar */}
-          <div style={{
+          <div className="mock-statusbar" style={{
             display: 'flex',
             alignItems: 'center',
             marginTop: '16px',
