@@ -819,66 +819,10 @@ function TabIcon({ type, active }) {
 
 function LogCupScreen() {
   return (
-    <div className="scrollable" style={{ flex: 1, overflowY: 'auto', background: '#f9eddd', paddingBottom: '118px' }}>
-      <div style={{ position: 'relative', width: '393px', minHeight: '1086px' }}>
-
-        {/* Shelf whole — background wood texture */}
-        <div style={{ position: 'absolute', top: '88px', left: '50%', transform: 'translateX(-50%) translateX(0.5px)', width: '370px', height: '998px', overflow: 'hidden', pointerEvents: 'none' }}>
-          <img src="assets/shelf-v2-whole.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'fill' }} />
-        </div>
-
-        {/* Shelf frame — sits on top of bags */}
-        <div style={{ position: 'absolute', left: '12px', top: '88px', width: '370px', height: '998px', pointerEvents: 'none', zIndex: 10 }}>
-          <img src="assets/shelf-v2-frame.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'fill' }} />
-        </div>
-
-        {/* Title */}
-        <div style={{ position: 'absolute', left: 0, top: 0, width: '393px', padding: '18px 24px 4px', zIndex: 5 }}>
-          <h1 style={{ fontFamily: 'DM Serif Display, Georgia, serif', fontSize: '38px', color: '#000000', margin: 0, lineHeight: 1, letterSpacing: '-1px', whiteSpace: 'nowrap' }}>Cupboard</h1>
-        </div>
-
-        {/* Bags — behind the shelf frame */}
-        <div style={{ position: 'absolute', left: '40px', top: '124px', width: '320px', display: 'flex', flexDirection: 'column', gap: '38px', zIndex: 5 }}>
-
-          {/* Row 1 */}
-          <div style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
-            <div style={{ position: 'relative', width: '143px', height: '224px', flexShrink: 0 }}>
-              <img src="assets/bag-green.png" alt="" style={{ position: 'absolute', left: '27px', top: '41px', width: '89px', height: '183px', objectFit: 'cover' }} />
-            </div>
-            <div style={{ position: 'relative', width: '145px', height: '224px', flexShrink: 0 }}>
-              <img src="assets/bag-orange.png" alt="" style={{ position: 'absolute', left: '28px', top: '43px', width: '88px', height: '181px', objectFit: 'cover' }} />
-            </div>
-          </div>
-
-          {/* Row 2 */}
-          <div style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
-            <div style={{ position: 'relative', width: '143px', height: '201px', flexShrink: 0 }}>
-              <img src="assets/bag-white.png" alt="" style={{ position: 'absolute', left: '27px', top: '18px', width: '89px', height: '183px', objectFit: 'cover' }} />
-            </div>
-            <div style={{ position: 'relative', width: '145px', height: '201px', flexShrink: 0 }}>
-              <img src="assets/bag-blue.png" alt="" style={{ position: 'absolute', left: '29px', top: '18px', width: '88px', height: '183px', objectFit: 'cover' }} />
-            </div>
-          </div>
-
-          {/* Row 3 — bottom-aligned, no cubby containers */}
-          <div style={{ display: 'flex', height: '194px', alignItems: 'flex-end', justifyContent: 'space-between', padding: '0 48px' }}>
-            <img src="assets/bag-orange.png" alt="" style={{ width: '88px', height: '181px', objectFit: 'cover' }} />
-            <img src="assets/bag-green.png" alt="" style={{ width: '89px', height: '183px', objectFit: 'cover' }} />
-          </div>
-
-          {/* Row 4 */}
-          <div style={{ display: 'flex', gap: '32px', alignItems: 'center' }}>
-            <div style={{ position: 'relative', width: '143px', height: '201px', flexShrink: 0 }}>
-              <img src="assets/bag-blue.png" alt="" style={{ position: 'absolute', left: '28px', top: '18px', width: '88px', height: '183px', objectFit: 'cover' }} />
-            </div>
-            <div style={{ position: 'relative', width: '145px', height: '201px', flexShrink: 0 }}>
-              <img src="assets/bag-white.png" alt="" style={{ position: 'absolute', left: '28px', top: '18px', width: '89px', height: '183px', objectFit: 'cover' }} />
-            </div>
-          </div>
-
-        </div>
-
-      </div>
+    <div style={{ flex: 1, background: '#f9eddd', display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: '118px' }}>
+      <p style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 800, fontSize: '17px', lineHeight: 1.4, letterSpacing: '-0.5px', color: '#6b6b6b', margin: 0 }}>
+        Coming soon!
+      </p>
     </div>
   );
 }
@@ -901,117 +845,11 @@ function App() {
   };
 
   function BeansScreen() {
-    const NAV_H = 118;
-
     return (
-      <div style={{ position: 'relative', flex: 1, background: '#f9eddd' }}>
-        {/* bottomsheet */}
-        <div data-name="bottomsheet" style={{
-          position: 'absolute',
-          bottom: `${NAV_H}px`,
-          left: 16,
-          right: 16,
-          height: '379px',
-          borderRadius: '34px',
-          zIndex: 100,
-          overflow: 'hidden',
-          isolation: 'isolate',
-        }}>
-          {/* Fill + Shadow */}
-          <div data-name="Fill + Shadow" style={{
-            position: 'absolute',
-            inset: 0,
-            borderRadius: '34px',
-            boxShadow: '0px 8px 40px rgba(0,0,0,0.12)',
-            pointerEvents: 'none',
-          }}>
-            <div style={{ position: 'absolute', inset: 0, borderRadius: '34px', background: 'rgb(255,255,255)', mixBlendMode: 'color-dodge' }} />
-            <div style={{ position: 'absolute', inset: 0, borderRadius: '34px', background: 'rgba(245,245,245,0.6)' }} />
-          </div>
-
-          {/* Glass Effect — Frost:12, Light:-45°/60%, Refraction:100, Depth:16, Dispersion:0, Splay:6 */}
-          <div data-name="Glass Effect" style={{
-            position: 'absolute',
-            inset: 0,
-            borderRadius: '34px',
-            backdropFilter: 'blur(12px)',
-            WebkitBackdropFilter: 'blur(12px)',
-            background: 'linear-gradient(135deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0) 50%)',
-            pointerEvents: 'none',
-          }} />
-
-          {/* Bottomsheet (inner content column) */}
-          <div data-name="Bottomsheet" style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-
-            {/* Header */}
-            <div data-name="Header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingBottom: '10px', flexShrink: 0, width: '100%' }}>
-
-              {/* Grabber (container) */}
-              <div data-name="Grabber" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', height: '16px', paddingTop: '5px', flexShrink: 0 }}>
-                {/* Grabber (pill) */}
-                <div data-name="Grabber" style={{ width: '36px', height: '5px', background: '#ccc', borderRadius: '100px', flexShrink: 0 }} />
-              </div>
-
-              {/* Title + Controls */}
-              <div data-name="Title + Controls" style={{ display: 'flex', alignItems: 'center', paddingLeft: '24px', paddingRight: '16px', width: '100%', flexShrink: 0 }}>
-                {/* Text */}
-                <div data-name="Text" style={{ display: 'flex', flexDirection: 'column', flex: '1 0 0', height: '58px', justifyContent: 'center', alignItems: 'flex-start', minWidth: 0 }}>
-                  <p style={{ fontFamily: 'DM Serif Display, Georgia, serif', fontSize: '22px', color: '#000', letterSpacing: '-0.23px', lineHeight: 1.4, margin: 0 }}>
-                    All Beans
-                  </p>
-                  <p style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontSize: '13px', fontWeight: 500, color: '#6b6b6b', lineHeight: 1.5, margin: 0, whiteSpace: 'nowrap' }}>
-                    10 beans
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Content */}
-            <div data-name="Content" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: '0 0 auto', height: '294px', width: '100%', overflow: 'hidden', borderBottomLeftRadius: '34px', borderBottomRightRadius: '34px' }}>
-              {/* slot */}
-              <div data-name="slot" className="scrollable" style={{ flex: '1 0 0', minHeight: 0, width: '100%', overflowY: 'auto' }}>
-                <div data-name="list-collection" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '100%' }}>
-                  {cups.map((cup, i) => (
-                    <div key={cup.id} data-name="list-item" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', flexShrink: 0, width: '100%' }}>
-                      <div data-name="item-card" style={{ display: 'flex', alignItems: 'center', paddingTop: '16px', paddingBottom: '16px', paddingLeft: '4px', paddingRight: '24px', width: '100%', boxSizing: 'border-box' }}>
-                        {/* coffeebag-med */}
-                        <div data-name="coffeebag-med" style={{ width: '72px', height: '72px', flexShrink: 0, overflow: 'hidden', position: 'relative' }}>
-                          <div data-name="bag-white" style={{ position: 'absolute', top: '50%', left: 'calc(50% - 0.5px)', transform: 'translate(-50%, -50%)', width: '31px', height: '64px', overflow: 'hidden' }}>
-                            <div style={{ position: 'absolute', top: '50%', left: 'calc(50% + 0.49px)', transform: 'translate(-50%, -50%)', width: '36px', height: '74px' }}>
-                              <img src={`assets/bag-${cup.bagImg}.png`} alt={cup.bean} style={{ width: '100%', height: '100%', objectFit: 'contain', pointerEvents: 'none' }} />
-                            </div>
-                          </div>
-                        </div>
-                        {/* Text column */}
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', width: '200px', flexShrink: 0, whiteSpace: 'nowrap' }}>
-                          <p style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 800, fontSize: '17px', color: '#000', letterSpacing: '-0.5px', lineHeight: 1.4, margin: 0 }}>
-                            {cup.bean}
-                          </p>
-                          <p style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: '13px', color: '#6b6b6b', lineHeight: 1.5, margin: 0 }}>
-                            {cup.roaster}
-                          </p>
-                          <div data-name="Country" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: '13px', color: '#6b6b6b' }}>
-                            <span>{ORIGIN_FLAGS[cup.origin]}</span>
-                            <span>{cup.origin}</span>
-                          </div>
-                        </div>
-                        {/* Date */}
-                        <p style={{ flex: '1 0 0', fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: '13px', color: '#6b6b6b', lineHeight: 1.5, textAlign: 'right', margin: 0 }}>
-                          {cup.date}
-                        </p>
-                      </div>
-                      {/* divider */}
-                      {i < cups.length - 1 && (
-                        <div data-name="divider" style={{ width: '100%', height: '0.5px', background: '#e7e7e7', flexShrink: 0 }} />
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </div>
+      <div style={{ flex: 1, background: '#f9eddd', display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: '118px' }}>
+        <p style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 800, fontSize: '17px', lineHeight: 1.4, letterSpacing: '-0.5px', color: '#6b6b6b', margin: 0 }}>
+          Coming soon!
+        </p>
       </div>
     );
   }
