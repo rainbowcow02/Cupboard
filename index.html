@@ -67,7 +67,8 @@
 <div id="root"></div>
 <script type="text/babel">
 
-const MAPBOX_TOKEN = 'pk.eyJ1IjoicmFpbmJvd2NvdzAyIiwiYSI6ImNtcGN0N3pmdjA1MnIyeHB2aDFqa21hdjcifQ.X3TvBj8J2kqQyeRYxzAiAQ';
+const MAPBOX_PROD_TOKEN = 'pk.eyJ1IjoicmFpbmJvd2NvdzAyIiwiYSI6ImNtcGN0N3pmdjA1MnIyeHB2aDFqa21hdjcifQ.X3TvBj8J2kqQyeRYxzAiAQ';
+const MAPBOX_TOKEN = (typeof localStorage !== 'undefined' && localStorage.getItem('mb_dev_token')) || MAPBOX_PROD_TOKEN;
 
 const ORIGIN_COORDS = {
   'Ethiopia':  [8.6,  39.6],
