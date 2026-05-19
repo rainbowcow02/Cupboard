@@ -430,7 +430,7 @@ function createBeanIcon(count, isSelected, isDimmed) {
     ? `<div style="position:absolute;top:-3px;right:-4px;min-width:14px;height:14px;padding:0 3px;background:#f9eddd;border:1.5px solid ${badgeColor};border-radius:7px;font-size:8px;font-family:Avenir,system-ui,sans-serif;font-weight:600;color:${badgeColor};display:flex;align-items:center;justify-content:center;line-height:1;box-sizing:border-box;">${count}</div>`
     : '';
   const el = document.createElement('div');
-  el.style.cssText = 'position:relative;display:inline-block;cursor:pointer;';
+  el.style.cssText = 'position:absolute;top:0;left:0;display:inline-block;cursor:pointer;';
   el.innerHTML = `${beanSvg}${badge}`;
   return el;
 }
@@ -464,7 +464,8 @@ function ExploreScreen({ cups }) {
     const map = new mapboxgl.Map({
       container: mapContainerRef.current,
       style: 'mapbox://styles/rainbowcow02/cmpbsoxbv002n01qhe2v56lsw',
-      center: [15, 20],
+      projection: 'mercator',
+      center: [-25, 2],
       zoom: 1.5,
       minZoom: 1.5,
       maxZoom: 5,
@@ -473,23 +474,31 @@ function ExploreScreen({ cups }) {
       attributionControl: false,
     });
 
-    map.setPadding({ bottom: 314, top: 0, left: 0, right: 0 });
-
     map.on('load', () => {
+      const bounds = new mapboxgl.LngLatBounds();
+
       Object.entries(originGroups).forEach(([origin, bags]) => {
         const coords = ORIGIN_COORDS[origin];
         if (!coords) return;
+        const lngLat = [coords[1], coords[0]];
         const el = createBeanIcon(bags.length, false, false);
         el.addEventListener('click', (e) => {
           e.stopPropagation();
           setSelectedOrigin(prev => (prev === origin ? null : origin));
         });
         const marker = new mapboxgl.Marker({ element: el })
-          .setLngLat([coords[1], coords[0]])
+          .setLngLat(lngLat)
           .addTo(map);
         markersRef.current[origin] = marker;
+        bounds.extend(lngLat);
       });
 
+      // Fit all origins in view, padding for the bottom sheet
+      map.fitBounds(bounds, {
+        padding: { top: 60, bottom: 314 + 60, left: 60, right: 60 },
+        maxZoom: 2,
+        animate: false,
+      });
     });
 
     map.on('click', () => setSelectedOrigin(null));
@@ -547,7 +556,13 @@ function ExploreScreen({ cups }) {
       if (!coords) return;
       map.flyTo({ center: [coords[1], coords[0]], zoom: 4, duration: 900, essential: true });
     } else if (originEverSet.current) {
-      map.flyTo({ center: [15, 20], zoom: 1.5, duration: 700 });
+      const bounds = new mapboxgl.LngLatBounds();
+      Object.values(ORIGIN_COORDS).forEach(c => bounds.extend([c[1], c[0]]));
+      map.fitBounds(bounds, {
+        padding: { top: 60, bottom: 314 + 60, left: 60, right: 60 },
+        maxZoom: 2,
+        duration: 700,
+      });
     }
   }, [selectedOrigin]);
 
