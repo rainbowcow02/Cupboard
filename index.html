@@ -11,15 +11,15 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.css" rel="stylesheet" />
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.js"></script>
   <style>
     * { -webkit-font-smoothing: antialiased; }
     body { background: #f9eddd; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 48px; box-sizing: border-box; }
     .phone-wrap { position: relative; }
     .scrollable::-webkit-scrollbar { display: none; }
     .scrollable { -ms-overflow-style: none; scrollbar-width: none; }
-    .leaflet-container { background: #cfd8dc; }
+    .mapboxgl-map { font: unset; }
     @keyframes slideInFromRight  { from { transform: translateX(100%); } to { transform: translateX(0); } }
     @keyframes slideInFromLeft   { from { transform: translateX(-100%); } to { transform: translateX(0); } }
     @keyframes slideOutToLeft    { from { transform: translateX(0); } to { transform: translateX(-100%); } }
@@ -51,6 +51,8 @@
 <body>
 <div id="root"></div>
 <script type="text/babel">
+
+const MAPBOX_TOKEN = 'pk.eyJ1IjoicmFpbmJvd2NvdzAyIiwiYSI6ImNtcGJxeXVzajAwYXAycHExM2VhYXdpOGkifQ.MQ9cQZnORf47gWjfctFSXw';
 
 const ORIGIN_COORDS = {
   'Ethiopia':  [8.6,  39.6],
@@ -427,20 +429,19 @@ function createBeanIcon(count, isSelected, isDimmed) {
   const badge   = count > 1
     ? `<div style="position:absolute;top:-3px;right:-4px;min-width:14px;height:14px;padding:0 3px;background:#f9eddd;border:1.5px solid ${badgeColor};border-radius:7px;font-size:8px;font-family:Avenir,system-ui,sans-serif;font-weight:600;color:${badgeColor};display:flex;align-items:center;justify-content:center;line-height:1;box-sizing:border-box;">${count}</div>`
     : '';
-  return L.divIcon({
-    html: `<div style="position:relative;display:inline-block;">${beanSvg}${badge}</div>`,
-    className: '',
-    iconSize:   [size, size],
-    iconAnchor: [half, half],
-  });
+  const el = document.createElement('div');
+  el.style.cssText = 'position:absolute;top:0;left:0;display:inline-block;cursor:pointer;';
+  el.innerHTML = `${beanSvg}${badge}`;
+  return el;
 }
 
 function ExploreScreen({ cups }) {
   const [selectedOrigin, setSelectedOrigin] = React.useState(null);
   const [sheetExpanded, setSheetExpanded]   = React.useState(false);
-  const mapContainerRef = React.useRef(null);
-  const mapInstanceRef  = React.useRef(null);
-  const markersRef      = React.useRef({});
+  const mapContainerRef  = React.useRef(null);
+  const mapInstanceRef   = React.useRef(null);
+  const markersRef       = React.useRef({});
+  const originEverSet    = React.useRef(false);
 
   const originGroups = React.useMemo(() =>
     cups.reduce((acc, cup) => {
@@ -458,43 +459,51 @@ function ExploreScreen({ cups }) {
   React.useEffect(() => {
     if (!mapContainerRef.current || mapInstanceRef.current) return;
 
-    // Zoom where world tiles >= container height so no background ever shows
-    const containerH = mapContainerRef.current.clientHeight;
-    const minZ = Math.ceil(Math.log2(containerH / 256) * 4) / 4;
+    mapboxgl.accessToken = MAPBOX_TOKEN;
 
-    const map = L.map(mapContainerRef.current, {
-      center: [20, 15],
-      zoom: minZ,
-      zoomSnap: 0.25,
-      zoomControl: false,
-      attributionControl: false,
-      scrollWheelZoom: false,
-      dragging: true,
-      minZoom: minZ,
+    const map = new mapboxgl.Map({
+      container: mapContainerRef.current,
+      style: 'mapbox://styles/rainbowcow02/cmpbsoxbv002n01qhe2v56lsw',
+      projection: 'mercator',
+      center: [-25, 2],
+      zoom: 1.5,
+      minZoom: 1.5,
       maxZoom: 5,
-      maxBounds: [[-85, -180], [85, 180]],
-      maxBoundsViscosity: 1.0,
+      maxBounds: [[-180, -85], [180, 85]],
+      scrollZoom: false,
+      attributionControl: false,
     });
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      maxZoom: 5,
-    }).addTo(map);
+    map.on('load', () => {
+      const bounds = new mapboxgl.LngLatBounds();
 
-    mapInstanceRef.current = map;
+      Object.entries(originGroups).forEach(([origin, bags]) => {
+        const coords = ORIGIN_COORDS[origin];
+        if (!coords) return;
+        const lngLat = [coords[1], coords[0]];
+        const el = createBeanIcon(bags.length, false, false);
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
+          setSelectedOrigin(prev => (prev === origin ? null : origin));
+        });
+        const marker = new mapboxgl.Marker({ element: el })
+          .setLngLat(lngLat)
+          .addTo(map);
+        markersRef.current[origin] = marker;
+        bounds.extend(lngLat);
+      });
+
+      // Fit all origins in view, padding for the bottom sheet
+      map.fitBounds(bounds, {
+        padding: { top: 60, bottom: 314 + 60, left: 60, right: 60 },
+        maxZoom: 2,
+        animate: false,
+      });
+    });
 
     map.on('click', () => setSelectedOrigin(null));
 
-    Object.entries(originGroups).forEach(([origin, bags]) => {
-      const coords = ORIGIN_COORDS[origin];
-      if (!coords) return;
-      const marker = L.marker(coords, {
-        icon: createBeanIcon(bags.length, false, false),
-      }).addTo(map);
-      marker.on('click', () =>
-        setSelectedOrigin(prev => (prev === origin ? null : origin))
-      );
-      markersRef.current[origin] = marker;
-    });
+    mapInstanceRef.current = map;
 
     return () => {
       map.remove();
@@ -503,14 +512,20 @@ function ExploreScreen({ cups }) {
     };
   }, []);
 
-  // Auto-expand sheet when a filter is selected
-  // Update marker styles when selection changes
+  // Update marker icons when selection changes
   React.useEffect(() => {
     Object.entries(markersRef.current).forEach(([origin, marker]) => {
       const count      = originGroups[origin]?.length || 0;
       const isSelected = selectedOrigin === origin;
       const isDimmed   = selectedOrigin !== null && !isSelected;
-      marker.setIcon(createBeanIcon(count, isSelected, isDimmed));
+      const newEl = createBeanIcon(count, isSelected, isDimmed);
+      newEl.addEventListener('click', (e) => {
+        e.stopPropagation();
+        setSelectedOrigin(prev => (prev === origin ? null : origin));
+      });
+      const oldEl = marker.getElement();
+      oldEl.replaceWith(newEl);
+      marker._element = newEl;
     });
   }, [selectedOrigin]);
 
@@ -523,6 +538,33 @@ function ExploreScreen({ cups }) {
   const sheetHeight = selectedOrigin !== null
     ? Math.min(HEADER_H + filteredCups.length * ROW_H + 16, MAX_SHEET_H)
     : sheetExpanded ? MAX_SHEET_H : PEEK_HEIGHT;
+
+  // Sync map camera padding with sheet height
+  React.useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+    map.easeTo({ padding: { bottom: sheetHeight + NAV_H, top: 0, left: 0, right: 0 }, duration: 320 });
+  }, [sheetHeight]);
+
+  // Fly to selected origin, or back to world view (skip initial mount)
+  React.useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+    if (selectedOrigin) {
+      originEverSet.current = true;
+      const coords = ORIGIN_COORDS[selectedOrigin];
+      if (!coords) return;
+      map.flyTo({ center: [coords[1], coords[0]], zoom: 4, duration: 900, essential: true });
+    } else if (originEverSet.current) {
+      const bounds = new mapboxgl.LngLatBounds();
+      Object.values(ORIGIN_COORDS).forEach(c => bounds.extend([c[1], c[0]]));
+      map.fitBounds(bounds, {
+        padding: { top: 60, bottom: 314 + 60, left: 60, right: 60 },
+        maxZoom: 2,
+        duration: 700,
+      });
+    }
+  }, [selectedOrigin]);
 
   return (
     <div style={{ flex: 1, position: 'relative' }}>
