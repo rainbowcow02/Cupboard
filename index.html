@@ -637,15 +637,6 @@ function ExploreScreen({ cups }) {
             letterSpacing: '-0.23px',
             textShadow: '0 1px 4px rgba(249,237,221,0.7)',
           }}>Origins</div>
-          <div style={{
-            fontFamily: 'Avenir, system-ui, sans-serif',
-            fontSize: '13px',
-            color: '#6b6b6b',
-            marginTop: '3px',
-            textShadow: '0 1px 3px rgba(249,237,221,0.6)',
-          }}>
-            {Object.keys(originGroups).length} {Object.keys(originGroups).length === 1 ? 'country' : 'countries'} · {cups.length} coffees
-          </div>
         </div>
       </div>
 
@@ -747,7 +738,11 @@ function ExploreScreen({ cups }) {
                   {selectedOrigin ? `${ORIGIN_FLAGS[selectedOrigin] || ''} ${selectedOrigin}` : 'All coffees'}
                 </p>
                 <p style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontSize: '13px', fontWeight: 500, color: '#6b6b6b', lineHeight: 1.5, margin: 0, whiteSpace: 'nowrap' }}>
-                  {filteredCups.length} {filteredCups.length === 1 ? 'result' : 'results'}
+                  {(() => {
+                    const coffeeCount = filteredCups.length;
+                    const countryCount = selectedOrigin ? 1 : Object.keys(originGroups).length;
+                    return `${coffeeCount} ${coffeeCount === 1 ? 'coffee' : 'coffees'} · ${countryCount} ${countryCount === 1 ? 'country' : 'countries'}`;
+                  })()}
                 </p>
               </div>
               {selectedOrigin && (
