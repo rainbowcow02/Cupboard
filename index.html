@@ -438,9 +438,10 @@ function createBeanIcon(count, isSelected, isDimmed) {
 function ExploreScreen({ cups }) {
   const [selectedOrigin, setSelectedOrigin] = React.useState(null);
   const [sheetExpanded, setSheetExpanded]   = React.useState(false);
-  const mapContainerRef = React.useRef(null);
-  const mapInstanceRef  = React.useRef(null);
-  const markersRef      = React.useRef({});
+  const mapContainerRef  = React.useRef(null);
+  const mapInstanceRef   = React.useRef(null);
+  const markersRef       = React.useRef({});
+  const originEverSet    = React.useRef(false);
 
   const originGroups = React.useMemo(() =>
     cups.reduce((acc, cup) => {
@@ -462,7 +463,7 @@ function ExploreScreen({ cups }) {
 
     const map = new mapboxgl.Map({
       container: mapContainerRef.current,
-      style: 'mapbox://styles/mapbox/light-v11',
+      style: 'mapbox://styles/rainbowcow02/cmpbsoxbv002n01qhe2v56lsw',
       center: [15, 20],
       zoom: 1.5,
       minZoom: 1.5,
@@ -489,23 +490,6 @@ function ExploreScreen({ cups }) {
         markersRef.current[origin] = marker;
       });
 
-      // Warm palette via setPaintProperty — correct property per layer type
-      const paintOverrides = [
-        ['land',                'background-color', '#f5e4c8'],
-        ['water',               'fill-color',       '#dce8ef'],
-        ['waterway',            'line-color',       '#dce8ef'],
-        ['national-park',       'fill-color',       '#e8dfc8'],
-        ['landuse',             'fill-color',       '#eddfc4'],
-        ['admin-0-boundary',    'line-color',       '#cca68c'],
-        ['admin-0-boundary-bg', 'line-color',       '#f5e4c8'],
-        ['admin-1-boundary',    'line-color',       '#d9c4a8'],
-        ['admin-1-boundary-bg', 'line-color',       '#f5e4c8'],
-        ['country-label',       'text-color',       '#6b6b6b'],
-        ['state-label',         'text-color',       '#a08870'],
-      ];
-      paintOverrides.forEach(([layer, prop, value]) => {
-        if (map.getLayer(layer)) map.setPaintProperty(layer, prop, value);
-      });
     });
 
     map.on('click', () => setSelectedOrigin(null));
@@ -553,15 +537,16 @@ function ExploreScreen({ cups }) {
     map.easeTo({ padding: { bottom: sheetHeight + NAV_H, top: 0, left: 0, right: 0 }, duration: 320 });
   }, [sheetHeight]);
 
-  // Fly to selected origin, or back to world view
+  // Fly to selected origin, or back to world view (skip initial mount)
   React.useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
     if (selectedOrigin) {
+      originEverSet.current = true;
       const coords = ORIGIN_COORDS[selectedOrigin];
       if (!coords) return;
       map.flyTo({ center: [coords[1], coords[0]], zoom: 4, duration: 900, essential: true });
-    } else {
+    } else if (originEverSet.current) {
       map.flyTo({ center: [15, 20], zoom: 1.5, duration: 700 });
     }
   }, [selectedOrigin]);
