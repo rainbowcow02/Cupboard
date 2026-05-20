@@ -577,7 +577,7 @@ function ExploreScreen({ cups }) {
   }, [selectedOrigin]);
 
   const NAV_H        = 118;  // 20px bottom + 90px pill height + 8px clearance
-  const PEEK_HEIGHT  = 196;
+  const PEEK_HEIGHT  = Math.floor(852 * 0.28); // 28% of phone height — header + ~1.5 rows
   const MAX_SHEET_H  = Math.floor(852 * 0.4); // 40% of phone height
   const ROW_H        = 104;  // 16+16 padding + 72px bag
   const HEADER_H     = 84;   // grabber ~16px + toolbar 58px + pb 10px
