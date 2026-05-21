@@ -577,7 +577,7 @@ function ExploreScreen({ cups }) {
   }, [selectedOrigin]);
 
   const NAV_H        = 118;  // 20px bottom + 90px pill height + 8px clearance
-  const PEEK_HEIGHT  = 196;
+  const PEEK_HEIGHT  = Math.floor(852 * 0.28); // 28% of phone height — header + ~1.5 rows
   const MAX_SHEET_H  = Math.floor(852 * 0.4); // 40% of phone height
   const ROW_H        = 104;  // 16+16 padding + 72px bag
   const HEADER_H     = 84;   // grabber ~16px + toolbar 58px + pb 10px
@@ -620,33 +620,6 @@ function ExploreScreen({ cups }) {
            context so Leaflet's internal panes (z 200–700) stay below the bottom sheet */}
       <div style={{ position: 'absolute', inset: 0, zIndex: 0, overflow: 'hidden' }}>
         <div ref={mapContainerRef} style={{ height: '100%' }} />
-
-        {/* Title overlay */}
-        <div style={{
-          position: 'absolute',
-          top: '16px',
-          left: '18px',
-          zIndex: 999,
-          pointerEvents: 'none',
-        }}>
-          <div style={{
-            fontFamily: 'DM Serif Display, Georgia, serif',
-            fontSize: '28px',
-            color: '#000000',
-            lineHeight: 1.4,
-            letterSpacing: '-0.23px',
-            textShadow: '0 1px 4px rgba(249,237,221,0.7)',
-          }}>Origins</div>
-          <div style={{
-            fontFamily: 'Avenir, system-ui, sans-serif',
-            fontSize: '13px',
-            color: '#6b6b6b',
-            marginTop: '3px',
-            textShadow: '0 1px 3px rgba(249,237,221,0.6)',
-          }}>
-            {Object.keys(originGroups).length} {Object.keys(originGroups).length === 1 ? 'country' : 'countries'} · {cups.length} coffees
-          </div>
-        </div>
       </div>
 
       {/* Zoom controls — sibling of bottom sheet so they share the same stacking context
@@ -654,7 +627,7 @@ function ExploreScreen({ cups }) {
       <div style={{
         position: 'absolute',
         bottom: `${sheetHeight + NAV_H + 14}px`,
-        right: '10px',
+        right: '16px',
         zIndex: 100,
         display: 'flex',
         flexDirection: 'column',
@@ -676,7 +649,7 @@ function ExploreScreen({ cups }) {
               borderRadius: '12px',
               fontFamily: 'Avenir, system-ui, sans-serif',
               fontSize: '26px',
-              fontWeight: 300,
+              fontWeight: 500,
               color: '#cca68c',
               cursor: 'pointer',
               display: 'flex',
@@ -747,12 +720,37 @@ function ExploreScreen({ cups }) {
                   {selectedOrigin ? `${ORIGIN_FLAGS[selectedOrigin] || ''} ${selectedOrigin}` : 'All coffees'}
                 </p>
                 <p style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontSize: '13px', fontWeight: 500, color: '#6b6b6b', lineHeight: 1.5, margin: 0, whiteSpace: 'nowrap' }}>
-                  {filteredCups.length} {filteredCups.length === 1 ? 'result' : 'results'}
+                  {(() => {
+                    const coffeeCount = filteredCups.length;
+                    const countryCount = selectedOrigin ? 1 : Object.keys(originGroups).length;
+                    return `${coffeeCount} ${coffeeCount === 1 ? 'coffee' : 'coffees'} · ${countryCount} ${countryCount === 1 ? 'country' : 'countries'}`;
+                  })()}
                 </p>
               </div>
               {selectedOrigin && (
-                <button onClick={() => setSelectedOrigin(null)} style={{ background: 'none', border: '1px solid #d9d9d9', borderRadius: '20px', padding: '3px 10px', fontFamily: 'Avenir, system-ui, sans-serif', fontSize: '12px', color: '#6b6b6b', cursor: 'pointer', flexShrink: 0 }}>
-                  Clear ×
+                <button
+                  onClick={() => setSelectedOrigin(null)}
+                  aria-label="Clear filter"
+                  style={{
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '50%',
+                    background: '#78788029',
+                    border: 'none',
+                    padding: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif',
+                    fontSize: '17px',
+                    fontWeight: 510,
+                    color: '#727272',
+                    lineHeight: 1,
+                    cursor: 'pointer',
+                    flexShrink: 0,
+                  }}
+                >
+                  ✕
                 </button>
               )}
             </div>
@@ -774,7 +772,7 @@ function ExploreScreen({ cups }) {
                         </div>
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', width: '200px', flexShrink: 0, whiteSpace: 'nowrap' }}>
-                        <p style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 800, fontSize: '17px', color: '#000', letterSpacing: '-0.5px', lineHeight: 1.4, margin: 0 }}>{cup.bean}</p>
+                        <p style={{ fontFamily: '"Avenir Next Condensed", Avenir, system-ui, sans-serif', fontWeight: 600, fontSize: '17px', color: '#000', letterSpacing: '-0.5px', lineHeight: 1.4, margin: 0 }}>{cup.bean}</p>
                         <p style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: '13px', color: '#6b6b6b', lineHeight: 1.5, margin: 0 }}>{cup.roaster}</p>
                         <div data-name="Country" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: '13px', color: '#6b6b6b' }}>
                           <span>{ORIGIN_FLAGS[cup.origin]}</span>
