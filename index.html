@@ -26,6 +26,8 @@
     @keyframes slideInFromLeft   { from { transform: translateX(-100%); } to { transform: translateX(0); } }
     @keyframes slideOutToLeft    { from { transform: translateX(0); } to { transform: translateX(-100%); } }
     @keyframes slideOutToRight   { from { transform: translateX(0); } to { transform: translateX(100%); } }
+    @keyframes slideInFromBottom { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    @keyframes slideOutToBottom  { from { transform: translateY(0); } to { transform: translateY(100%); } }
     /* Fullscreen on mobile: drop the page padding and frame chrome so the mockup fills the screen. */
     @media (max-width: 480px) {
       body { padding: 0; }
@@ -239,6 +241,53 @@ const cups = [
   },
 ];
 
+// Extra detail per cup (roast level, region, variety, brew log). Keyed by cup.id.
+const COFFEE_DETAILS = {
+  1: { roastLevel: 'Light', region: 'Yirgacheffe, Gedeo Zone', variety: 'Heirloom',
+       brews: [
+         { brewer: 'Hario V60', filter: 'Hario tabbed', grind: 'Medium-fine', tempC: 94, beansG: 18, waterMl: 300, date: 'May 9' },
+         { brewer: 'Aeropress',  filter: 'Aesir paper',   grind: 'Medium-fine', tempC: 88, beansG: 15, waterMl: 225, date: 'May 8' },
+       ] },
+  2: { roastLevel: 'Light', region: 'Cauca, Piendamó', variety: 'Castillo · Colombia',
+       brews: [
+         { brewer: 'Origami',    filter: 'Cafec Abaca',   grind: 'Medium',      tempC: 96, beansG: 20, waterMl: 320, date: 'May 7' },
+       ] },
+  3: { roastLevel: 'Light', region: 'Volcán, Chiriquí', variety: 'Gesha',
+       brews: [
+         { brewer: 'Hario V60',     filter: 'Hario tabbed', grind: 'Medium-fine', tempC: 92, beansG: 15, waterMl: 250, date: 'May 4' },
+         { brewer: 'Kalita Wave 185', filter: 'Kalita wave', grind: 'Medium',    tempC: 93, beansG: 18, waterMl: 280, date: 'May 2' },
+       ] },
+  4: { roastLevel: 'Medium-Light', region: 'Huila, Pitalito', variety: 'Caturra · Castillo',
+       brews: [
+         { brewer: 'Chemex',     filter: 'Chemex bonded', grind: 'Medium-coarse', tempC: 96, beansG: 30, waterMl: 500, date: 'Apr 30' },
+       ] },
+  5: { roastLevel: 'Light', region: 'Kochere, Yirgacheffe', variety: 'Heirloom',
+       brews: [
+         { brewer: 'Hario V60',  filter: 'Hario tabbed', grind: 'Medium-fine', tempC: 94, beansG: 18, waterMl: 300, date: 'Apr 26' },
+       ] },
+  6: { roastLevel: 'Medium', region: 'Sidama, Bensa', variety: 'Heirloom',
+       brews: [] },
+  7: { roastLevel: 'Light', region: 'Nyeri County', variety: 'SL28 · SL34',
+       brews: [
+         { brewer: 'Aeropress',  filter: 'Aesir paper',   grind: 'Medium-fine', tempC: 90, beansG: 17, waterMl: 230, date: 'Apr 18' },
+       ] },
+  8: { roastLevel: 'Medium-Light', region: 'Antigua, Sacatepéquez', variety: 'Bourbon',
+       brews: [
+         { brewer: 'French Press', filter: 'Metal mesh',  grind: 'Coarse',      tempC: 95, beansG: 30, waterMl: 500, date: 'Apr 14' },
+       ] },
+  9: { roastLevel: 'Medium-Dark', region: 'Cerrado Mineiro', variety: 'Mundo Novo',
+       brews: [
+         { brewer: 'Moka Pot',   filter: 'None',          grind: 'Fine',        tempC: 92, beansG: 20, waterMl: 200, date: 'Apr 10' },
+       ] },
+  10: { roastLevel: 'Medium', region: 'Tarrazú, Los Santos', variety: 'Caturra · Catuaí',
+        brews: [
+          { brewer: 'Hario V60', filter: 'Hario tabbed', grind: 'Medium-fine', tempC: 93, beansG: 18, waterMl: 300, date: 'Apr 6' },
+        ] },
+};
+
+// Set by App; consumed by ShelfRow + Explore list-item to open the detail page.
+const SelectCupContext = React.createContext(null);
+
 function BagArt({ cup }) {
   const { bagColor, bagAccent, bagShape } = cup;
   const svgStyle = { width: '100%', height: '100%', display: 'block' };
@@ -357,25 +406,28 @@ function BagLabel({ cup }) {
   );
 }
 
-function Bag({ cup, style }) {
+function Bag({ cup, style, onClick }) {
   return (
-    <figure style={{ position: 'relative', flexShrink: 0, margin: 0, ...style }}>
+    <figure onClick={onClick} style={{ position: 'relative', flexShrink: 0, margin: 0, cursor: onClick ? 'pointer' : 'default', ...style }}>
       <img src={`assets/bag-${cup.bagImg}.png`} alt={cup.bean}
-        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', pointerEvents: 'none' }} />
       <BagLabel cup={cup} />
     </figure>
   );
 }
 
 function ShelfRow({ type, leftCup, rightCup }) {
+  const onSelect = React.useContext(SelectCupContext);
+  const click = (cup) => (cup && onSelect ? () => onSelect(cup.id) : undefined);
+
   if (type === 'tall') {
     return (
       <div style={{ display: 'flex', gap: 32, alignItems: 'center' }}>
         <div style={{ position: 'relative', width: 143, height: 224, flexShrink: 0 }}>
-          {leftCup && <Bag cup={leftCup} style={{ position: 'absolute', left: 27, top: 41, width: 89, height: 183 }} />}
+          {leftCup && <Bag cup={leftCup} onClick={click(leftCup)} style={{ position: 'absolute', left: 27, top: 41, width: 89, height: 183 }} />}
         </div>
         <div style={{ position: 'relative', width: 145, height: 224, flexShrink: 0 }}>
-          {rightCup && <Bag cup={rightCup} style={{ position: 'absolute', left: 28, top: 43, width: 88, height: 181 }} />}
+          {rightCup && <Bag cup={rightCup} onClick={click(rightCup)} style={{ position: 'absolute', left: 28, top: 43, width: 88, height: 181 }} />}
         </div>
       </div>
     );
@@ -385,10 +437,10 @@ function ShelfRow({ type, leftCup, rightCup }) {
     return (
       <div style={{ display: 'flex', gap: 32, alignItems: 'center' }}>
         <div style={{ position: 'relative', width: 143, height: 200, flexShrink: 0 }}>
-          {leftCup && <Bag cup={leftCup} style={{ position: 'absolute', left: 27, top: 18, width: 89, height: 183 }} />}
+          {leftCup && <Bag cup={leftCup} onClick={click(leftCup)} style={{ position: 'absolute', left: 27, top: 18, width: 89, height: 183 }} />}
         </div>
         <div style={{ position: 'relative', width: 145, height: 200, flexShrink: 0 }}>
-          {rightCup && <Bag cup={rightCup} style={{ position: 'absolute', left: 29, top: 18, width: 88, height: 183 }} />}
+          {rightCup && <Bag cup={rightCup} onClick={click(rightCup)} style={{ position: 'absolute', left: 29, top: 18, width: 88, height: 183 }} />}
         </div>
       </div>
     );
@@ -398,10 +450,10 @@ function ShelfRow({ type, leftCup, rightCup }) {
   return (
     <div style={{ display: 'flex', height: 194, alignItems: 'flex-end', justifyContent: 'space-between', padding: '0 48px' }}>
       {leftCup
-        ? <Bag cup={leftCup} style={{ width: 88, height: 181 }} />
+        ? <Bag cup={leftCup} onClick={click(leftCup)} style={{ width: 88, height: 181 }} />
         : <div style={{ width: 88 }} />}
       {rightCup
-        ? <Bag cup={rightCup} style={{ width: 89, height: 183 }} />
+        ? <Bag cup={rightCup} onClick={click(rightCup)} style={{ width: 89, height: 183 }} />
         : <div style={{ width: 89 }} />}
     </div>
   );
@@ -483,6 +535,7 @@ function createBeanIcon(count, isSelected, isDimmed) {
 }
 
 function ExploreScreen({ cups }) {
+  const onSelectCup = React.useContext(SelectCupContext);
   const [selectedOrigin, setSelectedOrigin] = React.useState(null);
   const [sheetExpanded, setSheetExpanded]   = React.useState(false);
   const mapContainerRef  = React.useRef(null);
@@ -763,7 +816,7 @@ function ExploreScreen({ cups }) {
               <div data-name="list-collection" style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
                 {filteredCups.map((cup, i) => (
                   <div key={cup.id} data-name="list-item" style={{ display: 'flex', flexDirection: 'column', flexShrink: 0, width: '100%' }}>
-                    <div data-name="item-card" style={{ display: 'flex', alignItems: 'center', paddingTop: '16px', paddingBottom: '16px', paddingLeft: '4px', paddingRight: '24px', boxSizing: 'border-box' }}>
+                    <div data-name="item-card" onClick={() => onSelectCup?.(cup.id)} style={{ display: 'flex', alignItems: 'center', paddingTop: '16px', paddingBottom: '16px', paddingLeft: '4px', paddingRight: '24px', boxSizing: 'border-box', cursor: 'pointer' }}>
                       <div data-name="coffeebag-med" style={{ width: '72px', height: '72px', flexShrink: 0, overflow: 'hidden', position: 'relative' }}>
                         <div data-name="bag-white" style={{ position: 'absolute', top: '50%', left: 'calc(50% - 0.5px)', transform: 'translate(-50%, -50%)', width: '31px', height: '64px', overflow: 'hidden' }}>
                           <div style={{ position: 'absolute', top: '50%', left: 'calc(50% + 0.49px)', transform: 'translate(-50%, -50%)', width: '36px', height: '74px' }}>
@@ -825,10 +878,223 @@ function LogCupScreen() {
   );
 }
 
+// ─── Coffee Detail Page ──────────────────────────────────────────────────────
+
+function DetailSection({ title, action, onAction, children }) {
+  return (
+    <section style={{ padding: '8px 24px 18px' }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
+        <h2 style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 800, fontSize: 17, color: '#000', margin: 0, lineHeight: 1.4, letterSpacing: '-0.2px' }}>{title}</h2>
+        {action && (
+          <button onClick={onAction} style={{ background: 'none', border: 'none', padding: 0, fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 13, color: '#5d0505', cursor: 'pointer', lineHeight: 1.1 }}>
+            {action}
+          </button>
+        )}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+// Liquid Glass-light card on Pearl background (sub-DS variant — softer shadow, 24px radius)
+function GlassCard({ children, style }) {
+  return (
+    <div style={{ position: 'relative', borderRadius: 24, overflow: 'hidden', isolation: 'isolate', boxShadow: '0px 6px 28px rgba(0,0,0,0.08)', ...style }}>
+      <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.55)' }} />
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(255,255,255,0.20) 0%, rgba(255,255,255,0) 60%)' }} />
+      <div style={{ position: 'relative' }}>{children}</div>
+    </div>
+  );
+}
+
+function DetailRow({ label, value, last }) {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16,
+      paddingTop: 14, paddingBottom: 14, paddingLeft: 18, paddingRight: 18,
+      borderBottom: last ? 'none' : '0.5px solid #E7E7E7',
+    }}>
+      <span style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 13, color: '#6b6b6b', flexShrink: 0 }}>{label}</span>
+      <span style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 15, color: '#000', textAlign: 'right', lineHeight: 1.4 }}>
+        {value || '—'}
+      </span>
+    </div>
+  );
+}
+
+function BrewStat({ label, value, sub }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, minWidth: 0 }}>
+      <span style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 10, color: '#6b6b6b', letterSpacing: '0.9px', textTransform: 'uppercase' }}>{label}</span>
+      <span style={{ fontFamily: '"Avenir Next Condensed", Avenir, system-ui, sans-serif', fontWeight: 600, fontSize: 18, color: '#000', lineHeight: 1.1, letterSpacing: '-0.3px' }}>{value}</span>
+      {sub && <span style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 11, color: '#6b6b6b', lineHeight: 1.1 }}>{sub}</span>}
+    </div>
+  );
+}
+
+function BrewMetaRow({ label, value }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16 }}>
+      <span style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 13, color: '#6b6b6b' }}>{label}</span>
+      <span style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 13, color: '#000', textAlign: 'right' }}>{value}</span>
+    </div>
+  );
+}
+
+function BrewCard({ brew }) {
+  const ratio = `1:${(brew.waterMl / brew.beansG).toFixed(1)}`;
+  const tempF = Math.round(brew.tempC * 9 / 5 + 32);
+  return (
+    <GlassCard>
+      <div style={{ padding: '16px 18px 18px' }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 }}>
+          <h3 style={{ fontFamily: '"Avenir Next Condensed", Avenir, system-ui, sans-serif', fontWeight: 700, fontSize: 19, color: '#000', margin: 0, lineHeight: 1.2, letterSpacing: '-0.3px' }}>
+            {brew.brewer}
+          </h3>
+          <span style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 13, color: '#6b6b6b' }}>{brew.date}</span>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, paddingTop: 4, paddingBottom: 12 }}>
+          <BrewStat label="Beans" value={`${brew.beansG}g`} />
+          <BrewStat label="Water" value={`${brew.waterMl} ml`} />
+          <BrewStat label="Ratio" value={ratio} />
+          <BrewStat label="Temp"  value={`${brew.tempC}°C`} sub={`${tempF}°F`} />
+        </div>
+
+        <div style={{ height: '0.5px', background: '#E7E7E7', margin: '2px 0 12px' }} />
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <BrewMetaRow label="Grind"  value={brew.grind} />
+          <BrewMetaRow label="Filter" value={brew.filter} />
+        </div>
+      </div>
+    </GlassCard>
+  );
+}
+
+function CoffeeDetailScreen({ cup, onBack }) {
+  const details = COFFEE_DETAILS[cup.id] || {};
+  const tastingNotes = (cup.notes || '')
+    .split(',').map(n => n.trim()).filter(Boolean);
+  const brews = details.brews || [];
+
+  const [closing, setClosing] = React.useState(false);
+  const EXIT_MS = 320;
+  const dismiss = () => {
+    if (closing) return;
+    setClosing(true);
+    setTimeout(onBack, EXIT_MS);
+  };
+
+  return (
+    <div style={{
+      position: 'absolute', inset: 0, zIndex: 60, background: '#f9eddd',
+      display: 'flex', flexDirection: 'column',
+      animation: closing
+        ? `slideOutToBottom ${EXIT_MS}ms cubic-bezier(0.32, 0.72, 0, 1) forwards`
+        : 'slideInFromBottom 360ms cubic-bezier(0.32, 0.72, 0, 1)',
+    }}>
+      {/* Status-bar spacer (mock app reserves ~44px for the device chrome) */}
+      <div style={{ height: 44, flexShrink: 0 }} />
+
+      {/* Top bar — back arrow only */}
+      <div style={{ display: 'flex', alignItems: 'center', padding: '4px 12px 4px 8px', flexShrink: 0 }}>
+        <button onClick={dismiss} aria-label="Back" style={{
+          width: 44, height: 44, borderRadius: 22, border: 'none', background: 'transparent',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0,
+        }}>
+          <svg width="14" height="22" viewBox="0 0 14 22" fill="none">
+            <path d="M12 2L3 11L12 20" stroke="#5d0505" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+        <div style={{ flex: 1 }} />
+      </div>
+
+      {/* Scrollable body */}
+      <div className="scrollable" style={{ flex: 1, overflowY: 'auto', paddingBottom: 48 }}>
+
+        {/* Hero — bag art + title block */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '4px 24px 20px' }}>
+          <div style={{ position: 'relative', width: 156, height: 320, filter: 'drop-shadow(0 18px 26px rgba(0,0,0,0.18))' }}>
+            <img src={`assets/bag-${cup.bagImg}.png`} alt={cup.bean}
+              style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
+            <BagLabel cup={cup} />
+          </div>
+          <h1 style={{
+            fontFamily: 'DM Serif Display, Georgia, serif', fontSize: 32, color: '#000',
+            lineHeight: 1.1, letterSpacing: '-0.5px', margin: '22px 0 0', textAlign: 'center',
+          }}>{cup.bean}</h1>
+          <p style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontSize: 15, fontWeight: 500, color: '#6b6b6b', margin: '4px 0 0', textAlign: 'center' }}>
+            {cup.roaster}
+          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'Avenir, system-ui, sans-serif', fontSize: 13, fontWeight: 500, color: '#6b6b6b', margin: '10px 0 12px' }}>
+            <span style={{ fontSize: 15 }}>{ORIGIN_FLAGS[cup.origin]}</span>
+            <span>{cup.origin}</span>
+            <span style={{ color: '#d9d9d9' }}>·</span>
+            <span>{cup.date}</span>
+          </div>
+          <Stars rating={cup.rating} />
+        </div>
+
+        {/* Details card */}
+        <DetailSection title="Details">
+          <GlassCard>
+            <DetailRow label="Roaster" value={cup.roaster} />
+            <DetailRow label="Roast"   value={details.roastLevel} />
+            <DetailRow label="Process" value={cup.process} />
+            <DetailRow label="Variety" value={details.variety} />
+            <DetailRow label="Region"  value={details.region} />
+            <DetailRow label="Country" value={`${ORIGIN_FLAGS[cup.origin]} ${cup.origin}`} last />
+          </GlassCard>
+        </DetailSection>
+
+        {/* Tasting notes */}
+        {tastingNotes.length > 0 && (
+          <DetailSection title="Tasting Notes">
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {tastingNotes.map(n => (
+                <span key={n} style={{
+                  display: 'inline-flex', alignItems: 'center',
+                  padding: '8px 14px', borderRadius: 100,
+                  background: 'rgba(252, 153, 155, 0.22)',
+                  fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 13,
+                  color: '#5d0505', letterSpacing: '0.1px',
+                }}>{n}</span>
+              ))}
+            </div>
+          </DetailSection>
+        )}
+
+        {/* Brew recipes */}
+        <DetailSection title="Brew Recipes" action="+ Add">
+          {brews.length === 0 ? (
+            <GlassCard>
+              <p style={{
+                fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 13,
+                color: '#6b6b6b', margin: 0, padding: '24px 18px', textAlign: 'center', lineHeight: 1.5,
+              }}>
+                No brew recipes yet. Tap “+ Add” to log how you brewed this coffee.
+              </p>
+            </GlassCard>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {brews.map((b, i) => <BrewCard key={i} brew={b} />)}
+            </div>
+          )}
+        </DetailSection>
+
+        <div style={{ height: 16 }} />
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const [activeTab, setActiveTab] = React.useState('home');
   const [prevTab, setPrevTab] = React.useState(null);
   const [direction, setDirection] = React.useState(1);
+  const [selectedCupId, setSelectedCupId] = React.useState(null);
+  const selectedCup = selectedCupId != null ? cups.find(c => c.id === selectedCupId) : null;
 
   const TAB_ORDER = ['home', 'search', 'add', 'beans'];
 
@@ -876,6 +1142,7 @@ function App() {
   const activeIdx = TAB_ORDER.indexOf(activeTab);
 
   return (
+    <SelectCupContext.Provider value={setSelectedCupId}>
     <div className="phone-wrap">
       {/* Phone shell */}
       <div className="phone-shell" style={{
@@ -1095,9 +1362,15 @@ function App() {
               </div>
             </div>
           </div>
+
+          {/* Coffee Detail overlay — covers screen content + tab bar when a bag is selected */}
+          {selectedCup && (
+            <CoffeeDetailScreen cup={selectedCup} onBack={() => setSelectedCupId(null)} />
+          )}
         </div>
       </div>
     </div>
+    </SelectCupContext.Provider>
   );
 }
 
