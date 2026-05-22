@@ -154,7 +154,15 @@ export function cupToProperties(cup) {
   const setText = (col, v) => { if (v) props[col] = { rich_text: richText(v) }; };
   const setSelect = (col, v) => { if (v) props[col] = { select: { name: String(v) } }; };
 
-  if (cup.date)            props[c.date] = { title: richText(cup.date) };
+  if (cup.date) {
+    // The title column holds a Notion date mention, which renders relatively
+    // ("@Today", "@Jan 1, 2026"). Write a date mention for ISO dates; fall
+    // back to plain text for anything that isn't a plain ISO date.
+    const d = String(cup.date).trim();
+    props[c.date] = /^\d{4}-\d{2}-\d{2}$/.test(d)
+      ? { title: [{ type: 'mention', mention: { type: 'date', date: { start: d } } }] }
+      : { title: richText(d) };
+  }
   setText(c.bean, cup.bean);
   setText(c.notes, cup.notes);
   setSelect(c.roaster, cup.roaster);
