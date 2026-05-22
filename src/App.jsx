@@ -828,12 +828,134 @@ function TabIcon({ type, active }) {
   );
 }
 
-function LogCupScreen() {
+function FormSectionLabel({ children }) {
   return (
-    <div style={{ flex: 1, background: '#f9eddd', display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: '118px' }}>
-      <p style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 800, fontSize: '17px', lineHeight: 1.4, letterSpacing: '-0.5px', color: '#6b6b6b', margin: 0 }}>
-        Coming soon!
-      </p>
+    <p style={{
+      fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 800, fontSize: 13, color: '#6b6b6b',
+      letterSpacing: '1px', textTransform: 'uppercase', margin: '0 0 12px',
+    }}>{children}</p>
+  );
+}
+
+// The "Log Cup" tab — a full form to log a brand-new coffee + its first brew.
+function LogCupScreen({ onSaved, onDone }) {
+  const blank = {
+    bean: '', roaster: '', origin: '', process: '', roastLevel: '',
+    region: '', variety: '', notes: '',
+    brewer: '', filter: '', grind: '', beansG: '', waterMl: '', tempC: '',
+    date: new Date().toISOString().slice(0, 10), rating: 0,
+  };
+  const [form, setForm] = React.useState(blank);
+  const [saving, setSaving] = React.useState(false);
+  const [error, setError] = React.useState(null);
+
+  const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
+
+  const save = async () => {
+    if (saving) return;
+    if (!form.bean.trim()) { setError('Add a coffee name (Bean) first.'); return; }
+    setSaving(true);
+    setError(null);
+    try {
+      const r = await fetch('/api/cups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      if (!r.ok) {
+        const d = await r.json().catch(() => ({}));
+        throw new Error(d.error || `Save failed (HTTP ${r.status})`);
+      }
+      await onSaved();
+      setForm(blank);
+      onDone();
+    } catch (e) {
+      setError(e.message);
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: '#f9eddd' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px 8px', flexShrink: 0 }}>
+        <h1 style={{ fontFamily: 'DM Serif Display, Georgia, serif', fontSize: 32, color: '#000', margin: 0, lineHeight: 1, letterSpacing: '-0.5px' }}>
+          Log a Cup
+        </h1>
+        <button onClick={save} disabled={saving} style={{
+          background: saving ? '#b9a99a' : '#5d0505', color: '#f9eddd', border: 'none',
+          borderRadius: 100, padding: '10px 20px', cursor: saving ? 'default' : 'pointer',
+          fontFamily: 'Avenir, system-ui, sans-serif', fontSize: 14, fontWeight: 800,
+        }}>{saving ? 'Saving…' : 'Save'}</button>
+      </div>
+
+      <div className="scrollable" style={{ flex: 1, overflowY: 'auto', padding: '12px 24px 140px' }}>
+        {error && (
+          <div style={{
+            background: 'rgba(252,153,155,0.22)', borderRadius: 12, padding: '10px 14px', marginBottom: 16,
+            fontFamily: 'Avenir, system-ui, sans-serif', fontSize: 13, fontWeight: 500, color: '#5d0505',
+          }}>{error}</div>
+        )}
+
+        <FormSectionLabel>Coffee</FormSectionLabel>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 26 }}>
+          <FormField label="Bean">
+            <input style={FIELD_INPUT} value={form.bean} onChange={set('bean')} placeholder="Gitega 861" />
+          </FormField>
+          <FormField label="Roaster">
+            <input style={FIELD_INPUT} value={form.roaster} onChange={set('roaster')} placeholder="H&S Coffee Roasters" />
+          </FormField>
+          <FormField label="Country">
+            <input style={FIELD_INPUT} value={form.origin} onChange={set('origin')} placeholder="Rwanda" />
+          </FormField>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <FormField label="Process">
+              <input style={FIELD_INPUT} value={form.process} onChange={set('process')} placeholder="Washed" />
+            </FormField>
+            <FormField label="Roast">
+              <input style={FIELD_INPUT} value={form.roastLevel} onChange={set('roastLevel')} placeholder="Light" />
+            </FormField>
+          </div>
+          <FormField label="Region">
+            <input style={FIELD_INPUT} value={form.region} onChange={set('region')} placeholder="Nyamagabe" />
+          </FormField>
+          <FormField label="Variety">
+            <input style={FIELD_INPUT} value={form.variety} onChange={set('variety')} placeholder="Red Bourbon" />
+          </FormField>
+          <FormField label="Tasting notes">
+            <input style={FIELD_INPUT} value={form.notes} onChange={set('notes')} placeholder="Red Apple, Peach, Hibiscus" />
+          </FormField>
+        </div>
+
+        <FormSectionLabel>Brew</FormSectionLabel>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <FormField label="Brewer">
+            <input style={FIELD_INPUT} value={form.brewer} onChange={set('brewer')} placeholder="Hario V60" />
+          </FormField>
+          <FormField label="Filter">
+            <input style={FIELD_INPUT} value={form.filter} onChange={set('filter')} placeholder="Cafec Light" />
+          </FormField>
+          <FormField label="Grind size">
+            <input style={FIELD_INPUT} value={form.grind} onChange={set('grind')} placeholder="14" />
+          </FormField>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <FormField label="Beans (g)">
+              <input style={FIELD_INPUT} type="number" inputMode="decimal" value={form.beansG} onChange={set('beansG')} placeholder="18" />
+            </FormField>
+            <FormField label="Water (ml)">
+              <input style={FIELD_INPUT} type="number" inputMode="decimal" value={form.waterMl} onChange={set('waterMl')} placeholder="300" />
+            </FormField>
+            <FormField label="Temp °C">
+              <input style={FIELD_INPUT} type="number" inputMode="decimal" value={form.tempC} onChange={set('tempC')} placeholder="94" />
+            </FormField>
+          </div>
+          <FormField label="Date">
+            <input style={FIELD_INPUT} type="date" value={form.date} onChange={set('date')} />
+          </FormField>
+          <FormField label="Rating">
+            <RatingInput value={form.rating} onChange={(v) => setForm(f => ({ ...f, rating: v }))} />
+          </FormField>
+        </div>
+      </div>
     </div>
   );
 }
@@ -867,9 +989,9 @@ function DetailSection({ title, action, onAction, children }) {
 }
 
 // Liquid Glass-light card on Pearl background (sub-DS variant — softer shadow, 24px radius)
-function GlassCard({ children, style }) {
+function GlassCard({ children, style, onClick }) {
   return (
-    <div style={{ position: 'relative', borderRadius: 24, overflow: 'hidden', isolation: 'isolate', boxShadow: '0px 6px 28px rgba(0,0,0,0.08)', ...style }}>
+    <div onClick={onClick} style={{ position: 'relative', borderRadius: 24, overflow: 'hidden', isolation: 'isolate', boxShadow: '0px 6px 28px rgba(0,0,0,0.08)', cursor: onClick ? 'pointer' : 'default', ...style }}>
       <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.55)' }} />
       <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(255,255,255,0.20) 0%, rgba(255,255,255,0) 60%)' }} />
       <div style={{ position: 'relative' }}>{children}</div>
@@ -911,11 +1033,11 @@ function BrewMetaRow({ label, value }) {
   );
 }
 
-function BrewCard({ brew }) {
+function BrewCard({ brew, onClick }) {
   const ratio = `1:${(brew.waterMl / brew.beansG).toFixed(1)}`;
   const tempF = Math.round(brew.tempC * 9 / 5 + 32);
   return (
-    <GlassCard>
+    <GlassCard onClick={onClick}>
       <div style={{ padding: '16px 18px 18px' }}>
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 }}>
           <h3 style={{ fontFamily: '"Avenir Next Condensed", Avenir, system-ui, sans-serif', fontWeight: 700, fontSize: 19, color: '#000', margin: 0, lineHeight: 1.2, letterSpacing: '-0.3px' }}>
@@ -950,6 +1072,7 @@ function CoffeeDetailScreen({ cup, onBack, onRefresh }) {
     .split(',').map(n => n.trim()).filter(Boolean);
   const brews = details.brews || [];
   const [addingBrew, setAddingBrew] = React.useState(false);
+  const [editingBrew, setEditingBrew] = React.useState(null);
 
   const [closing, setClosing] = React.useState(false);
   const EXIT_MS = 320;
@@ -1051,7 +1174,10 @@ function CoffeeDetailScreen({ cup, onBack, onRefresh }) {
             </GlassCard>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {brews.map((b, i) => <BrewCard key={i} brew={b} />)}
+              {brews.map((b, i) => (
+                <BrewCard key={b.id || i} brew={b}
+                  onClick={b.id ? () => setEditingBrew(b) : undefined} />
+              ))}
             </div>
           )}
         </DetailSection>
@@ -1059,8 +1185,13 @@ function CoffeeDetailScreen({ cup, onBack, onRefresh }) {
         <div style={{ height: 16 }} />
       </div>
 
-      {addingBrew && (
-        <BrewForm coffee={cup} onClose={() => setAddingBrew(false)} onSaved={onRefresh} />
+      {(addingBrew || editingBrew) && (
+        <BrewForm
+          coffee={cup}
+          brew={editingBrew}
+          onClose={() => { setAddingBrew(false); setEditingBrew(null); }}
+          onSaved={onRefresh}
+        />
       )}
     </div>
   );
@@ -1107,15 +1238,28 @@ function RatingInput({ value, onChange }) {
 
 // Slide-up form to log a new brewed cup of an existing coffee. The coffee-level
 // fields are copied from `coffee`; the user fills in just the brew details.
-function BrewForm({ coffee, onClose, onSaved }) {
+// ISO yyyy-mm-dd for an <input type="date">, falling back to today.
+function toDateInput(value) {
   const today = new Date().toISOString().slice(0, 10);
-  const [form, setForm] = React.useState({
-    brewer: '', filter: '', grind: '', beansG: '', waterMl: '', tempC: '',
-    date: today, rating: 0,
-  });
+  if (!value) return today;
+  const m = /^\d{4}-\d{2}-\d{2}/.exec(String(value).trim());
+  return m ? m[0] : today;
+}
+
+// Slide-up form to log a new brewed cup of an existing coffee, or edit/delete
+// an existing brew. The coffee-level fields are carried from `coffee`; the user
+// fills in just the brew details.
+function BrewForm({ coffee, brew, onClose, onSaved }) {
+  const editing = !!brew;
+  const [form, setForm] = React.useState(() => ({
+    brewer: brew?.brewer || '', filter: brew?.filter || '', grind: brew?.grind || '',
+    beansG: brew?.beansG ?? '', waterMl: brew?.waterMl ?? '', tempC: brew?.tempC ?? '',
+    date: toDateInput(brew?.date), rating: brew?.rating || 0,
+  }));
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState(null);
   const [closing, setClosing] = React.useState(false);
+  const [confirmDelete, setConfirmDelete] = React.useState(false);
   const EXIT_MS = 320;
 
   const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
@@ -1131,22 +1275,49 @@ function BrewForm({ coffee, onClose, onSaved }) {
     setSaving(true);
     setError(null);
     try {
-      const payload = {
-        bean: coffee.bean, roaster: coffee.roaster, origin: coffee.origin,
-        process: coffee.process, roastLevel: coffee.roastLevel,
-        region: coffee.region, variety: coffee.variety, notes: coffee.notes,
+      const brewFields = {
         brewer: form.brewer, filter: form.filter, grind: form.grind,
         beansG: form.beansG, waterMl: form.waterMl, tempC: form.tempC,
         date: form.date, rating: form.rating,
       };
-      const r = await fetch('/api/cups', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+      const r = editing
+        ? await fetch(`/api/cups/${brew.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(brewFields),
+          })
+        : await fetch('/api/cups', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              bean: coffee.bean, roaster: coffee.roaster, origin: coffee.origin,
+              process: coffee.process, roastLevel: coffee.roastLevel,
+              region: coffee.region, variety: coffee.variety, notes: coffee.notes,
+              ...brewFields,
+            }),
+          });
       if (!r.ok) {
         const d = await r.json().catch(() => ({}));
         throw new Error(d.error || `Save failed (HTTP ${r.status})`);
+      }
+      await onSaved();
+      onClose();
+    } catch (e) {
+      setError(e.message);
+      setSaving(false);
+    }
+  };
+
+  const remove = async () => {
+    if (saving) return;
+    if (!confirmDelete) { setConfirmDelete(true); return; }
+    setSaving(true);
+    setError(null);
+    try {
+      const r = await fetch(`/api/cups/${brew.id}`, { method: 'DELETE' });
+      if (!r.ok) {
+        const d = await r.json().catch(() => ({}));
+        throw new Error(d.error || `Delete failed (HTTP ${r.status})`);
       }
       await onSaved();
       onClose();
@@ -1173,7 +1344,7 @@ function BrewForm({ coffee, onClose, onSaved }) {
           fontFamily: 'Avenir, system-ui, sans-serif', fontSize: 15, fontWeight: 500, color: '#6b6b6b',
         }}>Cancel</button>
         <p style={{ fontFamily: 'DM Serif Display, Georgia, serif', fontSize: 19, color: '#000', margin: 0 }}>
-          New Brew
+          {editing ? 'Edit Brew' : 'New Brew'}
         </p>
         <button onClick={save} disabled={saving} style={{
           background: 'none', border: 'none', padding: 0,
@@ -1223,6 +1394,17 @@ function BrewForm({ coffee, onClose, onSaved }) {
             <RatingInput value={form.rating} onChange={(v) => setForm(f => ({ ...f, rating: v }))} />
           </FormField>
         </div>
+
+        {editing && (
+          <button onClick={remove} disabled={saving} style={{
+            marginTop: 28, width: '100%', padding: '12px', borderRadius: 14,
+            border: '0.5px solid rgba(93,5,5,0.25)', background: 'transparent',
+            cursor: saving ? 'default' : 'pointer',
+            fontFamily: 'Avenir, system-ui, sans-serif', fontSize: 14, fontWeight: 600, color: '#5d0505',
+          }}>
+            {confirmDelete ? 'Tap again to delete this brew' : 'Delete brew'}
+          </button>
+        )}
       </div>
     </div>
   );
@@ -1296,7 +1478,7 @@ function App() {
       </div>
     );
     if (tabId === 'search') return <ExploreScreen cups={coffees} />;
-    if (tabId === 'add') return <LogCupScreen />;
+    if (tabId === 'add') return <LogCupScreen onSaved={loadCoffees} onDone={() => handleTabChange('home')} />;
     if (tabId === 'beans') return <BeansScreen />;
     return null;
   };

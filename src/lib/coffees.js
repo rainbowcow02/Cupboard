@@ -81,6 +81,7 @@ export function groupIntoCoffees(rows) {
           beansG: r.beansG,
           waterMl: r.waterMl,
           date: r.date,
+          rating: r.rating,
         }))
         .filter(isRealBrew),
     });
