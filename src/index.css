@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* { -webkit-font-smoothing: antialiased; }
+body { background: #f9eddd; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 48px; box-sizing: border-box; }
+.phone-wrap { position: relative; }
+.scrollable::-webkit-scrollbar { display: none; }
+.scrollable { -ms-overflow-style: none; scrollbar-width: none; }
+.mapboxgl-map { font: unset; }
+@keyframes slideInFromRight  { from { transform: translateX(100%); } to { transform: translateX(0); } }
+@keyframes slideInFromLeft   { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+@keyframes slideOutToLeft    { from { transform: translateX(0); } to { transform: translateX(-100%); } }
+@keyframes slideOutToRight   { from { transform: translateX(0); } to { transform: translateX(100%); } }
+@keyframes slideInFromBottom { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes slideOutToBottom  { from { transform: translateY(0); } to { transform: translateY(100%); } }
+/* Fullscreen on mobile: drop the page padding and frame chrome so the mockup fills the screen. */
+@media (max-width: 480px) {
+  body { padding: 0; }
+  .phone-shell {
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+  /* Hide the mock island; hide the mock status bar's contents but keep its
+     height as a spacer so the header clears the device's real status bar. */
+  .mock-island { display: none; }
+  .mock-statusbar > * { visibility: hidden; }
+}

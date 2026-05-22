@@ -2,11 +2,10 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "Static (npx serve)",
-      "runtimeExecutable": "npx",
-      "runtimeArgs": ["serve", ".", "--no-clipboard"],
-      "port": 3000,
-      "autoPort": false
+      "name": "Vite dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 5173
     }
   ]
 }
