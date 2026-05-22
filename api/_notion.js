@@ -124,3 +124,58 @@ export function rowToCup(page) {
     waterMl:    readNumber(p[c.waterMl]),
   };
 }
+
+// ─── Writing ────────────────────────────────────────────────────────────────
+
+// Country → flag, so writes use the flag-prefixed option names the DB already
+// has (rather than creating bare-name duplicates).
+const COUNTRY_FLAGS = {
+  Bolivia: '🇧🇴', Brazil: '🇧🇷', Colombia: '🇨🇴', 'Costa Rica': '🇨🇷',
+  Ethiopia: '🇪🇹', Guatemala: '🇬🇹', Honduras: '🇭🇳', Kenya: '🇰🇪',
+  Panama: '🇵🇦', Peru: '🇵🇪', Rwanda: '🇷🇼', Yemen: '🇾🇪',
+};
+
+function richText(s) {
+  return s ? [{ text: { content: String(s) } }] : [];
+}
+
+function multiSelect(s) {
+  return String(s || '')
+    .split(',').map((x) => x.trim()).filter(Boolean)
+    .map((name) => ({ name }));
+}
+
+// App cup → Notion page properties. Numbers are formatted into the select-
+// string conventions the database uses ("12g", "190ml", "93C/199F"). Only
+// fields with a value are included, so PATCH leaves the rest untouched.
+export function cupToProperties(cup) {
+  const c = COLUMNS;
+  const props = {};
+  const setText = (col, v) => { if (v) props[col] = { rich_text: richText(v) }; };
+  const setSelect = (col, v) => { if (v) props[col] = { select: { name: String(v) } }; };
+
+  if (cup.date)            props[c.date] = { title: richText(cup.date) };
+  setText(c.bean, cup.bean);
+  setText(c.notes, cup.notes);
+  setSelect(c.roaster, cup.roaster);
+  setSelect(c.process, cup.process);
+  setSelect(c.roastLevel, cup.roastLevel);
+  setSelect(c.brewer, cup.brewer);
+  setSelect(c.filter, cup.filter);
+  setSelect(c.grind, cup.grind);
+
+  if (cup.variety) props[c.variety] = { multi_select: multiSelect(cup.variety) };
+  if (cup.region)  props[c.region]  = { multi_select: multiSelect(cup.region) };
+  if (cup.origin) {
+    const flag = COUNTRY_FLAGS[cup.origin];
+    props[c.origin] = { multi_select: [{ name: flag ? `${flag} ${cup.origin}` : cup.origin }] };
+  }
+  if (cup.rating) props[c.rating] = { select: { name: '☕️'.repeat(cup.rating) } };
+  if (cup.beansG != null && cup.beansG !== '') props[c.beansG] = { select: { name: `${cup.beansG}g` } };
+  if (cup.waterMl != null && cup.waterMl !== '') props[c.waterMl] = { select: { name: `${cup.waterMl}ml` } };
+  if (cup.tempC != null && cup.tempC !== '') {
+    const f = Math.round(Number(cup.tempC) * 9 / 5 + 32);
+    props[c.tempC] = { select: { name: `${cup.tempC}C/${f}F` } };
+  }
+  return props;
+}

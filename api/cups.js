@@ -1,10 +1,14 @@
-// GET /api/cups — every brewed-cup row from the Notion table, normalized.
-// The browser groups these into coffees (see src/lib/coffees.js).
-import { notion, DATABASE_ID, notionConfigured, rowToCup } from './_notion.js';
+// /api/cups
+//   GET  — every brewed-cup row from the Notion table, normalized.
+//   POST — create a new brewed-cup row from a cup payload.
+// The browser groups GET results into coffees (see src/lib/coffees.js).
+import {
+  notion, DATABASE_ID, notionConfigured, rowToCup, cupToProperties,
+} from './_notion.js';
 
 export default async function handler(req, res) {
-  if (req.method !== 'GET') {
-    res.setHeader('Allow', 'GET');
+  if (req.method !== 'GET' && req.method !== 'POST') {
+    res.setHeader('Allow', 'GET, POST');
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
@@ -12,6 +16,19 @@ export default async function handler(req, res) {
     return res.status(500).json({
       error: 'Notion is not configured. Set NOTION_TOKEN and NOTION_DATABASE_ID.',
     });
+  }
+
+  if (req.method === 'POST') {
+    try {
+      const page = await notion.pages.create({
+        parent: { database_id: DATABASE_ID },
+        properties: cupToProperties(req.body || {}),
+      });
+      return res.status(201).json({ cup: rowToCup(page) });
+    } catch (err) {
+      console.error('[api/cups] Notion create failed:', err);
+      return res.status(502).json({ error: err.message || 'Notion create failed' });
+    }
   }
 
   try {

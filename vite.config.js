@@ -21,9 +21,25 @@ function devApiPlugin() {
           return res;
         };
 
+        // Parse a JSON body for writes, mirroring Vercel's req.body.
+        if (req.method !== 'GET' && req.method !== 'HEAD') {
+          try {
+            const chunks = [];
+            for await (const chunk of req) chunks.push(chunk);
+            const raw = Buffer.concat(chunks).toString('utf8');
+            req.body = raw ? JSON.parse(raw) : {};
+          } catch {
+            return res.status(400).json({ error: 'Invalid JSON body' });
+          }
+        }
+
         try {
           if (path === '/api/cups') {
             const mod = await server.ssrLoadModule('/api/cups.js');
+            await mod.default(req, res);
+          } else if (path.startsWith('/api/cups/')) {
+            req.query = { ...(req.query || {}), id: decodeURIComponent(path.slice('/api/cups/'.length)) };
+            const mod = await server.ssrLoadModule('/api/cups/[id].js');
             await mod.default(req, res);
           } else {
             res.status(404).json({ error: `No dev route for ${path}` });
