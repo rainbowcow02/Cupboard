@@ -1,5 +1,5 @@
 import React from 'react';
-import { groupIntoCoffees } from './lib/coffees.js';
+import { groupIntoCoffees, formatDate } from './lib/coffees.js';
 
 const MAPBOX_PROD_TOKEN = 'pk.eyJ1IjoicmFpbmJvd2NvdzAyIiwiYSI6ImNtcGN0N3pmdjA1MnIyeHB2aDFqa21hdjcifQ.X3TvBj8J2kqQyeRYxzAiAQ';
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || MAPBOX_PROD_TOKEN;
@@ -13,6 +13,10 @@ const ORIGIN_COORDS = {
   'Kenya':     [0.0,  37.9],
   'Brazil':    [-14.2, -51.9],
   'Costa Rica':[9.7, -83.8],
+  'Bolivia':   [-16.3, -63.6],
+  'Honduras':  [15.2, -86.2],
+  'Rwanda':    [-1.9,  29.9],
+  'Yemen':     [15.5,  48.5],
 };
 
 const ORIGIN_FLAGS = {
@@ -24,6 +28,10 @@ const ORIGIN_FLAGS = {
   'Kenya':      '🇰🇪',
   'Brazil':     '🇧🇷',
   'Costa Rica': '🇨🇷',
+  'Bolivia':    '🇧🇴',
+  'Honduras':   '🇭🇳',
+  'Rwanda':     '🇷🇼',
+  'Yemen':      '🇾🇪',
 };
 
 const cups = [
@@ -784,7 +792,7 @@ function ExploreScreen({ cups }) {
                           <span>{cup.origin}</span>
                         </div>
                       </div>
-                      <p style={{ flex: '1 0 0', fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: '13px', color: '#6b6b6b', lineHeight: 1.5, textAlign: 'right', margin: 0 }}>{cup.date}</p>
+                      <p style={{ flex: '1 0 0', fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: '13px', color: '#6b6b6b', lineHeight: 1.5, textAlign: 'right', margin: 0 }}>{formatDate(cup.date)}</p>
                     </div>
                     {i < filteredCups.length - 1 && (
                       <div data-name="divider" style={{ width: '100%', height: '0.5px', background: '#e7e7e7', flexShrink: 0 }} />
@@ -913,7 +921,7 @@ function BrewCard({ brew }) {
           <h3 style={{ fontFamily: '"Avenir Next Condensed", Avenir, system-ui, sans-serif', fontWeight: 700, fontSize: 19, color: '#000', margin: 0, lineHeight: 1.2, letterSpacing: '-0.3px' }}>
             {brew.brewer}
           </h3>
-          <span style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 13, color: '#6b6b6b' }}>{brew.date}</span>
+          <span style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 13, color: '#6b6b6b' }}>{formatDate(brew.date)}</span>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, paddingTop: 4, paddingBottom: 12 }}>
@@ -995,7 +1003,7 @@ function CoffeeDetailScreen({ cup, onBack }) {
             <span style={{ fontSize: 15 }}>{ORIGIN_FLAGS[cup.origin]}</span>
             <span>{cup.origin}</span>
             <span style={{ color: '#d9d9d9' }}>·</span>
-            <span>{cup.date}</span>
+            <span>{formatDate(cup.date)}</span>
           </div>
           <Stars rating={cup.rating} />
         </div>

@@ -20,6 +20,18 @@ export function coffeeId(bean, roaster) {
   return `${bean}|${roaster}`.trim().toLowerCase().replace(/\s+/g, '-');
 }
 
+// Display a date as "Mon D" (e.g. "May 22"). Passes through anything that
+// doesn't parse as a date (so existing values like "May 9" stay untouched).
+export function formatDate(s) {
+  if (!s) return '';
+  const trimmed = String(s).trim();
+  const isISO = /^\d{4}-\d{2}-\d{2}/.test(trimmed);
+  // Anchor ISO dates at noon so the day doesn't shift across timezones.
+  const d = new Date(isISO ? `${trimmed.slice(0, 10)}T12:00:00` : trimmed);
+  if (Number.isNaN(d.getTime())) return trimmed;
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
 // Comparable value for a date string ("May 9", ISO, etc). Unknown formats
 // sort last.
 function dateValue(d) {

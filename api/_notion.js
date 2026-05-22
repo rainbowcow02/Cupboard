@@ -15,28 +15,27 @@ export function notionConfigured() {
 }
 
 // ───────────────────────────────────────────────────────────────────────────
-// COLUMN MAPPING — set each value to the EXACT name of the matching column in
-// the Notion table. These are best-guess defaults; confirm them against the
-// real database (the GET route warns in the server log about any name that
-// isn't found on a row).
+// COLUMN MAPPING — each value is the EXACT name of the column in the Notion
+// "Recipes" database (one row = one brewed cup). The GET route warns in the
+// server log if any of these names isn't found on a row.
 // ───────────────────────────────────────────────────────────────────────────
 export const COLUMNS = {
-  bean:       'Bean',          // Title column (the coffee's name)
+  bean:       'Bean',
   roaster:    'Roaster',
-  origin:     'Origin',        // country — must match a key in ORIGIN_COORDS
-  process:    'Process',
+  origin:     'Country',      // multi-select; option names are flag-prefixed
+  process:    'Processing',
   roastLevel: 'Roast',
   region:     'Region',
   variety:    'Variety',
-  notes:      'Tasting Notes', // multi-select or text
-  rating:     'Rating',        // number 1–5
-  date:       'Date',          // brew date
-  brewer:     'Brewer',
+  notes:      'Notes',        // short comma-separated tasting notes → chips
+  rating:     'Rating ',      // NOTE: trailing space in the real column name
+  date:       'Date',         // title column — holds the brew date
+  brewer:     'Dripper',
   filter:     'Filter',
-  grind:      'Grind',
-  tempC:      'Water Temp',    // number, °C
-  beansG:     'Beans',         // number, grams
-  waterMl:    'Water',         // number, ml
+  grind:      'Grind size',
+  tempC:      'Water temp',   // select, e.g. "93C/199F"
+  beansG:     'Amt beans',    // select, e.g. "12g"
+  waterMl:    'Amt water 💧', // select, e.g. "190ml"
 };
 
 // ─── Property readers — tolerant of whichever Notion property type a column is.
@@ -73,6 +72,18 @@ function readDate(prop) {
   return readText(prop);
 }
 
+// "Rating " is a select of ☕ repeated 1–5 times → a 1–5 number.
+function readRating(prop) {
+  return (readText(prop).match(/☕/g) || []).length;
+}
+
+// "Country" multi-select option names are flag-prefixed ("🇷🇼 Rwanda").
+// Strip the flag so the value matches ORIGIN_COORDS / ORIGIN_FLAGS keys.
+function readCountry(prop) {
+  const raw = prop?.multi_select?.[0]?.name || readText(prop);
+  return raw.replace(/^[\u{1F1E6}-\u{1F1FF}]{2}\s*/u, '').trim();
+}
+
 // One-time warning if a mapped column name isn't present on a Notion page.
 let _warned = false;
 function warnMissingColumns(properties) {
@@ -95,16 +106,16 @@ export function rowToCup(page) {
   const c = COLUMNS;
   return {
     id:         page.id,
-    bean:       readText(p[c.bean]),
+    bean:       readText(p[c.bean]).trim(),
     roaster:    readText(p[c.roaster]),
-    origin:     readText(p[c.origin]),
+    origin:     readCountry(p[c.origin]),
     process:    readText(p[c.process]),
     roastLevel: readText(p[c.roastLevel]),
     region:     readText(p[c.region]),
     variety:    readText(p[c.variety]),
     notes:      readText(p[c.notes]),
-    rating:     readNumber(p[c.rating]) || 0,
-    date:       readDate(p[c.date]),
+    rating:     readRating(p[c.rating]),
+    date:       readDate(p[c.date]).trim(),
     brewer:     readText(p[c.brewer]),
     filter:     readText(p[c.filter]),
     grind:      readText(p[c.grind]),
