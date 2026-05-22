@@ -1,4 +1,5 @@
 import React from 'react';
+import { groupIntoCoffees } from './lib/coffees.js';
 
 const MAPBOX_PROD_TOKEN = 'pk.eyJ1IjoicmFpbmJvd2NvdzAyIiwiYSI6ImNtcGN0N3pmdjA1MnIyeHB2aDFqa21hdjcifQ.X3TvBj8J2kqQyeRYxzAiAQ';
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || MAPBOX_PROD_TOKEN;
@@ -211,6 +212,30 @@ const COFFEE_DETAILS = {
           { brewer: 'Hario V60', filter: 'Hario tabbed', grind: 'Medium-fine', tempC: 93, beansG: 18, waterMl: 300, date: 'Apr 6' },
         ] },
 };
+
+// Offline sample data — the original hardcoded coffees, shaped like the grouped
+// Notion result. Used as a fallback when /api/cups is unreachable (e.g. Notion
+// not configured yet, or running plain `vite` without the proxy).
+function sampleCoffees() {
+  return cups.map((c) => {
+    const d = COFFEE_DETAILS[c.id] || {};
+    return {
+      id: c.id,
+      bean: c.bean,
+      roaster: c.roaster,
+      origin: c.origin,
+      process: c.process,
+      roastLevel: d.roastLevel,
+      region: d.region,
+      variety: d.variety,
+      notes: c.notes,
+      rating: c.rating,
+      date: c.date,
+      bagImg: c.bagImg,
+      brews: d.brews || [],
+    };
+  });
+}
 
 // Set by App; consumed by ShelfRow + Explore list-item to open the detail page.
 const SelectCupContext = React.createContext(null);
@@ -805,6 +830,16 @@ function LogCupScreen() {
   );
 }
 
+function LoadingScreen() {
+  return (
+    <div style={{ flex: 1, background: '#f9eddd', display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: '118px' }}>
+      <p style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 800, fontSize: '17px', lineHeight: 1.4, letterSpacing: '-0.5px', color: '#6b6b6b', margin: 0 }}>
+        Loading…
+      </p>
+    </div>
+  );
+}
+
 // ─── Coffee Detail Page ──────────────────────────────────────────────────────
 
 function DetailSection({ title, action, onAction, children }) {
@@ -900,7 +935,9 @@ function BrewCard({ brew }) {
 }
 
 function CoffeeDetailScreen({ cup, onBack }) {
-  const details = COFFEE_DETAILS[cup.id] || {};
+  // The coffee object carries its own roast/region/variety/brews (grouped from
+  // Notion rows, or from sample data).
+  const details = cup;
   const tastingNotes = (cup.notes || '')
     .split(',').map(n => n.trim()).filter(Boolean);
   const brews = details.brews || [];
@@ -1021,7 +1058,30 @@ function App() {
   const [prevTab, setPrevTab] = React.useState(null);
   const [direction, setDirection] = React.useState(1);
   const [selectedCupId, setSelectedCupId] = React.useState(null);
-  const selectedCup = selectedCupId != null ? cups.find(c => c.id === selectedCupId) : null;
+  const [coffees, setCoffees] = React.useState(null); // null while loading
+
+  // Load coffees from the Notion proxy; fall back to bundled sample data if the
+  // API isn't reachable (Notion not configured, or running plain `vite`).
+  React.useEffect(() => {
+    let cancelled = false;
+    fetch('/api/cups')
+      .then((r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        return r.json();
+      })
+      .then((data) => {
+        if (!cancelled) setCoffees(groupIntoCoffees(data.cups || []));
+      })
+      .catch((err) => {
+        console.warn('[Cupboard] /api/cups unavailable — using sample data:', err.message);
+        if (!cancelled) setCoffees(sampleCoffees());
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  const selectedCup = (coffees && selectedCupId != null)
+    ? coffees.find(c => c.id === selectedCupId)
+    : null;
 
   const TAB_ORDER = ['home', 'search', 'add', 'beans'];
 
@@ -1046,6 +1106,7 @@ function App() {
   }
 
   const renderScreen = (tabId) => {
+    if (!coffees) return <LoadingScreen />;
     if (tabId === 'home') return (
       <div className="scrollable" style={{ height: '100%', overflowY: 'auto', paddingBottom: '88px' }}>
         <div style={{ padding: '16px 24px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1056,11 +1117,11 @@ function App() {
             <span style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontSize: '20px', fontWeight: 600, color: '#f9eddd', lineHeight: 1 }}>L</span>
           </div>
         </div>
-        <CupboardShelves cells={cups} />
+        <CupboardShelves cells={coffees} />
         <div style={{ height: '28px' }} />
       </div>
     );
-    if (tabId === 'search') return <ExploreScreen cups={cups} />;
+    if (tabId === 'search') return <ExploreScreen cups={coffees} />;
     if (tabId === 'add') return <LogCupScreen />;
     if (tabId === 'beans') return <BeansScreen />;
     return null;
