@@ -942,13 +942,14 @@ function BrewCard({ brew }) {
   );
 }
 
-function CoffeeDetailScreen({ cup, onBack }) {
+function CoffeeDetailScreen({ cup, onBack, onRefresh }) {
   // The coffee object carries its own roast/region/variety/brews (grouped from
   // Notion rows, or from sample data).
   const details = cup;
   const tastingNotes = (cup.notes || '')
     .split(',').map(n => n.trim()).filter(Boolean);
   const brews = details.brews || [];
+  const [addingBrew, setAddingBrew] = React.useState(false);
 
   const [closing, setClosing] = React.useState(false);
   const EXIT_MS = 320;
@@ -1038,7 +1039,7 @@ function CoffeeDetailScreen({ cup, onBack }) {
         )}
 
         {/* Brew recipes */}
-        <DetailSection title="Brew Recipes" action="+ Add">
+        <DetailSection title="Brew Recipes" action="+ Add" onAction={() => setAddingBrew(true)}>
           {brews.length === 0 ? (
             <GlassCard>
               <p style={{
@@ -1057,6 +1058,172 @@ function CoffeeDetailScreen({ cup, onBack }) {
 
         <div style={{ height: 16 }} />
       </div>
+
+      {addingBrew && (
+        <BrewForm coffee={cup} onClose={() => setAddingBrew(false)} onSaved={onRefresh} />
+      )}
+    </div>
+  );
+}
+
+// ─── Brew form ───────────────────────────────────────────────────────────────
+
+const FIELD_INPUT = {
+  width: '100%', boxSizing: 'border-box', padding: '12px 14px', borderRadius: 14,
+  border: '0.5px solid rgba(0,0,0,0.14)', background: 'rgba(255,255,255,0.7)',
+  fontFamily: 'Avenir, system-ui, sans-serif', fontSize: 15, fontWeight: 500,
+  color: '#000', outline: 'none',
+};
+
+function FormField({ label, children }) {
+  return (
+    <div style={{ flex: 1, minWidth: 0 }}>
+      <label style={{
+        display: 'block', fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500,
+        fontSize: 11, color: '#6b6b6b', letterSpacing: '0.8px', textTransform: 'uppercase',
+        marginBottom: 6,
+      }}>{label}</label>
+      {children}
+    </div>
+  );
+}
+
+function RatingInput({ value, onChange }) {
+  return (
+    <div style={{ display: 'flex', gap: 6, alignItems: 'center', height: 44 }}>
+      {[1, 2, 3, 4, 5].map(n => (
+        <button key={n} type="button" onClick={() => onChange(n === value ? 0 : n)}
+          style={{ background: 'none', border: 'none', padding: 4, cursor: 'pointer', lineHeight: 0 }}>
+          <svg width="22" height="22" viewBox="0 0 9 9">
+            <polygon points="4.5,0.5 5.6,3.2 8.5,3.4 6.4,5.3 7.1,8.1 4.5,6.6 1.9,8.1 2.6,5.3 0.5,3.4 3.4,3.2"
+              fill={n <= value ? '#355c44' : 'none'}
+              stroke={n <= value ? '#355c44' : '#d9d9d9'} strokeWidth="0.75" />
+          </svg>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// Slide-up form to log a new brewed cup of an existing coffee. The coffee-level
+// fields are copied from `coffee`; the user fills in just the brew details.
+function BrewForm({ coffee, onClose, onSaved }) {
+  const today = new Date().toISOString().slice(0, 10);
+  const [form, setForm] = React.useState({
+    brewer: '', filter: '', grind: '', beansG: '', waterMl: '', tempC: '',
+    date: today, rating: 0,
+  });
+  const [saving, setSaving] = React.useState(false);
+  const [error, setError] = React.useState(null);
+  const [closing, setClosing] = React.useState(false);
+  const EXIT_MS = 320;
+
+  const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
+
+  const dismiss = () => {
+    if (closing || saving) return;
+    setClosing(true);
+    setTimeout(onClose, EXIT_MS);
+  };
+
+  const save = async () => {
+    if (saving) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const payload = {
+        bean: coffee.bean, roaster: coffee.roaster, origin: coffee.origin,
+        process: coffee.process, roastLevel: coffee.roastLevel,
+        region: coffee.region, variety: coffee.variety, notes: coffee.notes,
+        brewer: form.brewer, filter: form.filter, grind: form.grind,
+        beansG: form.beansG, waterMl: form.waterMl, tempC: form.tempC,
+        date: form.date, rating: form.rating,
+      };
+      const r = await fetch('/api/cups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!r.ok) {
+        const d = await r.json().catch(() => ({}));
+        throw new Error(d.error || `Save failed (HTTP ${r.status})`);
+      }
+      await onSaved();
+      onClose();
+    } catch (e) {
+      setError(e.message);
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div style={{
+      position: 'absolute', inset: 0, zIndex: 70, background: '#f9eddd',
+      display: 'flex', flexDirection: 'column',
+      animation: closing
+        ? `slideOutToBottom ${EXIT_MS}ms cubic-bezier(0.32, 0.72, 0, 1) forwards`
+        : 'slideInFromBottom 360ms cubic-bezier(0.32, 0.72, 0, 1)',
+    }}>
+      <div style={{ height: 44, flexShrink: 0 }} />
+
+      {/* Header: Cancel · title · Save */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 20px', flexShrink: 0 }}>
+        <button onClick={dismiss} style={{
+          background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+          fontFamily: 'Avenir, system-ui, sans-serif', fontSize: 15, fontWeight: 500, color: '#6b6b6b',
+        }}>Cancel</button>
+        <p style={{ fontFamily: 'DM Serif Display, Georgia, serif', fontSize: 19, color: '#000', margin: 0 }}>
+          New Brew
+        </p>
+        <button onClick={save} disabled={saving} style={{
+          background: 'none', border: 'none', padding: 0,
+          cursor: saving ? 'default' : 'pointer',
+          fontFamily: 'Avenir, system-ui, sans-serif', fontSize: 15, fontWeight: 800,
+          color: saving ? '#b9a99a' : '#5d0505',
+        }}>{saving ? 'Saving…' : 'Save'}</button>
+      </div>
+
+      <div className="scrollable" style={{ flex: 1, overflowY: 'auto', padding: '8px 24px 48px' }}>
+        <p style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontSize: 13, fontWeight: 500, color: '#6b6b6b', margin: '0 0 20px' }}>
+          Brew recipe for <span style={{ color: '#000', fontWeight: 700 }}>{coffee.bean}</span> · {coffee.roaster}
+        </p>
+
+        {error && (
+          <div style={{
+            background: 'rgba(252,153,155,0.22)', borderRadius: 12, padding: '10px 14px', marginBottom: 16,
+            fontFamily: 'Avenir, system-ui, sans-serif', fontSize: 13, fontWeight: 500, color: '#5d0505',
+          }}>{error}</div>
+        )}
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <FormField label="Brewer">
+            <input style={FIELD_INPUT} value={form.brewer} onChange={set('brewer')} placeholder="Hario V60" />
+          </FormField>
+          <FormField label="Filter">
+            <input style={FIELD_INPUT} value={form.filter} onChange={set('filter')} placeholder="Cafec Light" />
+          </FormField>
+          <FormField label="Grind size">
+            <input style={FIELD_INPUT} value={form.grind} onChange={set('grind')} placeholder="14" />
+          </FormField>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <FormField label="Beans (g)">
+              <input style={FIELD_INPUT} type="number" inputMode="decimal" value={form.beansG} onChange={set('beansG')} placeholder="18" />
+            </FormField>
+            <FormField label="Water (ml)">
+              <input style={FIELD_INPUT} type="number" inputMode="decimal" value={form.waterMl} onChange={set('waterMl')} placeholder="300" />
+            </FormField>
+            <FormField label="Temp °C">
+              <input style={FIELD_INPUT} type="number" inputMode="decimal" value={form.tempC} onChange={set('tempC')} placeholder="94" />
+            </FormField>
+          </div>
+          <FormField label="Date">
+            <input style={FIELD_INPUT} type="date" value={form.date} onChange={set('date')} />
+          </FormField>
+          <FormField label="Rating">
+            <RatingInput value={form.rating} onChange={(v) => setForm(f => ({ ...f, rating: v }))} />
+          </FormField>
+        </div>
+      </div>
     </div>
   );
 }
@@ -1068,24 +1235,23 @@ function App() {
   const [selectedCupId, setSelectedCupId] = React.useState(null);
   const [coffees, setCoffees] = React.useState(null); // null while loading
 
-  // Load coffees from the Notion proxy; fall back to bundled sample data if the
-  // API isn't reachable (Notion not configured, or running plain `vite`).
-  React.useEffect(() => {
-    let cancelled = false;
-    fetch('/api/cups')
+  // Load coffees from the Notion proxy. Reusable so writes can refresh. Falls
+  // back to bundled sample data only on the first load (Notion not configured,
+  // or running plain `vite`); a failed refresh keeps whatever is already shown.
+  const loadCoffees = React.useCallback(() => {
+    return fetch('/api/cups')
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
       })
-      .then((data) => {
-        if (!cancelled) setCoffees(groupIntoCoffees(data.cups || []));
-      })
+      .then((data) => setCoffees(groupIntoCoffees(data.cups || [])))
       .catch((err) => {
-        console.warn('[Cupboard] /api/cups unavailable — using sample data:', err.message);
-        if (!cancelled) setCoffees(sampleCoffees());
+        console.warn('[Cupboard] /api/cups unavailable:', err.message);
+        setCoffees((prev) => prev ?? sampleCoffees());
       });
-    return () => { cancelled = true; };
   }, []);
+
+  React.useEffect(() => { loadCoffees(); }, [loadCoffees]);
 
   const selectedCup = (coffees && selectedCupId != null)
     ? coffees.find(c => c.id === selectedCupId)
@@ -1361,7 +1527,7 @@ function App() {
 
           {/* Coffee Detail overlay — covers screen content + tab bar when a bag is selected */}
           {selectedCup && (
-            <CoffeeDetailScreen cup={selectedCup} onBack={() => setSelectedCupId(null)} />
+            <CoffeeDetailScreen cup={selectedCup} onBack={() => setSelectedCupId(null)} onRefresh={loadCoffees} />
           )}
         </div>
       </div>
