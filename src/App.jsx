@@ -325,19 +325,19 @@ function BagArt({ cup }) {
   );
 }
 
-function Stars({ rating, max = 5 }) {
+function CupRating({ rating }) {
+  if (!rating || rating <= 0) return null;
+  const bg = rating >= 4 ? 'rgba(253,203,136,0.6)' : 'rgba(252,153,155,0.6)';
+  const cups = Array.from({ length: rating }).map(() => '☕️').join('');
   return (
-    <div style={{ display: 'flex', gap: '3px', alignItems: 'center' }}>
-      {Array.from({ length: max }).map((_, i) => (
-        <svg key={i} width="9" height="9" viewBox="0 0 9 9">
-          <polygon
-            points="4.5,0.5 5.6,3.2 8.5,3.4 6.4,5.3 7.1,8.1 4.5,6.6 1.9,8.1 2.6,5.3 0.5,3.4 3.4,3.2"
-            fill={i < rating ? '#355c44' : 'none'}
-            stroke={i < rating ? '#355c44' : '#d9d9d9'}
-            strokeWidth="0.75"
-          />
-        </svg>
-      ))}
+    <div style={{
+      background: bg, borderRadius: 100, padding: '8px',
+      display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+    }}>
+      <span style={{
+        fontFamily: '"Avenir Next Condensed", Avenir, system-ui, sans-serif',
+        fontWeight: 600, fontSize: 17, lineHeight: 1.4, letterSpacing: '-0.5px', whiteSpace: 'nowrap',
+      }}>{cups}</span>
     </div>
   );
 }
@@ -972,28 +972,64 @@ function LoadingScreen() {
 
 // ─── Coffee Detail Page ──────────────────────────────────────────────────────
 
+function OriginMap({ country }) {
+  const containerRef = React.useRef(null);
+  const mapRef = React.useRef(null);
+  const coords = ORIGIN_COORDS[country];
+
+  React.useEffect(() => {
+    if (!containerRef.current || !coords || mapRef.current) return;
+    mapboxgl.accessToken = MAPBOX_TOKEN;
+    const map = new mapboxgl.Map({
+      container: containerRef.current,
+      style: 'mapbox://styles/rainbowcow02/cmpbsoxbv002n01qhe2v56lsw',
+      center: [coords[1], coords[0]],
+      zoom: 4.5,
+      interactive: false,
+      attributionControl: false,
+    });
+    map.on('load', () => {
+      const el = document.createElement('div');
+      el.style.cssText = 'position:absolute;top:0;left:0;display:flex;align-items:center;justify-content:center;padding:6px 8px 7px;border-radius:100px;background:#ffffff;box-shadow:0 2px 10px rgba(0,0,0,0.15);';
+      el.innerHTML = `<img src="assets/Coffee-Bean Streamline Plump.svg" width="17" height="17" alt="" style="display:block;">`;
+      new mapboxgl.Marker({ element: el }).setLngLat([coords[1], coords[0]]).addTo(map);
+    });
+    mapRef.current = map;
+    return () => {
+      if (mapRef.current) { mapRef.current.remove(); mapRef.current = null; }
+    };
+  }, [country]);
+
+  if (!coords) return null;
+  return <div ref={containerRef} style={{ width: '100%', height: '120px', borderRadius: '30px', overflow: 'hidden' }} />;
+}
+
 function DetailSection({ title, action, onAction, children }) {
   return (
-    <section style={{ padding: '8px 24px 18px' }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
-        <h2 style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 800, fontSize: 17, color: '#000', margin: 0, lineHeight: 1.4, letterSpacing: '-0.2px' }}>{title}</h2>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+        <h2 style={{ fontFamily: 'DM Serif Display, Georgia, serif', fontWeight: 400, fontSize: 22, color: '#000', margin: 0, lineHeight: 1.4, letterSpacing: '-0.23px' }}>{title}</h2>
         {action && (
-          <button onClick={onAction} style={{ background: 'none', border: 'none', padding: 0, fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 13, color: '#5d0505', cursor: 'pointer', lineHeight: 1.1 }}>
+          <button onClick={onAction} style={{ background: 'none', border: 'none', padding: 0, fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 12, color: '#5d0505', cursor: 'pointer', lineHeight: 1.1 }}>
             {action}
           </button>
         )}
       </div>
       {children}
-    </section>
+    </div>
   );
 }
 
-// Liquid Glass-light card on Pearl background (sub-DS variant — softer shadow, 24px radius)
 function GlassCard({ children, style, onClick }) {
   return (
-    <div onClick={onClick} style={{ position: 'relative', borderRadius: 24, overflow: 'hidden', isolation: 'isolate', boxShadow: '0px 6px 28px rgba(0,0,0,0.08)', cursor: onClick ? 'pointer' : 'default', ...style }}>
-      <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.55)' }} />
-      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(255,255,255,0.20) 0%, rgba(255,255,255,0) 60%)' }} />
+    <div onClick={onClick} style={{ position: 'relative', borderRadius: 34, overflow: 'hidden', isolation: 'isolate', boxShadow: '0px 8px 40px rgba(0,0,0,0.12)', cursor: onClick ? 'pointer' : 'default', ...style }}>
+      {/* Fill + Shadow — matches bottomsheet */}
+      <div style={{ position: 'absolute', inset: 0, borderRadius: 34, pointerEvents: 'none' }}>
+        <div style={{ position: 'absolute', inset: 0, borderRadius: 34, background: 'rgb(255,255,255)', mixBlendMode: 'color-dodge' }} />
+        <div style={{ position: 'absolute', inset: 0, borderRadius: 34, background: 'rgba(245,245,245,0.6)' }} />
+      </div>
+      {/* Glass Effect — blur + sheen */}
+      <div style={{ position: 'absolute', inset: 0, borderRadius: 34, backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', background: 'linear-gradient(135deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0) 50%)', pointerEvents: 'none' }} />
       <div style={{ position: 'relative' }}>{children}</div>
     </div>
   );
@@ -1001,81 +1037,76 @@ function GlassCard({ children, style, onClick }) {
 
 function DetailRow({ label, value, last }) {
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16,
-      paddingTop: 14, paddingBottom: 14, paddingLeft: 18, paddingRight: 18,
-      borderBottom: last ? 'none' : '0.5px solid #E7E7E7',
-    }}>
-      <span style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 13, color: '#6b6b6b', flexShrink: 0 }}>{label}</span>
-      <span style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 15, color: '#000', textAlign: 'right', lineHeight: 1.4 }}>
-        {value || '—'}
-      </span>
-    </div>
-  );
-}
-
-function BrewStat({ label, value, sub }) {
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, minWidth: 0 }}>
-      <span style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 10, color: '#6b6b6b', letterSpacing: '0.9px', textTransform: 'uppercase' }}>{label}</span>
-      <span style={{ fontFamily: '"Avenir Next Condensed", Avenir, system-ui, sans-serif', fontWeight: 600, fontSize: 18, color: '#000', lineHeight: 1.1, letterSpacing: '-0.3px' }}>{value}</span>
-      {sub && <span style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 11, color: '#6b6b6b', lineHeight: 1.1 }}>{sub}</span>}
-    </div>
-  );
-}
-
-function BrewMetaRow({ label, value }) {
-  return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16 }}>
-      <span style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 13, color: '#6b6b6b' }}>{label}</span>
-      <span style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 13, color: '#000', textAlign: 'right' }}>{value}</span>
+    <div style={{ paddingTop: 16, paddingLeft: 24, paddingRight: 24, paddingBottom: last ? 16 : 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, marginBottom: last ? 0 : 16 }}>
+        <span style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 13, color: '#6b6b6b', flexShrink: 0 }}>{label}</span>
+        <span style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 400, fontSize: 15, color: '#6b6b6b', textAlign: 'right', lineHeight: 1.5 }}>
+          {value || '—'}
+        </span>
+      </div>
+      {!last && <div style={{ height: '0.5px', background: '#E7E7E7' }} />}
     </div>
   );
 }
 
 function BrewCard({ brew, onClick }) {
   const ratio = `1:${(brew.waterMl / brew.beansG).toFixed(1)}`;
-  const tempF = Math.round(brew.tempC * 9 / 5 + 32);
+  const stats = [
+    { label: 'Beans', value: `${brew.beansG}g` },
+    { label: 'Water', value: `${brew.waterMl}ml` },
+    { label: 'Ratio', value: ratio },
+    { label: 'Grind', value: brew.grind },
+    { label: 'Temp',  value: `${brew.tempC}°C` },
+  ];
   return (
-    <GlassCard onClick={onClick}>
-      <div style={{ padding: '16px 18px 18px' }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 }}>
-          <h3 style={{ fontFamily: '"Avenir Next Condensed", Avenir, system-ui, sans-serif', fontWeight: 700, fontSize: 19, color: '#000', margin: 0, lineHeight: 1.2, letterSpacing: '-0.3px' }}>
-            {brew.brewer}
-          </h3>
-          <span style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 13, color: '#6b6b6b' }}>{formatDate(brew.date)}</span>
+    <div onClick={onClick} style={{ background: '#fff', borderRadius: 34, overflow: 'hidden', cursor: onClick ? 'pointer' : 'default' }}>
+      {/* Header: date + rating pill */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', paddingTop: 16, paddingLeft: 24, paddingRight: 24 }}>
+        <span style={{ fontFamily: '"Avenir Next Condensed", Avenir, system-ui, sans-serif', fontWeight: 600, fontSize: 17, color: '#000', letterSpacing: '-0.5px', lineHeight: 1.4 }}>
+          {formatDate(brew.date)}
+        </span>
+        <CupRating rating={brew.rating} />
+      </div>
+
+      {/* Stats row */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '16px 24px', boxSizing: 'border-box' }}>
+        {stats.map(({ label, value }) => (
+          <div key={label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+            <span style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 13, color: '#6b6b6b' }}>{label}</span>
+            <span style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 800, fontSize: 17, color: '#000', letterSpacing: '-0.5px', lineHeight: 1.4 }}>{value}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Equipment rows */}
+      <div style={{ paddingLeft: 24, paddingRight: 24 }}>
+        <div style={{ height: '0.5px', background: '#E7E7E7' }} />
+      </div>
+      <div style={{ paddingTop: 16, paddingLeft: 24, paddingRight: 24 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, marginBottom: 16 }}>
+          <span style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 13, color: '#6b6b6b', flexShrink: 0 }}>Dripper</span>
+          <span style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 400, fontSize: 15, color: '#6b6b6b', textAlign: 'right' }}>{brew.brewer || '—'}</span>
         </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, paddingTop: 4, paddingBottom: 12 }}>
-          <BrewStat label="Beans" value={`${brew.beansG}g`} />
-          <BrewStat label="Water" value={`${brew.waterMl} ml`} />
-          <BrewStat label="Ratio" value={ratio} />
-          <BrewStat label="Temp"  value={`${brew.tempC}°C`} sub={`${tempF}°F`} />
-        </div>
-
-        <div style={{ height: '0.5px', background: '#E7E7E7', margin: '2px 0 12px' }} />
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <BrewMetaRow label="Grind"  value={brew.grind} />
-          <BrewMetaRow label="Filter" value={brew.filter} />
+        <div style={{ height: '0.5px', background: '#E7E7E7' }} />
+      </div>
+      <div style={{ padding: '16px 24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16 }}>
+          <span style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 13, color: '#6b6b6b', flexShrink: 0 }}>Filter paper</span>
+          <span style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 400, fontSize: 15, color: '#6b6b6b', textAlign: 'right' }}>{brew.filter || '—'}</span>
         </div>
       </div>
-    </GlassCard>
+    </div>
   );
 }
 
 function CoffeeDetailScreen({ cup, onBack, onRefresh }) {
-  // The coffee object carries its own roast/region/variety/brews (grouped from
-  // Notion rows, or from sample data).
-  const details = cup;
-  const tastingNotes = (cup.notes || '')
-    .split(',').map(n => n.trim()).filter(Boolean);
-  const brews = details.brews || [];
+  const tastingNotes = (cup.notes || '').split(',').map(n => n.trim()).filter(Boolean);
+  const brews = cup.brews || [];
   const [addingBrew, setAddingBrew] = React.useState(false);
   const [editingBrew, setEditingBrew] = React.useState(null);
-
   const [closing, setClosing] = React.useState(false);
   const EXIT_MS = 320;
+
   const dismiss = () => {
     if (closing) return;
     setClosing(true);
@@ -1090,99 +1121,107 @@ function CoffeeDetailScreen({ cup, onBack, onRefresh }) {
         ? `slideOutToBottom ${EXIT_MS}ms cubic-bezier(0.32, 0.72, 0, 1) forwards`
         : 'slideInFromBottom 360ms cubic-bezier(0.32, 0.72, 0, 1)',
     }}>
-      {/* Status-bar spacer (mock app reserves ~44px for the device chrome) */}
+      {/* Status-bar spacer */}
       <div style={{ height: 44, flexShrink: 0 }} />
 
-      {/* Top bar — back arrow only */}
-      <div style={{ display: 'flex', alignItems: 'center', padding: '4px 12px 4px 8px', flexShrink: 0 }}>
-        <button onClick={dismiss} aria-label="Back" style={{
-          width: 44, height: 44, borderRadius: 22, border: 'none', background: 'transparent',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0,
-        }}>
-          <svg width="14" height="22" viewBox="0 0 14 22" fill="none">
-            <path d="M12 2L3 11L12 20" stroke="#5d0505" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </button>
-        <div style={{ flex: 1 }} />
-      </div>
-
-      {/* Scrollable body */}
-      <div className="scrollable" style={{ flex: 1, overflowY: 'auto', paddingBottom: 48 }}>
-
-        {/* Hero — bag art + title block */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '4px 24px 20px' }}>
-          <div style={{ position: 'relative', width: 156, height: 320, filter: 'drop-shadow(0 18px 26px rgba(0,0,0,0.18))' }}>
-            <img src={`assets/bag-${cup.bagImg}.png`} alt={cup.bean}
-              style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
-            <BagLabel cup={cup} />
-          </div>
-          <h1 style={{
-            fontFamily: 'DM Serif Display, Georgia, serif', fontSize: 32, color: '#000',
-            lineHeight: 1.1, letterSpacing: '-0.5px', margin: '22px 0 0', textAlign: 'center',
-          }}>{cup.bean}</h1>
-          <p style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontSize: 15, fontWeight: 500, color: '#6b6b6b', margin: '4px 0 0', textAlign: 'center' }}>
-            {cup.roaster}
-          </p>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'Avenir, system-ui, sans-serif', fontSize: 13, fontWeight: 500, color: '#6b6b6b', margin: '10px 0 12px' }}>
-            <span style={{ fontSize: 15 }}>{ORIGIN_FLAGS[cup.origin]}</span>
-            <span>{cup.origin}</span>
-            <span style={{ color: '#d9d9d9' }}>·</span>
-            <span>{formatDate(cup.date)}</span>
-          </div>
-          <Stars rating={cup.rating} />
+      {/* Content area — back button floats over scroll */}
+      <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
+        {/* Back button */}
+        <div style={{ position: 'absolute', top: 0, left: 8, zIndex: 10 }}>
+          <button onClick={dismiss} aria-label="Back" style={{
+            width: 44, height: 44, borderRadius: 22, border: 'none', background: 'transparent',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0,
+          }}>
+            <svg width="14" height="22" viewBox="0 0 14 22" fill="none">
+              <path d="M12 2L3 11L12 20" stroke="#5d0505" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
         </div>
 
-        {/* Details card */}
-        <DetailSection title="Details">
-          <GlassCard>
-            <DetailRow label="Roaster" value={cup.roaster} />
-            <DetailRow label="Roast"   value={details.roastLevel} />
-            <DetailRow label="Process" value={cup.process} />
-            <DetailRow label="Variety" value={details.variety} />
-            <DetailRow label="Region"  value={details.region} />
-            <DetailRow label="Country" value={`${ORIGIN_FLAGS[cup.origin]} ${cup.origin}`} last />
-          </GlassCard>
-        </DetailSection>
+        {/* Scrollable body */}
+        <div className="scrollable" style={{ height: '100%', overflowY: 'auto', paddingBottom: 48 }}>
 
-        {/* Tasting notes */}
-        {tastingNotes.length > 0 && (
-          <DetailSection title="Tasting Notes">
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {tastingNotes.map(n => (
-                <span key={n} style={{
-                  display: 'inline-flex', alignItems: 'center',
-                  padding: '8px 14px', borderRadius: 100,
-                  background: 'rgba(252, 153, 155, 0.22)',
-                  fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 13,
-                  color: '#5d0505', letterSpacing: '0.1px',
-                }}>{n}</span>
-              ))}
+          {/* Bag hero — centered 300×300 */}
+          <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 24, paddingBottom: 24 }}>
+            <div style={{ position: 'relative', width: 300, height: 300, filter: 'drop-shadow(0 18px 26px rgba(0,0,0,0.18))' }}>
+              <img src={`assets/bag-${cup.bagImg}.png`} alt={cup.bean}
+                style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
+              <BagLabel cup={cup} />
             </div>
-          </DetailSection>
-        )}
+          </div>
 
-        {/* Brew recipes */}
-        <DetailSection title="Brew Recipes" action="+ Add" onAction={() => setAddingBrew(true)}>
-          {brews.length === 0 ? (
+          {/* Page title block */}
+          <div style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <p style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 15, color: '#355c44', lineHeight: 1.1, margin: 0 }}>
+              {cup.roaster}
+            </p>
+            <p style={{ fontFamily: '"Avenir Next Condensed", Avenir, system-ui, sans-serif', fontWeight: 600, fontSize: 48, color: '#000', lineHeight: 1, letterSpacing: '-0.48px', margin: 0 }}>
+              {cup.bean}
+            </p>
+          </div>
+
+          {/* Sections */}
+          <div style={{ padding: '16px 24px 0', display: 'flex', flexDirection: 'column', gap: 40 }}>
+
+            {/* Details card — no section header */}
             <GlassCard>
-              <p style={{
-                fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 13,
-                color: '#6b6b6b', margin: 0, padding: '24px 18px', textAlign: 'center', lineHeight: 1.5,
-              }}>
-                No brew recipes yet. Tap “+ Add” to log how you brewed this coffee.
-              </p>
+              <DetailRow label="Roast"   value={cup.roastLevel} />
+              <DetailRow label="Process" value={cup.process} />
+              <DetailRow label="Variety" value={cup.variety} last />
             </GlassCard>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {brews.map((b, i) => (
-                <BrewCard key={b.id || i} brew={b}
-                  onClick={b.id ? () => setEditingBrew(b) : undefined} />
-              ))}
-            </div>
-          )}
-        </DetailSection>
 
-        <div style={{ height: 16 }} />
+            {/* Tasting notes */}
+            {tastingNotes.length > 0 && (
+              <DetailSection title="Tasting notes">
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {tastingNotes.map(n => (
+                    <span key={n} style={{
+                      padding: '8px 14px', borderRadius: 100,
+                      background: 'rgba(252,153,155,0.22)',
+                      fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 13,
+                      color: '#5d0505',
+                    }}>{n}</span>
+                  ))}
+                </div>
+              </DetailSection>
+            )}
+
+            {/* Origin */}
+            <DetailSection title="Origin">
+              <GlassCard>
+                <DetailRow label="Country"  value={`${ORIGIN_FLAGS[cup.origin] || ''} ${cup.origin}`} />
+                <DetailRow label="Region"   value={cup.region} />
+                {cup.altitude && <DetailRow label="Altitude" value={cup.altitude} />}
+                <div style={{ padding: '0 24px 24px' }}>
+                  <OriginMap country={cup.origin} />
+                </div>
+              </GlassCard>
+            </DetailSection>
+
+            {/* Brew recipes */}
+            <DetailSection title="Brew recipes" action="+ Add" onAction={() => setAddingBrew(true)}>
+              {brews.length === 0 ? (
+                <GlassCard>
+                  <p style={{
+                    fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 13,
+                    color: '#6b6b6b', margin: 0, padding: '24px', textAlign: 'center', lineHeight: 1.5,
+                  }}>
+                    No brew recipes yet. Tap "+ Add" to log one.
+                  </p>
+                </GlassCard>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {brews.map((b, i) => (
+                    <BrewCard key={b.id || i} brew={b}
+                      onClick={b.id ? () => setEditingBrew(b) : undefined} />
+                  ))}
+                </div>
+              )}
+            </DetailSection>
+
+            <div style={{ height: 16 }} />
+          </div>
+        </div>
       </div>
 
       {(addingBrew || editingBrew) && (
