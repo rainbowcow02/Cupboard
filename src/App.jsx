@@ -4,6 +4,23 @@ import { groupIntoCoffees, formatDate } from './lib/coffees.js';
 const MAPBOX_PROD_TOKEN = 'pk.eyJ1IjoicmFpbmJvd2NvdzAyIiwiYSI6ImNtcGN0N3pmdjA1MnIyeHB2aDFqa21hdjcifQ.X3TvBj8J2kqQyeRYxzAiAQ';
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || MAPBOX_PROD_TOKEN;
 
+// Lazy-load Mapbox GL JS + CSS on first use so it doesn't block initial render.
+let _mapboxPromise = null;
+function loadMapbox() {
+  if (_mapboxPromise) return _mapboxPromise;
+  _mapboxPromise = new Promise((resolve) => {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.css';
+    document.head.appendChild(link);
+    const script = document.createElement('script');
+    script.src = 'https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.js';
+    script.onload = resolve;
+    document.head.appendChild(script);
+  });
+  return _mapboxPromise;
+}
+
 const ORIGIN_COORDS = {
   'Ethiopia':  [8.6,  39.6],
   'Colombia':  [4.5, -74.3],
@@ -392,15 +409,22 @@ function BagLabel({ cup, bagWidth = 300 }) {
 }
 
 function Bag({ cup, style, onClick }) {
+  if (cup.skeleton) {
+    return (
+      <div className="animate-pulse" style={{ borderRadius: 6, background: 'rgba(0,0,0,0.07)', flexShrink: 0, ...style }} />
+    );
+  }
   const bagWidth = typeof style?.width === 'number' ? style.width : 300;
   return (
     <figure onClick={onClick} style={{ position: 'relative', flexShrink: 0, margin: 0, cursor: onClick ? 'pointer' : 'default', ...style }}>
-      <img src={`assets/bag-${cup.bagImg}.png`} alt={cup.bean}
+      <img src={`assets/bag-${cup.bagImg}.webp`} alt={cup.bean}
         style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', pointerEvents: 'none' }} />
       <BagLabel cup={cup} bagWidth={bagWidth} />
     </figure>
   );
 }
+
+const SKELETON_CELLS = Array.from({ length: 8 }, (_, i) => ({ id: `sk-${i}`, skeleton: true }));
 
 function ShelfRow({ type, leftCup, rightCup }) {
   const onSelect = React.useContext(SelectCupContext);
@@ -449,7 +473,7 @@ function ShelvesStart({ cells }) {
   const c = [...cells, ...Array(8).fill(null)].slice(0, 8);
   return (
     <div style={{ position: 'relative', width: '100%', height: 998 }}>
-      <img src="assets/shelf-v2-whole.png" alt=""
+      <img src="assets/shelf-v2-whole.webp" alt=""
         style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', width: 370, height: 998, display: 'block' }} />
       <div style={{ position: 'absolute', left: 40, top: 37, width: 320, display: 'flex', flexDirection: 'column', gap: 38, zIndex: 2 }}>
         <ShelfRow type="tall"   leftCup={c[0]} rightCup={c[1]} />
@@ -457,7 +481,7 @@ function ShelvesStart({ cells }) {
         <ShelfRow type="open"   leftCup={c[4]} rightCup={c[5]} />
         <ShelfRow type="normal" leftCup={c[6]} rightCup={c[7]} />
       </div>
-      <img src="assets/shelf-v2-frame.png" alt=""
+      <img src="assets/shelf-v2-frame.webp" alt=""
         style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', width: 370, height: 998, zIndex: 5, pointerEvents: 'none' }} />
     </div>
   );
@@ -467,14 +491,14 @@ function ShelfContinued({ cells }) {
   const c = [...cells, ...Array(6).fill(null)].slice(0, 6);
   return (
     <div style={{ position: 'relative', width: '100%', height: 733 }}>
-      <img src="assets/shelfcontinue-v2-whole.png" alt=""
+      <img src="assets/shelfcontinue-v2-whole.webp" alt=""
         style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', width: 370, height: 733, display: 'block' }} />
       <div style={{ position: 'absolute', left: 36, top: 31, width: 320, display: 'flex', flexDirection: 'column', gap: 38, zIndex: 2 }}>
         <ShelfRow type="normal" leftCup={c[0]} rightCup={c[1]} />
         <ShelfRow type="open"   leftCup={c[2]} rightCup={c[3]} />
         <ShelfRow type="normal" leftCup={c[4]} rightCup={c[5]} />
       </div>
-      <img src="assets/shelfcontinue-v2-frame.png" alt=""
+      <img src="assets/shelfcontinue-v2-frame.webp" alt=""
         style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', width: 370, height: 733, zIndex: 5, pointerEvents: 'none' }} />
     </div>
   );
@@ -544,57 +568,65 @@ function ExploreScreen({ cups }) {
   // Initialise map once on mount
   React.useEffect(() => {
     if (!mapContainerRef.current || mapInstanceRef.current) return;
+    let cancelled = false;
 
-    mapboxgl.accessToken = MAPBOX_TOKEN;
+    loadMapbox().then(() => {
+      if (cancelled || !mapContainerRef.current || mapInstanceRef.current) return;
 
-    const map = new mapboxgl.Map({
-      container: mapContainerRef.current,
-      style: 'mapbox://styles/rainbowcow02/cmpbsoxbv002n01qhe2v56lsw',
-      projection: 'mercator',
-      center: [-25, 2],
-      zoom: 1.5,
-      minZoom: 1.5,
-      maxZoom: 5,
-      maxBounds: [[-180, -85], [180, 85]],
-      scrollZoom: false,
-      attributionControl: false,
-    });
+      mapboxgl.accessToken = MAPBOX_TOKEN;
 
-    map.on('load', () => {
-      const bounds = new mapboxgl.LngLatBounds();
+      const map = new mapboxgl.Map({
+        container: mapContainerRef.current,
+        style: 'mapbox://styles/rainbowcow02/cmpbsoxbv002n01qhe2v56lsw',
+        projection: 'mercator',
+        center: [-25, 2],
+        zoom: 1.5,
+        minZoom: 1.5,
+        maxZoom: 5,
+        maxBounds: [[-180, -85], [180, 85]],
+        scrollZoom: false,
+        attributionControl: false,
+      });
 
-      Object.entries(originGroups).forEach(([origin, bags]) => {
-        const coords = ORIGIN_COORDS[origin];
-        if (!coords) return;
-        const lngLat = [coords[1], coords[0]];
-        const el = createBeanIcon(bags.length, false, false);
-        el.addEventListener('click', (e) => {
-          e.stopPropagation();
-          setSelectedOrigin(prev => (prev === origin ? null : origin));
+      map.on('load', () => {
+        const bounds = new mapboxgl.LngLatBounds();
+
+        Object.entries(originGroups).forEach(([origin, bags]) => {
+          const coords = ORIGIN_COORDS[origin];
+          if (!coords) return;
+          const lngLat = [coords[1], coords[0]];
+          const el = createBeanIcon(bags.length, false, false);
+          el.addEventListener('click', (e) => {
+            e.stopPropagation();
+            setSelectedOrigin(prev => (prev === origin ? null : origin));
+          });
+          const marker = new mapboxgl.Marker({ element: el })
+            .setLngLat(lngLat)
+            .addTo(map);
+          markersRef.current[origin] = marker;
+          bounds.extend(lngLat);
         });
-        const marker = new mapboxgl.Marker({ element: el })
-          .setLngLat(lngLat)
-          .addTo(map);
-        markersRef.current[origin] = marker;
-        bounds.extend(lngLat);
+
+        // Fit all origins in view, padding for the bottom sheet
+        map.fitBounds(bounds, {
+          padding: { top: 60, bottom: 314 + 60, left: 60, right: 60 },
+          maxZoom: 2,
+          animate: false,
+        });
       });
 
-      // Fit all origins in view, padding for the bottom sheet
-      map.fitBounds(bounds, {
-        padding: { top: 60, bottom: 314 + 60, left: 60, right: 60 },
-        maxZoom: 2,
-        animate: false,
-      });
+      map.on('click', () => setSelectedOrigin(null));
+
+      mapInstanceRef.current = map;
     });
-
-    map.on('click', () => setSelectedOrigin(null));
-
-    mapInstanceRef.current = map;
 
     return () => {
-      map.remove();
-      mapInstanceRef.current = null;
-      markersRef.current = {};
+      cancelled = true;
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+        markersRef.current = {};
+      }
     };
   }, []);
 
@@ -806,7 +838,7 @@ function ExploreScreen({ cups }) {
                       <div data-name="coffeebag-med" style={{ width: '72px', height: '72px', flexShrink: 0, overflow: 'hidden', position: 'relative' }}>
                         <div data-name="bag-white" style={{ position: 'absolute', top: '50%', left: 'calc(50% - 0.5px)', transform: 'translate(-50%, -50%)', width: '31px', height: '64px', overflow: 'hidden' }}>
                           <div style={{ position: 'absolute', top: '50%', left: 'calc(50% + 0.49px)', transform: 'translate(-50%, -50%)', width: '36px', height: '74px' }}>
-                            <img src={`assets/bag-${cup.bagImg}.png`} alt={cup.bean} style={{ width: '100%', height: '100%', objectFit: 'contain', pointerEvents: 'none' }} />
+                            <img src={`assets/bag-${cup.bagImg}.webp`} alt={cup.bean} style={{ width: '100%', height: '100%', objectFit: 'contain', pointerEvents: 'none' }} />
                           </div>
                         </div>
                       </div>
@@ -1005,23 +1037,30 @@ function OriginMap({ country }) {
 
   React.useEffect(() => {
     if (!containerRef.current || !coords || mapRef.current) return;
-    mapboxgl.accessToken = MAPBOX_TOKEN;
-    const map = new mapboxgl.Map({
-      container: containerRef.current,
-      style: 'mapbox://styles/rainbowcow02/cmpbsoxbv002n01qhe2v56lsw',
-      center: [coords[1], coords[0]],
-      zoom: 4.5,
-      interactive: false,
-      attributionControl: false,
+    let cancelled = false;
+
+    loadMapbox().then(() => {
+      if (cancelled || !containerRef.current || mapRef.current) return;
+      mapboxgl.accessToken = MAPBOX_TOKEN;
+      const map = new mapboxgl.Map({
+        container: containerRef.current,
+        style: 'mapbox://styles/rainbowcow02/cmpbsoxbv002n01qhe2v56lsw',
+        center: [coords[1], coords[0]],
+        zoom: 4.5,
+        interactive: false,
+        attributionControl: false,
+      });
+      map.on('load', () => {
+        const el = document.createElement('div');
+        el.style.cssText = 'position:absolute;top:0;left:0;display:flex;align-items:center;justify-content:center;padding:6px 8px 7px;border-radius:100px;background:#ffffff;box-shadow:0 2px 10px rgba(0,0,0,0.15);';
+        el.innerHTML = `<img src="assets/Coffee-Bean Streamline Plump.svg" width="17" height="17" alt="" style="display:block;">`;
+        new mapboxgl.Marker({ element: el }).setLngLat([coords[1], coords[0]]).addTo(map);
+      });
+      mapRef.current = map;
     });
-    map.on('load', () => {
-      const el = document.createElement('div');
-      el.style.cssText = 'position:absolute;top:0;left:0;display:flex;align-items:center;justify-content:center;padding:6px 8px 7px;border-radius:100px;background:#ffffff;box-shadow:0 2px 10px rgba(0,0,0,0.15);';
-      el.innerHTML = `<img src="assets/Coffee-Bean Streamline Plump.svg" width="17" height="17" alt="" style="display:block;">`;
-      new mapboxgl.Marker({ element: el }).setLngLat([coords[1], coords[0]]).addTo(map);
-    });
-    mapRef.current = map;
+
     return () => {
+      cancelled = true;
       if (mapRef.current) { mapRef.current.remove(); mapRef.current = null; }
     };
   }, [country]);
@@ -1170,7 +1209,7 @@ function CoffeeDetailScreen({ cup, onBack, onRefresh }) {
           {/* Bag hero — centered 300×300 */}
           <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 24, paddingBottom: 24 }}>
             <div style={{ position: 'relative', width: 300, height: 300, filter: 'drop-shadow(0 18px 26px rgba(0,0,0,0.18))' }}>
-              <img src={`assets/bag-${cup.bagImg}.png`} alt={cup.bean}
+              <img src={`assets/bag-${cup.bagImg}.webp`} alt={cup.bean}
                 style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
               <BagLabel cup={cup} bagWidth={300} />
             </div>
@@ -1480,7 +1519,12 @@ function App() {
   const [prevTab, setPrevTab] = React.useState(null);
   const [direction, setDirection] = React.useState(1);
   const [selectedCupId, setSelectedCupId] = React.useState(null);
-  const [coffees, setCoffees] = React.useState(null); // null while loading
+  const [coffees, setCoffees] = React.useState(() => {
+    try {
+      const cached = localStorage.getItem('cupboard-coffees');
+      return cached ? groupIntoCoffees(JSON.parse(cached)) : null;
+    } catch { return null; }
+  });
 
   // Load coffees from the Notion proxy. Reusable so writes can refresh. Falls
   // back to bundled sample data only on the first load (Notion not configured,
@@ -1491,7 +1535,11 @@ function App() {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
       })
-      .then((data) => setCoffees(groupIntoCoffees(data.cups || [])))
+      .then((data) => {
+        const cups = data.cups || [];
+        try { localStorage.setItem('cupboard-coffees', JSON.stringify(cups)); } catch {}
+        setCoffees(groupIntoCoffees(cups));
+      })
       .catch((err) => {
         console.warn('[Cupboard] /api/cups unavailable:', err.message);
         setCoffees((prev) => prev ?? sampleCoffees());
@@ -1527,7 +1575,6 @@ function App() {
   }
 
   const renderScreen = (tabId) => {
-    if (!coffees) return <LoadingScreen />;
     if (tabId === 'home') return (
       <div className="scrollable" style={{ height: '100%', overflowY: 'auto', paddingBottom: '88px' }}>
         <div style={{ padding: '16px 24px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1538,10 +1585,11 @@ function App() {
             <span style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontSize: '20px', fontWeight: 600, color: '#f9eddd', lineHeight: 1 }}>L</span>
           </div>
         </div>
-        <CupboardShelves cells={coffees} />
+        <CupboardShelves cells={coffees ?? SKELETON_CELLS} />
         <div style={{ height: '28px' }} />
       </div>
     );
+    if (!coffees) return <LoadingScreen />;
     if (tabId === 'search') return <ExploreScreen cups={coffees} />;
     if (tabId === 'add') return <LogCupScreen onSaved={loadCoffees} onDone={() => handleTabChange('home')} />;
     if (tabId === 'beans') return <BeansScreen />;
