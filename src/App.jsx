@@ -344,13 +344,13 @@ function CupRating({ rating }) {
 
 // Centered label overlaid on a bag's clear front panel (above the decorative art).
 // Sizes are miniature (sub-DS) to fit the bag art; colors are DS tokens.
-function BagLabel({ cup }) {
+function BagLabel({ cup, widthClass = 'w-[72%]' }) {
   const lightBag = cup.bagImg === 'white';
   const ink     = lightBag ? 'text-black' : 'text-pearl';      // DS Black / Pearl
   const sub     = lightBag ? 'text-grey-dark' : 'text-pearl';  // DS Grey Dark / Pearl
   const divider = lightBag ? 'bg-black/40' : 'bg-pearl/40';  // DS Black / Pearl @ 40% opacity
   return (
-    <figcaption className="absolute top-[30%] left-1/2 -translate-x-1/2 w-[72%] flex flex-col items-center text-center pointer-events-none">
+    <figcaption className={`absolute top-[30%] left-1/2 -translate-x-1/2 ${widthClass} flex flex-col items-center text-center pointer-events-none`}>
       <h3 className={`font-condensed font-semibold text-[17px] leading-[1.2] tracking-[-0.9px] w-full hyphens-none break-words ${ink}`}>
         {cup.bean}
       </h3>
@@ -1006,7 +1006,7 @@ function OriginMap({ country }) {
 
 function DetailSection({ title, action, onAction, children }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
       <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
         <h2 style={{ fontFamily: 'DM Serif Display, Georgia, serif', fontWeight: 400, fontSize: 22, color: '#000', margin: 0, lineHeight: 1.4, letterSpacing: '-0.23px' }}>{title}</h2>
         {action && (
@@ -1146,12 +1146,12 @@ function CoffeeDetailScreen({ cup, onBack, onRefresh }) {
             <div style={{ position: 'relative', width: 300, height: 300, filter: 'drop-shadow(0 18px 26px rgba(0,0,0,0.18))' }}>
               <img src={`assets/bag-${cup.bagImg}.png`} alt={cup.bean}
                 style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
-              <BagLabel cup={cup} />
+              <BagLabel cup={cup} widthClass="w-[45%]" />
             </div>
           </div>
 
           {/* Page title block */}
-          <div style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 8 }}>
             <p style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 15, color: '#355c44', lineHeight: 1.1, margin: 0 }}>
               {cup.roaster}
             </p>
@@ -1161,7 +1161,7 @@ function CoffeeDetailScreen({ cup, onBack, onRefresh }) {
           </div>
 
           {/* Sections */}
-          <div style={{ padding: '16px 24px 0', display: 'flex', flexDirection: 'column', gap: 40 }}>
+          <div style={{ padding: '16px 24px 0', display: 'flex', flexDirection: 'column', gap: 36 }}>
 
             {/* Details card — no section header */}
             <GlassCard>
