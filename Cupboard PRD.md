@@ -231,3 +231,12 @@ Your Notion table is a **single flat table** — each row is one cup, with bean 
 ---
 
 *This is a living document. Treat it as a starting point, not a contract.*  
+
+---
+
+## 12\. To Do
+
+- [ ] **Fix mobile load performance** — app loads slowly on mobile due to three issues:
+  1. Unoptimized PNG assets (~18 MB total): convert shelf and bag images to WebP at quality 80–85 for an estimated 60–75% size reduction
+  2. Mapbox GL JS (~1 MB) loaded synchronously in `<head>`, blocking first render — add `defer` and/or lazy-load only when Explore tab is opened
+  3. SVG nav icons are 100–200 KB each (600 KB total) — replace with simpler/smaller versions

@@ -63,5 +63,8 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react(), devApiPlugin()],
+    server: {
+      host: true, // expose on local network so mobile devices can connect
+    },
   };
 });
