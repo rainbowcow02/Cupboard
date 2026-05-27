@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(which puppeteer *)",
+      "Read(//Users/lindsaylee/.npm/**)",
+      "Bash(curl -s http://localhost:5173/)",
+      "Bash(node -e ' *)",
+      "Bash(ls ~/Library/Caches/ms-playwright/chromium-1223/chrome-mac-arm64/)",
+      "Read(//Users/lindsaylee/Library/Caches/ms-playwright/chromium-1223/chrome-mac-arm64/**)",
+      "Bash(node /tmp/screenshot-bags.mjs)",
+      "Bash(git -C \"/Users/lindsaylee/Documents/Side Projects/Cupboard\" diff \"Cupboard PRD.md\" vite.config.js)"
+    ]
+  }
+}
