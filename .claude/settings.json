@@ -8,7 +8,14 @@
       "Bash(ls ~/Library/Caches/ms-playwright/chromium-1223/chrome-mac-arm64/)",
       "Read(//Users/lindsaylee/Library/Caches/ms-playwright/chromium-1223/chrome-mac-arm64/**)",
       "Bash(node /tmp/screenshot-bags.mjs)",
-      "Bash(git -C \"/Users/lindsaylee/Documents/Side Projects/Cupboard\" diff \"Cupboard PRD.md\" vite.config.js)"
+      "Bash(git -C \"/Users/lindsaylee/Documents/Side Projects/Cupboard\" diff \"Cupboard PRD.md\" vite.config.js)",
+      "Bash(git -C \"/Users/lindsaylee/Documents/Side Projects/Cupboard\" diff HEAD --stat)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5199/)",
+      "Bash(curl -s http://localhost:5199/)",
+      "Bash(curl -s \"http://localhost:5199/\")",
+      "Bash(node -e \"const {chromium} = require\\('playwright'\\); console.log\\(!!chromium\\);\")",
+      "Bash('/Users/lindsaylee/.cache/ms-playwright/chromium-1223/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing' --headless=new --screenshot=/tmp/cupboard-icons.png --window-size=393,852 --virtual-time-budget=5000 --disable-gpu http://localhost:5200/)",
+      "Bash(kill %1)"
     ]
   }
 }
