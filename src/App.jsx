@@ -344,22 +344,47 @@ function CupRating({ rating }) {
 
 // Centered label overlaid on a bag's clear front panel (above the decorative art).
 // Sizes are miniature (sub-DS) to fit the bag art; colors are DS tokens.
-function BagLabel({ cup, widthClass = 'w-[72%]' }) {
+function BagLabel({ cup, bagWidth = 300 }) {
   const lightBag = cup.bagImg === 'white';
-  const ink     = lightBag ? 'text-black' : 'text-pearl';      // DS Black / Pearl
-  const sub     = lightBag ? 'text-grey-dark' : 'text-pearl';  // DS Grey Dark / Pearl
-  const divider = lightBag ? 'bg-black/40' : 'bg-pearl/40';  // DS Black / Pearl @ 40% opacity
+  const ink     = lightBag ? 'text-black' : 'text-pearl';
+  const sub     = lightBag ? 'text-grey-dark' : 'text-pearl';
+  const divider = lightBag ? 'bg-black/40' : 'bg-pearl/40';
+
+  // Scale proportionally: floors ensure minimum readable size on small (home) bags.
+  // At 300px (detail): bean=24px, sub=9px, label=115px.
+  // At ~89px (home):   bean=16px, sub=7px,  label=70px  (via Math.max floors).
+  const scale        = bagWidth / 300;
+  const labelWidth   = Math.max(70,  Math.round(115 * scale));
+  const beanFontSize = Math.max(16,  Math.round(24  * scale));
+  const subFontSize  = Math.max(7,   Math.round(9   * scale));
+  const dividerMy    = Math.max(4,   Math.round(12  * scale));
+
   return (
-    <figcaption className={`absolute top-[30%] left-1/2 -translate-x-1/2 ${widthClass} flex flex-col items-center text-center pointer-events-none`}>
-      <h3 className={`font-condensed font-semibold text-[17px] leading-[1.2] tracking-[-0.9px] w-full hyphens-none break-words ${ink}`}>
+    <figcaption
+      className={`absolute top-[24%] left-1/2 -translate-x-1/2 flex flex-col items-center text-center pointer-events-none overflow-hidden`}
+      style={{ width: `${labelWidth}px` }}
+    >
+      <h3
+        className={`font-condensed font-semibold leading-[1.2] tracking-[-0.9px] w-full break-normal ${ink}`}
+        style={{ fontSize: `${beanFontSize}px` }}
+      >
         {cup.bean}
       </h3>
-      <p className={`font-sans font-medium text-[6px] tracking-[0.9px] mt-1 uppercase whitespace-nowrap ${sub}`}>
+      <p
+        className={`font-sans font-medium tracking-[0.9px] mt-1 uppercase w-full break-normal ${sub}`}
+        style={{ fontSize: `${subFontSize}px` }}
+      >
         {cup.roaster}
       </p>
-      <hr className={`w-[18px] h-px border-0 my-[12px] ${divider}`} />
-      <p className={`flex items-center justify-center gap-[3px] font-sans font-medium text-[6.5px] tracking-[0.5px] uppercase ${sub}`}>
-        <span className="text-[8px] tracking-normal">{ORIGIN_FLAGS[cup.origin]}</span>
+      <hr
+        className={`w-[18px] h-px border-0 ${divider}`}
+        style={{ marginTop: `${dividerMy}px`, marginBottom: `${dividerMy}px` }}
+      />
+      <p
+        className={`flex items-center justify-center gap-[3px] font-sans font-medium uppercase ${sub}`}
+        style={{ fontSize: `${subFontSize}px`, letterSpacing: '0.5px' }}
+      >
+        <span style={{ fontSize: `${subFontSize + 1.5}px` }}>{ORIGIN_FLAGS[cup.origin]}</span>
         <span>{cup.origin}</span>
       </p>
     </figcaption>
@@ -367,11 +392,12 @@ function BagLabel({ cup, widthClass = 'w-[72%]' }) {
 }
 
 function Bag({ cup, style, onClick }) {
+  const bagWidth = typeof style?.width === 'number' ? style.width : 300;
   return (
     <figure onClick={onClick} style={{ position: 'relative', flexShrink: 0, margin: 0, cursor: onClick ? 'pointer' : 'default', ...style }}>
       <img src={`assets/bag-${cup.bagImg}.png`} alt={cup.bean}
         style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', pointerEvents: 'none' }} />
-      <BagLabel cup={cup} />
+      <BagLabel cup={cup} bagWidth={bagWidth} />
     </figure>
   );
 }
@@ -1146,7 +1172,7 @@ function CoffeeDetailScreen({ cup, onBack, onRefresh }) {
             <div style={{ position: 'relative', width: 300, height: 300, filter: 'drop-shadow(0 18px 26px rgba(0,0,0,0.18))' }}>
               <img src={`assets/bag-${cup.bagImg}.png`} alt={cup.bean}
                 style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }} />
-              <BagLabel cup={cup} widthClass="w-[45%]" />
+              <BagLabel cup={cup} bagWidth={300} />
             </div>
           </div>
 
@@ -1190,8 +1216,8 @@ function CoffeeDetailScreen({ cup, onBack, onRefresh }) {
             <DetailSection title="Origin">
               <GlassCard>
                 <DetailRow label="Country"  value={`${ORIGIN_FLAGS[cup.origin] || ''} ${cup.origin}`} />
-                <DetailRow label="Region"   value={cup.region} />
-                {cup.altitude && <DetailRow label="Altitude" value={cup.altitude} />}
+                <DetailRow label="Region"   value={cup.region} last={!cup.altitude} />
+                {cup.altitude && <DetailRow label="Altitude" value={cup.altitude} last />}
                 <div style={{ padding: '0 24px 24px' }}>
                   <OriginMap country={cup.origin} />
                 </div>
