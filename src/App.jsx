@@ -504,13 +504,240 @@ function ShelfContinued({ cells }) {
   );
 }
 
-function CupboardShelves({ cells }) {
-  const startCells = cells.slice(0, 8);
-  const overflow = cells.slice(8);
+function SortChevron({ flipped }) {
+  return (
+    <svg width="9" height="6" viewBox="0 0 9 6" fill="currentColor"
+      style={{ flexShrink: 0, transform: flipped ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>
+      <path d="M0 0L9 0L4.5 6Z" />
+    </svg>
+  );
+}
+
+function FilterCheckbox({ checked }) {
+  return (
+    <div style={{
+      width: 20, height: 20, borderRadius: 6, flexShrink: 0,
+      border: '1.5px solid', borderColor: checked ? 'transparent' : '#cca68c',
+      background: checked ? '#fc999b' : 'transparent',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      transition: 'background 0.15s ease, border-color 0.15s ease',
+    }}>
+      <svg width="12" height="9" viewBox="0 0 12 9" fill="none"
+        style={{
+          opacity: checked ? 1 : 0,
+          transform: checked ? 'scale(1)' : 'scale(0.4)',
+          transition: 'opacity 0.15s ease, transform 0.15s ease',
+        }}
+      >
+        <path d="M1 4.5L4.5 8L11 1" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </div>
+  );
+}
+
+function FilterSheet({ filterKey, coffees, activeValues = [], onSelect, onClose, isClosing }) {
+  const FIELD = { country: 'origin', process: 'process', roast: 'roastLevel' };
+  const TITLE = { country: 'Country', process: 'Processing', roast: 'Roast' };
+  const field = FIELD[filterKey];
+  const values = React.useMemo(() => {
+    const all = coffees.map(c => c[field]).filter(Boolean);
+    return [...new Set(all)].sort();
+  }, [coffees, field]);
+
+  const toggle = (val) => {
+    const next = activeValues.includes(val)
+      ? activeValues.filter(v => v !== val)
+      : [...activeValues, val];
+    onSelect(next);
+  };
+
+  return (
+    <>
+      <div onClick={onClose} style={{
+        position: 'absolute', inset: 0, zIndex: 99,
+        animation: isClosing
+          ? 'backdropOut 0.18s ease-in forwards'
+          : 'backdropIn 0.22s ease-out forwards',
+      }} />
+      <div style={{
+        position: 'absolute', bottom: 118, left: 16, right: 16,
+        borderRadius: '34px', zIndex: 100, overflow: 'hidden', isolation: 'isolate',
+        animation: isClosing
+          ? 'filterSheetOut 0.18s ease-in forwards'
+          : 'filterSheetIn 0.22s ease-out forwards',
+        willChange: 'opacity, transform',
+      }}>
+        {/* Liquid Glass fill */}
+        <div style={{ position: 'absolute', inset: 0, borderRadius: '34px', boxShadow: '0px 8px 40px rgba(0,0,0,0.12)', pointerEvents: 'none' }}>
+          <div style={{ position: 'absolute', inset: 0, borderRadius: '34px', background: 'rgb(255,255,255)', mixBlendMode: 'color-dodge' }} />
+          <div style={{ position: 'absolute', inset: 0, borderRadius: '34px', background: 'rgba(245,245,245,0.6)' }} />
+        </div>
+        <div style={{ position: 'absolute', inset: 0, borderRadius: '34px', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', background: 'linear-gradient(135deg,rgba(255,255,255,0.09) 0%,rgba(255,255,255,0) 50%)', pointerEvents: 'none' }} />
+        {/* Content */}
+        <div style={{ position: 'relative', display: 'flex', flexDirection: 'column' }}>
+          <div onClick={onClose} style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 4px', cursor: 'pointer' }}>
+            <div style={{ width: '36px', height: '5px', background: '#ccc', borderRadius: '100px' }} />
+          </div>
+          {/* Header: title + clear button */}
+          <div style={{ display: 'flex', alignItems: 'center', padding: '8px 16px 12px 24px' }}>
+            <p style={{ fontFamily: 'DM Serif Display, Georgia, serif', fontSize: '22px', color: '#000', letterSpacing: '-0.23px', lineHeight: 1.4, margin: 0, flex: 1 }}>
+              {TITLE[filterKey]}
+            </p>
+            <button onClick={() => onSelect([])} aria-label="Clear filter" style={{
+              width: '44px', height: '44px', borderRadius: '50%',
+              background: '#78788029', border: 'none', padding: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif',
+              fontSize: '17px', fontWeight: 510, color: '#727272',
+              lineHeight: 1, cursor: 'pointer', flexShrink: 0,
+              opacity: activeValues.length > 0 ? 1 : 0,
+              transform: activeValues.length > 0 ? 'scale(1)' : 'scale(0.5)',
+              transition: 'opacity 0.18s ease, transform 0.18s ease',
+              pointerEvents: activeValues.length > 0 ? 'auto' : 'none',
+            }}>✕</button>
+          </div>
+          {/* Options */}
+          <div className="scrollable" style={{ overflowY: 'auto', maxHeight: '280px', paddingBottom: '16px' }}>
+            {values.map((val, i) => {
+              const isActive = activeValues.includes(val);
+              const flag = filterKey === 'country' ? (ORIGIN_FLAGS[val] || '') : '';
+              return (
+                <button key={val} onClick={() => toggle(val)} style={{
+                  display: 'flex', width: '100%', alignItems: 'center', gap: '10px',
+                  padding: '14px 20px 14px 24px', background: 'none', border: 'none',
+                  borderTop: i === 0 ? '1px solid #E7E7E7' : 'none',
+                  borderBottom: '1px solid #E7E7E7',
+                  cursor: 'pointer', boxSizing: 'border-box', textAlign: 'left',
+                  fontFamily: 'Avenir, system-ui, sans-serif', fontSize: '17px', fontWeight: 500,
+                  color: '#000', WebkitTapHighlightColor: 'transparent',
+                }}>
+                  {flag && <span style={{ flexShrink: 0, fontSize: '18px', lineHeight: 1 }}>{flag}</span>}
+                  <span style={{ flex: 1, textAlign: 'left' }}>{val}</span>
+                  <FilterCheckbox checked={isActive} />
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function CupboardShelves({
+  cells,
+  homeSortMode = 'recent', setHomeSortMode,
+  homeSortDir  = 'desc',   setHomeSortDir,
+  homeFilters  = {},       setHomeFilters, setFilterSheet,
+}) {
+  const processedCells = React.useMemo(() => {
+    if (cells.some(c => c.skeleton)) return cells;
+    let result = [...cells];
+    if (homeSortMode === 'az') {
+      result.sort((a, b) => (a.bean || '').localeCompare(b.bean || ''));
+      if (homeSortDir === 'desc') result.reverse();
+    } else {
+      if (homeSortDir === 'asc') result.reverse();
+    }
+    if (homeFilters.country?.length) result = result.filter(c => homeFilters.country.includes(c.origin));
+    if (homeFilters.process?.length) result = result.filter(c => homeFilters.process.includes(c.process));
+    if (homeFilters.roast?.length)   result = result.filter(c => homeFilters.roast.includes(c.roastLevel));
+    return result;
+  }, [cells, homeSortMode, homeSortDir, homeFilters]);
+
+  const startCells = processedCells.slice(0, 8);
+  const overflow   = processedCells.slice(8);
   const groups = [];
   for (let i = 0; i < overflow.length; i += 6) groups.push(overflow.slice(i, i + 6));
+
+  const [pressedPill, setPressedPill] = React.useState(null);
+
+  const handleSortChip = (key) => {
+    if (homeSortMode === key) {
+      setHomeSortDir?.(d => d === 'desc' ? 'asc' : 'desc');
+    } else {
+      setHomeSortMode?.(key);
+      setHomeSortDir?.(key === 'recent' ? 'desc' : 'asc');
+    }
+  };
+
+  const pillStyle = (active) => ({
+    flexShrink: 0, display: 'flex', alignItems: 'center', gap: '4px',
+    padding: '6px 12px', borderRadius: '100px',
+    border: active ? '1px solid #fc999b' : '1px solid #cca68c',
+    background: active ? '#fc999b' : 'transparent',
+    color: active ? '#ffffff' : '#000000',
+    fontFamily: 'Avenir, system-ui, sans-serif',
+    fontWeight: 500, fontSize: '15px', lineHeight: 1.1,
+    cursor: 'pointer', WebkitTapHighlightColor: 'transparent',
+    transition: 'background 0.18s ease, border-color 0.18s ease, color 0.18s ease',
+  });
+
+  const pressedStyle = (key) => ({
+    transform: pressedPill === key ? 'scale(0.95)' : 'scale(1)',
+    transition: pressedPill === key
+      ? 'background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.08s ease'
+      : 'background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease',
+  });
+
   return (
-    <div style={{ paddingTop: '16px' }}>
+    <div style={{ paddingTop: '8px' }}>
+      <div style={{
+        display: 'flex', gap: '8px', padding: '0 24px 12px',
+        overflowX: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none',
+      }}>
+        {[{ key: 'recent', label: 'recent' }, { key: 'az', label: 'a-z' }].map(chip => {
+          const active = homeSortMode === chip.key;
+          const flipped = active && (
+            (chip.key === 'recent' && homeSortDir === 'asc') ||
+            (chip.key === 'az'     && homeSortDir === 'desc')
+          );
+          return (
+            <button key={chip.key} onClick={() => handleSortChip(chip.key)}
+              onPointerDown={() => setPressedPill(chip.key)}
+              onPointerUp={() => setPressedPill(null)}
+              onPointerLeave={() => setPressedPill(null)}
+              style={{ ...pillStyle(active), ...pressedStyle(chip.key), whiteSpace: 'nowrap' }}>
+              {chip.label}<SortChevron flipped={flipped} />
+            </button>
+          );
+        })}
+        {[{ key: 'country', label: 'country' }, { key: 'process', label: 'process' }, { key: 'roast', label: 'roast' }].map(chip => {
+          const activeVals = homeFilters[chip.key] || [];
+          const hasFilter = activeVals.length > 0;
+          const pillText = hasFilter ? activeVals.map(v => v.toLowerCase()).join(', ') : chip.label;
+          return (
+            <button key={chip.key} onClick={() => setFilterSheet?.(chip.key)}
+              onPointerDown={() => setPressedPill(chip.key)}
+              onPointerUp={() => setPressedPill(null)}
+              onPointerLeave={() => setPressedPill(null)}
+              style={{
+                ...pillStyle(hasFilter),
+                ...pressedStyle(chip.key),
+                maxWidth: hasFilter ? '200px' : undefined,
+                overflow: 'hidden',
+              }}>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: '1 1 0', minWidth: 0 }}>
+                {pillText}
+              </span>
+              <span
+                  role="button"
+                  aria-label={`Clear ${chip.label} filter`}
+                  onClick={(e) => { e.stopPropagation(); setHomeFilters?.(prev => ({ ...prev, [chip.key]: [] })); }}
+                  style={{
+                    display: 'flex', alignItems: 'center', flexShrink: 0, fontSize: '12px',
+                    opacity: hasFilter ? 0.85 : 0,
+                    width: hasFilter ? undefined : 0,
+                    overflow: 'hidden',
+                    transform: hasFilter ? 'scale(1)' : 'scale(0.5)',
+                    transition: 'opacity 0.18s ease, transform 0.18s ease, width 0.18s ease',
+                    pointerEvents: hasFilter ? 'auto' : 'none',
+                  }}
+                >✕</span>
+            </button>
+          );
+        })}
+      </div>
       <ShelvesStart cells={startCells} />
       {groups.map((group, i) => <ShelfContinued key={i} cells={group} />)}
     </div>
@@ -1593,6 +1820,17 @@ function App() {
   const [prevTab, setPrevTab] = React.useState(null);
   const [direction, setDirection] = React.useState(1);
   const [selectedCupId, setSelectedCupId] = React.useState(null);
+  const [homeSortMode, setHomeSortMode] = React.useState('recent');
+  const [homeSortDir,  setHomeSortDir]  = React.useState('desc');
+  const [homeFilters,  setHomeFilters]  = React.useState({ country: [], process: [], roast: [] });
+  const [filterSheet,        setFilterSheet]        = React.useState(null);
+  const [filterSheetClosing, setFilterSheetClosing] = React.useState(false);
+
+  const closeFilterSheet = React.useCallback(() => {
+    setFilterSheetClosing(true);
+    setTimeout(() => { setFilterSheet(null); setFilterSheetClosing(false); }, 200);
+  }, []);
+
   const [coffees, setCoffees] = React.useState(() => {
     try {
       const cached = localStorage.getItem('cupboard-coffees');
@@ -1650,17 +1888,34 @@ function App() {
 
   const renderScreen = (tabId) => {
     if (tabId === 'home') return (
-      <div className="scrollable" style={{ height: '100%', overflowY: 'auto', paddingBottom: '88px' }}>
-        <div style={{ padding: '16px 24px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h1 style={{ fontFamily: 'DM Serif Display, Georgia, serif', fontSize: '38px', color: '#000000', margin: 0, lineHeight: 1, letterSpacing: '-1px' }}>
-            Cupboard
-          </h1>
-          <div style={{ width: '48px', height: '48px', borderRadius: '24px', background: '#355c44', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <span style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontSize: '20px', fontWeight: 600, color: '#f9eddd', lineHeight: 1 }}>L</span>
+      <div style={{ position: 'relative', height: '100%' }}>
+        <div className="scrollable" style={{ height: '100%', overflowY: 'auto', paddingBottom: '88px' }}>
+          <div style={{ padding: '16px 24px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h1 style={{ fontFamily: 'DM Serif Display, Georgia, serif', fontSize: '38px', color: '#000000', margin: 0, lineHeight: 1, letterSpacing: '-1px' }}>
+              Cupboard
+            </h1>
+            <div style={{ width: '48px', height: '48px', borderRadius: '24px', background: '#355c44', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <span style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontSize: '20px', fontWeight: 600, color: '#f9eddd', lineHeight: 1 }}>L</span>
+            </div>
           </div>
+          <CupboardShelves
+            cells={coffees ?? SKELETON_CELLS}
+            homeSortMode={homeSortMode} setHomeSortMode={setHomeSortMode}
+            homeSortDir={homeSortDir}   setHomeSortDir={setHomeSortDir}
+            homeFilters={homeFilters}   setHomeFilters={setHomeFilters}  setFilterSheet={setFilterSheet}
+          />
+          <div style={{ height: '28px' }} />
         </div>
-        <CupboardShelves cells={coffees ?? SKELETON_CELLS} />
-        <div style={{ height: '28px' }} />
+        {filterSheet && (
+          <FilterSheet
+            filterKey={filterSheet}
+            coffees={coffees ?? []}
+            activeValues={homeFilters[filterSheet] || []}
+            onSelect={(vals) => setHomeFilters(prev => ({ ...prev, [filterSheet]: vals }))}
+            onClose={closeFilterSheet}
+            isClosing={filterSheetClosing}
+          />
+        )}
       </div>
     );
     if (!coffees) return <LoadingScreen />;

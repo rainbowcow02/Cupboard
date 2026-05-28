@@ -14,16 +14,20 @@ body { background: #f9eddd; display: flex; justify-content: center; align-items:
 @keyframes slideOutToRight   { from { transform: translateX(0); } to { transform: translateX(100%); } }
 @keyframes slideInFromBottom { from { transform: translateY(100%); } to { transform: translateY(0); } }
 @keyframes slideOutToBottom  { from { transform: translateY(0); } to { transform: translateY(100%); } }
+@keyframes filterSheetIn  { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes filterSheetOut { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(16px); } }
+@keyframes backdropIn  { from { background: rgba(0,0,0,0); } to { background: rgba(0,0,0,0.12); } }
+@keyframes backdropOut { from { background: rgba(0,0,0,0.12); } to { background: rgba(0,0,0,0); } }
 /* Fullscreen on mobile: drop the page padding and frame chrome so the mockup fills the screen. */
 @media (max-width: 480px) {
-  body { padding: 0; align-items: flex-start; }
+  body { padding: 0; align-items: flex-start; min-height: 100svh; }
   .phone-shell {
     border-radius: 0 !important;
     box-shadow: none !important;
     height: 100svh !important;
   }
-  /* Hide the mock island; hide the mock status bar's contents but keep its
-     height as a spacer so the header clears the device's real status bar. */
+  /* Hide all mock chrome — Safari already places content below the real status
+     bar/Dynamic Island without viewport-fit:cover, so no spacer is needed. */
   .mock-island { display: none; }
-  .mock-statusbar > * { visibility: hidden; }
+  .mock-statusbar { display: none !important; }
 }
