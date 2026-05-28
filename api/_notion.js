@@ -34,8 +34,12 @@ export const COLUMNS = {
   filter:     'Filter',
   grind:      'Grind size',
   tempC:      'Water temp',   // select, e.g. "93C/199F"
-  beansG:     'Amt beans',    // select, e.g. "12g"
-  waterMl:    'Amt water 💧', // select, e.g. "190ml"
+  beansG:       'Amt beans',      // select, e.g. "12g"
+  waterMl:      'Amt water 💧',   // select, e.g. "190ml"
+  altitude:     'Altitude',
+  brewNotes:    'Brew Notes',
+  recipeToTest: 'Recipe to test', // free-form paragraph: pour structure + brew time
+  tastingNotes: 'Tasting notes',  // detailed per-brew tasting notes (distinct from short Notes chips)
 };
 
 // ─── Property readers — tolerant of whichever Notion property type a column is.
@@ -120,8 +124,12 @@ export function rowToCup(page) {
     filter:     readText(p[c.filter]),
     grind:      readText(p[c.grind]),
     tempC:      readNumber(p[c.tempC]),
-    beansG:     readNumber(p[c.beansG]),
-    waterMl:    readNumber(p[c.waterMl]),
+    beansG:       readNumber(p[c.beansG]),
+    waterMl:      readNumber(p[c.waterMl]),
+    altitude:     readText(p[c.altitude]),
+    brewNotes:    readText(p[c.brewNotes]),
+    recipeToTest: readText(p[c.recipeToTest]),
+    tastingNotes: readText(p[c.tastingNotes]),
   };
 }
 

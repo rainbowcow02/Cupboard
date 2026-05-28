@@ -16,10 +16,11 @@ body { background: #f9eddd; display: flex; justify-content: center; align-items:
 @keyframes slideOutToBottom  { from { transform: translateY(0); } to { transform: translateY(100%); } }
 /* Fullscreen on mobile: drop the page padding and frame chrome so the mockup fills the screen. */
 @media (max-width: 480px) {
-  body { padding: 0; }
+  body { padding: 0; align-items: flex-start; }
   .phone-shell {
     border-radius: 0 !important;
     box-shadow: none !important;
+    height: 100svh !important;
   }
   /* Hide the mock island; hide the mock status bar's contents but keep its
      height as a spacer so the header clears the device's real status bar. */

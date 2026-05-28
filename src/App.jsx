@@ -1,5 +1,5 @@
 import React from 'react';
-import { groupIntoCoffees, formatDate } from './lib/coffees.js';
+import { groupIntoCoffees, formatDate, parseRecipe } from './lib/coffees.js';
 
 const MAPBOX_PROD_TOKEN = 'pk.eyJ1IjoicmFpbmJvd2NvdzAyIiwiYSI6ImNtcGN0N3pmdjA1MnIyeHB2aDFqa21hdjcifQ.X3TvBj8J2kqQyeRYxzAiAQ';
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || MAPBOX_PROD_TOKEN;
@@ -1116,6 +1116,7 @@ function DetailRow({ label, value, last }) {
 
 function BrewCard({ brew, onClick }) {
   const ratio = `1:${(brew.waterMl / brew.beansG).toFixed(1)}`;
+  const parsed = parseRecipe(brew.recipeToTest);
   const stats = [
     { label: 'Beans', value: `${brew.beansG}g` },
     { label: 'Water', value: `${brew.waterMl}ml` },
@@ -1160,6 +1161,79 @@ function BrewCard({ brew, onClick }) {
           <span style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 400, fontSize: 15, color: '#6b6b6b', textAlign: 'right' }}>{brew.filter || '—'}</span>
         </div>
       </div>
+
+      {parsed ? (
+        <>
+          {parsed.pours.length > 0 && (
+            <>
+              <div style={{ paddingLeft: 24, paddingRight: 24 }}>
+                <div style={{ height: '0.5px', background: '#E7E7E7' }} />
+              </div>
+              <div style={{ padding: '16px 24px' }}>
+                {parsed.pours.map(({ step, amount, technique }) => (
+                  <div key={step} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <span style={{ width: 50, flexShrink: 0, fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 13, color: '#6b6b6b', lineHeight: 1.5 }}>{step}</span>
+                    <span style={{ width: 60, flexShrink: 0, fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 800, fontSize: 17, color: '#000', letterSpacing: '-0.5px', lineHeight: 1.4 }}>{amount}</span>
+                    <span style={{ flex: 1, minWidth: 0, fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 13, color: '#6b6b6b', lineHeight: 1.5 }}>{technique}</span>
+                  </div>
+                ))}
+                {parsed.agitation && (
+                  <div style={{ marginTop: 6, fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 13, color: '#6b6b6b', lineHeight: 1.5, paddingTop: 6, borderTop: '0.5px solid #E7E7E7' }}>
+                    {parsed.agitation}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+          {parsed.brewTime && (
+            <>
+              <div style={{ paddingLeft: 24, paddingRight: 24 }}>
+                <div style={{ height: '0.5px', background: '#E7E7E7' }} />
+              </div>
+              <div style={{ padding: '16px 24px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 13, color: '#6b6b6b' }}>Brew time</span>
+                  <span style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 800, fontSize: 17, color: '#000', letterSpacing: '-0.5px', lineHeight: 1.4 }}>{parsed.brewTime}</span>
+                </div>
+              </div>
+            </>
+          )}
+        </>
+      ) : brew.recipeToTest && (
+        <>
+          <div style={{ paddingLeft: 24, paddingRight: 24 }}>
+            <div style={{ height: '0.5px', background: '#E7E7E7' }} />
+          </div>
+          <div style={{ padding: '16px 24px' }}>
+            <span style={{ display: 'block', fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 13, color: '#6b6b6b', marginBottom: 8 }}>Recipe</span>
+            <span style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 400, fontSize: 15, color: '#6b6b6b', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{brew.recipeToTest}</span>
+          </div>
+        </>
+      )}
+
+      {brew.tastingNotes && (
+        <>
+          <div style={{ paddingLeft: 24, paddingRight: 24 }}>
+            <div style={{ height: '0.5px', background: '#E7E7E7' }} />
+          </div>
+          <div style={{ padding: '16px 24px' }}>
+            <span style={{ display: 'block', fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 13, color: '#6b6b6b', marginBottom: 8 }}>Tasting notes</span>
+            <span style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 400, fontSize: 15, color: '#6b6b6b', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{brew.tastingNotes}</span>
+          </div>
+        </>
+      )}
+
+      {brew.brewNotes && (
+        <>
+          <div style={{ paddingLeft: 24, paddingRight: 24 }}>
+            <div style={{ height: '0.5px', background: '#E7E7E7' }} />
+          </div>
+          <div style={{ padding: '16px 24px' }}>
+            <span style={{ display: 'block', fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 13, color: '#6b6b6b', marginBottom: 8 }}>Brew notes</span>
+            <span style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 400, fontSize: 15, color: '#6b6b6b', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{brew.brewNotes}</span>
+          </div>
+        </>
+      )}
     </div>
   );
 }
