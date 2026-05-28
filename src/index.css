@@ -16,7 +16,7 @@ body { background: #f9eddd; display: flex; justify-content: center; align-items:
 @keyframes slideOutToBottom  { from { transform: translateY(0); } to { transform: translateY(100%); } }
 /* Fullscreen on mobile: drop the page padding and frame chrome so the mockup fills the screen. */
 @media (max-width: 480px) {
-  body { padding: 0; align-items: flex-start; }
+  body { padding: 0; align-items: flex-start; min-height: 100svh; }
   .phone-shell {
     border-radius: 0 !important;
     box-shadow: none !important;
