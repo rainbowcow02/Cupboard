@@ -22,8 +22,8 @@ body { background: #f9eddd; display: flex; justify-content: center; align-items:
     box-shadow: none !important;
     height: 100svh !important;
   }
-  /* Hide the mock island; hide the mock status bar's contents but keep its
-     height as a spacer so the header clears the device's real status bar. */
+  /* Hide all mock chrome — Safari already places content below the real status
+     bar/Dynamic Island without viewport-fit:cover, so no spacer is needed. */
   .mock-island { display: none; }
-  .mock-statusbar > * { visibility: hidden; }
+  .mock-statusbar { display: none !important; }
 }

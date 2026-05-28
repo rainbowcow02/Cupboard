@@ -504,13 +504,53 @@ function ShelfContinued({ cells }) {
   );
 }
 
-function CupboardShelves({ cells }) {
-  const startCells = cells.slice(0, 8);
-  const overflow = cells.slice(8);
+const SORT_CHIPS = [
+  { key: 'recent',  label: 'Recent' },
+  { key: 'az',      label: 'A–Z' },
+  { key: 'country', label: 'Country' },
+  { key: 'process', label: 'Processing' },
+];
+
+function CupboardShelves({ cells, homeSort = 'recent', setHomeSort }) {
+  const sorted = React.useMemo(() => {
+    if (homeSort === 'recent') return cells;
+    return [...cells].sort((a, b) => {
+      if (a.skeleton || b.skeleton) return 0;
+      if (homeSort === 'az')      return (a.bean    || '').localeCompare(b.bean    || '');
+      if (homeSort === 'country') return (a.origin  || '').localeCompare(b.origin  || '');
+      if (homeSort === 'process') return (a.process || '').localeCompare(b.process || '');
+      return 0;
+    });
+  }, [cells, homeSort]);
+
+  const startCells = sorted.slice(0, 8);
+  const overflow = sorted.slice(8);
   const groups = [];
   for (let i = 0; i < overflow.length; i += 6) groups.push(overflow.slice(i, i + 6));
+
   return (
     <div style={{ paddingTop: '16px' }}>
+      <div style={{
+        display: 'flex', gap: '8px', padding: '0 24px 12px',
+        overflowX: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none',
+      }}>
+        {SORT_CHIPS.map(chip => {
+          const active = homeSort === chip.key;
+          return (
+            <button key={chip.key} onClick={() => setHomeSort?.(chip.key)} style={{
+              flexShrink: 0, padding: '6px 14px', borderRadius: '100px',
+              border: active ? 'none' : '1.5px solid #d9d9d9',
+              background: active ? 'rgba(252,153,155,0.5)' : 'transparent',
+              color: active ? '#5d0505' : '#6b6b6b',
+              fontFamily: 'Avenir, system-ui, sans-serif',
+              fontWeight: active ? 600 : 500, fontSize: '14px', lineHeight: 1.2,
+              cursor: 'pointer', WebkitTapHighlightColor: 'transparent',
+            }}>
+              {chip.label}
+            </button>
+          );
+        })}
+      </div>
       <ShelvesStart cells={startCells} />
       {groups.map((group, i) => <ShelfContinued key={i} cells={group} />)}
     </div>
@@ -1593,6 +1633,7 @@ function App() {
   const [prevTab, setPrevTab] = React.useState(null);
   const [direction, setDirection] = React.useState(1);
   const [selectedCupId, setSelectedCupId] = React.useState(null);
+  const [homeSort, setHomeSort] = React.useState('recent');
   const [coffees, setCoffees] = React.useState(() => {
     try {
       const cached = localStorage.getItem('cupboard-coffees');
@@ -1659,7 +1700,7 @@ function App() {
             <span style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontSize: '20px', fontWeight: 600, color: '#f9eddd', lineHeight: 1 }}>L</span>
           </div>
         </div>
-        <CupboardShelves cells={coffees ?? SKELETON_CELLS} />
+        <CupboardShelves cells={coffees ?? SKELETON_CELLS} homeSort={homeSort} setHomeSort={setHomeSort} />
         <div style={{ height: '28px' }} />
       </div>
     );
