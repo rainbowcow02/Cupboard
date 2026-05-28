@@ -1620,7 +1620,7 @@ function BagCarousel({ coffees, onSelect }) {
   return (
     <div>
       {/* Card stack — let shadows bleed freely; horizontal clipping is handled by parent */}
-      <div style={{ position: 'relative', height: 330 }}>
+      <div style={{ position: 'relative', height: 280 }}>
         {coffees.map((coffee, i) => {
           const pos = i - activeIdx;
           const isCenter = pos === 0;
@@ -1636,7 +1636,7 @@ function BagCarousel({ coffees, onSelect }) {
                 top: 0,
                 left: 'calc(50% - 140px)',
                 width: 280,
-                transform: `translateX(${pos * 191}px) translateY(${isCenter ? 0 : 33}px) rotate(${pos * 5}deg) scale(${isCenter ? 1 : 0.929})`,
+                transform: `translateX(${pos * 191}px) translateY(${isCenter ? 0 : 18}px) rotate(${pos * 5}deg) scale(${isCenter ? 1 : 0.929})`,
                 opacity: hidden ? 0 : 1,
                 zIndex: isCenter ? 2 : 1,
                 cursor: 'pointer',
@@ -1668,8 +1668,8 @@ function BagCarousel({ coffees, onSelect }) {
 
       {/* Hero text — cross-fades on index change */}
       <div style={{
-        paddingTop: 16, paddingBottom: 8,
-        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+        paddingTop: 8, paddingBottom: 8,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
         opacity: heroVisible ? 1 : 0,
         transition: 'opacity 0.18s ease',
       }}>
