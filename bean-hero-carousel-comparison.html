@@ -22,9 +22,9 @@
       --con:          #991b1b;
       --con-bg:       #fef2f2;
       --con-border:   #fecaca;
-      --gold:         #4c1d95;
-      --gold-bg:      #f5f3ff;
-      --gold-border:  #ddd6fe;
+      --gold:         #92400e;
+      --gold-bg:      #fffbeb;
+      --gold-border:  #fde68a;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -106,7 +106,7 @@
     }
 
     .page-title {
-      font-size: 48px;
+      font-size: 36px;
       font-weight: 700;
       color: var(--text-1);
       line-height: 1.1;
@@ -115,7 +115,7 @@
     }
 
     .page-subtitle {
-      font-size: 17px;
+      font-size: 15px;
       font-weight: 400;
       color: var(--text-2);
       line-height: 1.6;
@@ -130,13 +130,13 @@
       margin: 0 auto;
     }
 
-    .variant-5-row {
+    .last-odd-row {
       grid-column: 1 / -1;
       display: flex;
       justify-content: center;
     }
 
-    .variant-5-row .variant-card {
+    .last-odd-row .variant-card {
       max-width: 630px; /* matches one column at max-width */
     }
 
@@ -277,13 +277,13 @@
 
     .best-for {
       display: flex;
-      flex-direction: column;
-      gap: 4px;
+      align-items: baseline;
+      gap: 8px;
       font-size: 15px;
       font-weight: 400;
       color: var(--gold);
       padding: 9px 12px;
-      margin-bottom: 16px;
+      margin-top: 4px;
       background: var(--gold-bg);
       border-radius: 8px;
       border: 1px solid var(--gold-border);
@@ -296,57 +296,7 @@
       text-transform: uppercase;
       letter-spacing: 0.8px;
       color: var(--text-3);
-      padding-bottom: 8px;
-    }
-
-    .notes-section-header {
-      font-size: 10px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: var(--text-3);
-      margin-top: 4px;
-      padding-bottom: 8px;
-    }
-
-    .notes-section-header:first-child {
-      margin-top: 0;
-    }
-
-    .notes-divider {
-      border: none;
-      border-top: 1px solid var(--border);
-      margin: 16px 0;
-    }
-
-    /* ── Responsive ── */
-    @media (max-width: 900px) {
-      .page-body {
-        padding: 36px 24px 72px;
-      }
-
-      .grid {
-        grid-template-columns: 1fr;
-      }
-
-      .variant-5-row {
-        grid-column: auto;
-      }
-
-      .variant-5-row .variant-card {
-        max-width: none;
-      }
-
-      .card-body {
-        flex-direction: column;
-      }
-
-      .phone-stage {
-        width: 100%;
-        border-right: none;
-        border-bottom: 1px solid var(--border);
-        padding: 28px 36px;
-      }
+      flex-shrink: 0;
     }
 
     /* ── Footer ── */
@@ -401,11 +351,7 @@
             </div>
           </div>
           <div class="notes">
-            <div class="best-for">
-              <span class="best-for-label">Best for</span>
-              <span>Discovery — when serendipity matters</span>
-            </div>
-            <div class="notes-section-header">Pros</div>
+            
             <div class="note-row">
               <span class="note-chip pro">✓</span>
               <span>Tactile — mirrors physical card habits</span>
@@ -418,8 +364,7 @@
               <span class="note-chip pro">✓</span>
               <span>Swipe is universally understood</span>
             </div>
-            <hr class="notes-divider">
-            <div class="notes-section-header">Cons</div>
+            
             <div class="note-row">
               <span class="note-chip con">✗</span>
               <span>Stack depth not obvious at a glance</span>
@@ -427,6 +372,10 @@
             <div class="note-row">
               <span class="note-chip con">✗</span>
               <span>No quick scan of all options</span>
+            </div>
+            <div class="best-for">
+              <span class="best-for-label">Best for</span>
+              <span>Discovery — when serendipity matters</span>
             </div>
           </div>
         </div>
@@ -454,11 +403,7 @@
             </div>
           </div>
           <div class="notes">
-            <div class="best-for">
-              <span class="best-for-label">Best for</span>
-              <span>Feature hero sections with rich imagery</span>
-            </div>
-            <div class="notes-section-header">Pros</div>
+            
             <div class="note-row">
               <span class="note-chip pro">✓</span>
               <span>Full-bleed visuals command attention</span>
@@ -471,8 +416,7 @@
               <span class="note-chip pro">✓</span>
               <span>Elegant with strong photography</span>
             </div>
-            <hr class="notes-divider">
-            <div class="notes-section-header">Cons</div>
+            
             <div class="note-row">
               <span class="note-chip con">✗</span>
               <span>Needs great imagery to shine</span>
@@ -480,6 +424,10 @@
             <div class="note-row">
               <span class="note-chip con">✗</span>
               <span>Non-linear nav is harder</span>
+            </div>
+            <div class="best-for">
+              <span class="best-for-label">Best for</span>
+              <span>Feature hero sections with rich imagery</span>
             </div>
           </div>
         </div>
@@ -507,11 +455,7 @@
             </div>
           </div>
           <div class="notes">
-            <div class="best-for">
-              <span class="best-for-label">Best for</span>
-              <span>Collection browsers — overview + detail together</span>
-            </div>
-            <div class="notes-section-header">Pros</div>
+            
             <div class="note-row">
               <span class="note-chip pro">✓</span>
               <span>Shows full inventory at a glance</span>
@@ -524,8 +468,7 @@
               <span class="note-chip pro">✓</span>
               <span>Low visual noise by default</span>
             </div>
-            <hr class="notes-divider">
-            <div class="notes-section-header">Cons</div>
+            
             <div class="note-row">
               <span class="note-chip con">✗</span>
               <span>Thumbnails too small for text</span>
@@ -533,6 +476,10 @@
             <div class="note-row">
               <span class="note-chip con">✗</span>
               <span>Detail panel competes for space</span>
+            </div>
+            <div class="best-for">
+              <span class="best-for-label">Best for</span>
+              <span>Collection browsers — overview + detail together</span>
             </div>
           </div>
         </div>
@@ -560,11 +507,7 @@
             </div>
           </div>
           <div class="notes">
-            <div class="best-for">
-              <span class="best-for-label">Best for</span>
-              <span>Recent activity feeds and time-ordered lists</span>
-            </div>
-            <div class="notes-section-header">Pros</div>
+            
             <div class="note-row">
               <span class="note-chip pro">✓</span>
               <span>Dense — multiple items at once</span>
@@ -577,8 +520,7 @@
               <span class="note-chip pro">✓</span>
               <span>Pause-on-hover gives user control</span>
             </div>
-            <hr class="notes-divider">
-            <div class="notes-section-header">Cons</div>
+            
             <div class="note-row">
               <span class="note-chip con">✗</span>
               <span>Less discoverable interaction</span>
@@ -587,10 +529,14 @@
               <span class="note-chip con">✗</span>
               <span>Hard to jump non-sequentially</span>
             </div>
+            <div class="best-for">
+              <span class="best-for-label">Best for</span>
+              <span>Recent activity feeds and time-ordered lists</span>
+            </div>
           </div>
         </div>
       </div>
-      <div class="variant-5-row">
+      <div class="last-odd-row">
         
       <div class="variant-card">
         <div class="card-header">
@@ -614,11 +560,7 @@
             </div>
           </div>
           <div class="notes">
-            <div class="best-for">
-              <span class="best-for-label">Best for</span>
-              <span>Immersive moments — onboarding or hero features</span>
-            </div>
-            <div class="notes-section-header">Pros</div>
+            
             <div class="note-row">
               <span class="note-chip pro">✓</span>
               <span>3D depth creates instant "wow"</span>
@@ -631,8 +573,7 @@
               <span class="note-chip pro">✓</span>
               <span>Drag physics feel premium</span>
             </div>
-            <hr class="notes-divider">
-            <div class="notes-section-header">Cons</div>
+            
             <div class="note-row">
               <span class="note-chip con">✗</span>
               <span>Higher cognitive load — unconventional</span>
@@ -640,6 +581,10 @@
             <div class="note-row">
               <span class="note-chip con">✗</span>
               <span>Small cards limit text legibility</span>
+            </div>
+            <div class="best-for">
+              <span class="best-for-label">Best for</span>
+              <span>Immersive moments — onboarding or hero features</span>
             </div>
           </div>
         </div>
