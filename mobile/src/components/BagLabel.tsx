@@ -38,24 +38,26 @@ export function BagLabel({ coffee, bagWidth }: BagLabelProps) {
   const flag = coffee.origin ? (ORIGIN_FLAGS[coffee.origin] || '') : '';
 
   return (
-    <View style={[styles.container, { width: labelWidth }]} pointerEvents="none">
-      <Text
-        style={[styles.beanName, { fontSize: beanFontSize, color: inkColor }]}
-        numberOfLines={2}
-        adjustsFontSizeToFit
-      >
-        {coffee.bean}
-      </Text>
-      <Text
-        style={[styles.roaster, { fontSize: subFontSize, color: subColor }]}
-        numberOfLines={1}
-      >
-        {coffee.roaster}
-      </Text>
-      <View style={[styles.divider, { backgroundColor: dividerColor, marginVertical: dividerMy }]} />
-      <Text style={[styles.origin, { fontSize: subFontSize, color: subColor }]} numberOfLines={1}>
-        {flag ? `${flag} ` : ''}{coffee.origin}
-      </Text>
+    <View style={styles.container} pointerEvents="none">
+      <View style={{ width: labelWidth, alignItems: 'center' }}>
+        <Text
+          style={[styles.beanName, { fontSize: beanFontSize, color: inkColor }]}
+          numberOfLines={2}
+          adjustsFontSizeToFit
+        >
+          {coffee.bean}
+        </Text>
+        <Text
+          style={[styles.roaster, { fontSize: subFontSize, color: subColor }]}
+          numberOfLines={1}
+        >
+          {coffee.roaster}
+        </Text>
+        <View style={[styles.divider, { backgroundColor: dividerColor, marginVertical: dividerMy }]} />
+        <Text style={[styles.origin, { fontSize: subFontSize, color: subColor }]} numberOfLines={1}>
+          {flag ? `${flag} ` : ''}{coffee.origin}
+        </Text>
+      </View>
     </View>
   );
 }
@@ -64,10 +66,8 @@ const styles = StyleSheet.create({
   container: {
     position: 'absolute',
     top: '24%',
-    alignSelf: 'center',
     left: 0,
     right: 0,
-    marginHorizontal: 'auto',
     alignItems: 'center',
   },
   beanName: {
