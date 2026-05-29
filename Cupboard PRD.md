@@ -184,7 +184,7 @@ Your Notion table is a **single flat table** — each row is one cup, with bean 
 
 | Area | Notes |
 | :---- | :---- |
-| **Platform** | iOS native (Swift/SwiftUI) or React Native — TBD based on dev approach |
+| **Platform** | React Native + Expo — see [iOS App - Implementation Plan.md](./iOS%20App%20-%20Implementation%20Plan.md) |
 | **Data source** | Notion API (read-only sync via OAuth) |
 | **Image fetching** | Web scraping or product image APIs to auto-fetch bean package photos |
 | **Map** | MapKit (iOS native) or Mapbox |
