@@ -1,0 +1,220 @@
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { useState } from 'react';
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Brew, Coffee } from '@shared/lib/coffees';
+import { colors, fonts } from '@shared/theme';
+import { FormField, fieldInputStyle } from '../../src/components/FormField';
+import { RatingInput } from '../../src/components/RatingInput';
+import { createCup, updateCup, deleteCup } from '../../src/lib/api';
+
+interface Props {
+  coffee: Coffee;
+  brew?: Brew | null;
+  onClose: () => void;
+  onSaved: () => Promise<void>;
+}
+
+function toDateInput(value?: string | null): Date {
+  if (!value) return new Date();
+  const m = /^\d{4}-\d{2}-\d{2}/.exec(String(value).trim());
+  return m ? new Date(`${m[0]}T12:00:00`) : new Date();
+}
+
+function toISODate(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
+export function BrewForm({ coffee, brew, onClose, onSaved }: Props) {
+  const editing = !!brew;
+  const insets = useSafeAreaInsets();
+
+  const [form, setForm] = useState({
+    brewer: brew?.brewer ?? '',
+    filter: brew?.filter ?? '',
+    grind: brew?.grind ?? '',
+    beansG: brew?.beansG != null ? String(brew.beansG) : '',
+    waterMl: brew?.waterMl != null ? String(brew.waterMl) : '',
+    tempC: brew?.tempC != null ? String(brew.tempC) : '',
+    date: toDateInput(brew?.date),
+    rating: brew?.rating ?? 0,
+  });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const set = (k: keyof typeof form) => (v: string) =>
+    setForm((f) => ({ ...f, [k]: v }));
+
+  const save = async () => {
+    if (saving) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const brewFields = {
+        brewer: form.brewer || undefined,
+        filter: form.filter || undefined,
+        grind: form.grind || undefined,
+        beansG: form.beansG ? Number(form.beansG) : undefined,
+        waterMl: form.waterMl ? Number(form.waterMl) : undefined,
+        tempC: form.tempC ? Number(form.tempC) : undefined,
+        date: toISODate(form.date),
+        rating: form.rating || undefined,
+      };
+
+      if (editing && brew?.id) {
+        await updateCup(String(brew.id), brewFields);
+      } else {
+        await createCup({
+          bean: coffee.bean,
+          roaster: coffee.roaster,
+          origin: coffee.origin,
+          process: coffee.process,
+          roastLevel: coffee.roastLevel,
+          region: coffee.region,
+          variety: coffee.variety,
+          notes: coffee.notes,
+          ...brewFields,
+        });
+      }
+      await onSaved();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Save failed');
+      setSaving(false);
+    }
+  };
+
+  const remove = async () => {
+    if (saving || !brew?.id) return;
+    if (!confirmDelete) { setConfirmDelete(true); return; }
+    setSaving(true);
+    setError(null);
+    try {
+      await deleteCup(String(brew.id));
+      await onSaved();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Delete failed');
+      setSaving(false);
+    }
+  };
+
+  return (
+    <View style={[styles.sheet, { paddingTop: insets.top }]}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Pressable onPress={onClose} hitSlop={8}>
+          <Text style={styles.cancel}>Cancel</Text>
+        </Pressable>
+        <Text style={styles.title}>{editing ? 'Edit Brew' : 'New Brew'}</Text>
+        <Pressable onPress={save} disabled={saving} hitSlop={8}>
+          <Text style={[styles.saveBtn, saving && styles.saveBtnDisabled]}>
+            {saving ? 'Saving…' : 'Save'}
+          </Text>
+        </Pressable>
+      </View>
+
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 48 }]}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Text style={styles.subtitle}>
+          Brew recipe for <Text style={styles.subtitleBold}>{coffee.bean}</Text> · {coffee.roaster}
+        </Text>
+
+        {error && <View style={styles.errorBox}><Text style={styles.errorText}>{error}</Text></View>}
+
+        <View style={styles.fields}>
+          <FormField label="Brewer">
+            <TextInput style={fieldInputStyle} value={form.brewer} onChangeText={set('brewer')} placeholder="Hario V60" placeholderTextColor={colors.greyDark} returnKeyType="next" />
+          </FormField>
+          <FormField label="Filter">
+            <TextInput style={fieldInputStyle} value={form.filter} onChangeText={set('filter')} placeholder="Cafec Light" placeholderTextColor={colors.greyDark} returnKeyType="next" />
+          </FormField>
+          <FormField label="Grind size">
+            <TextInput style={fieldInputStyle} value={form.grind} onChangeText={set('grind')} placeholder="14" placeholderTextColor={colors.greyDark} returnKeyType="next" />
+          </FormField>
+
+          <View style={styles.row}>
+            <FormField label="Beans (g)">
+              <TextInput style={fieldInputStyle} value={form.beansG} onChangeText={set('beansG')} placeholder="18" placeholderTextColor={colors.greyDark} keyboardType="decimal-pad" returnKeyType="next" />
+            </FormField>
+            <FormField label="Water (ml)">
+              <TextInput style={fieldInputStyle} value={form.waterMl} onChangeText={set('waterMl')} placeholder="300" placeholderTextColor={colors.greyDark} keyboardType="decimal-pad" returnKeyType="next" />
+            </FormField>
+            <FormField label="Temp °C">
+              <TextInput style={fieldInputStyle} value={form.tempC} onChangeText={set('tempC')} placeholder="94" placeholderTextColor={colors.greyDark} keyboardType="decimal-pad" returnKeyType="done" />
+            </FormField>
+          </View>
+
+          <FormField label="Date">
+            <DateTimePicker
+              value={form.date}
+              mode="date"
+              display="compact"
+              onChange={(_, d) => d && setForm((f) => ({ ...f, date: d }))}
+              style={styles.datePicker}
+              themeVariant="light"
+            />
+          </FormField>
+
+          <FormField label="Rating">
+            <RatingInput value={form.rating} onChange={(v) => setForm((f) => ({ ...f, rating: v }))} />
+          </FormField>
+        </View>
+
+        {editing && (
+          <Pressable onPress={remove} disabled={saving} style={styles.deleteBtn}>
+            <Text style={styles.deleteBtnText}>
+              {confirmDelete ? 'Tap again to delete this brew' : 'Delete brew'}
+            </Text>
+          </Pressable>
+        )}
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  sheet: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: colors.pearl,
+    zIndex: 10,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+  },
+  cancel: { fontFamily: fonts.sans, fontWeight: '500', fontSize: 15, color: colors.greyDark },
+  title: { fontFamily: fonts.serif, fontSize: 19, color: '#000' },
+  saveBtn: { fontFamily: fonts.sans, fontWeight: '800', fontSize: 15, color: colors.burgundy },
+  saveBtnDisabled: { color: '#b9a99a' },
+  scroll: { flex: 1 },
+  scrollContent: { padding: 24, paddingTop: 8 },
+  subtitle: { fontFamily: fonts.sans, fontWeight: '500', fontSize: 13, color: colors.greyDark, marginBottom: 20 },
+  subtitleBold: { color: '#000', fontWeight: '700' },
+  errorBox: { backgroundColor: 'rgba(252,153,155,0.22)', borderRadius: 12, padding: 12, marginBottom: 16 },
+  errorText: { fontFamily: fonts.sans, fontWeight: '500', fontSize: 13, color: colors.burgundy },
+  fields: { gap: 14 },
+  row: { flexDirection: 'row', gap: 10 },
+  datePicker: { alignSelf: 'flex-start', marginTop: 2 },
+  deleteBtn: {
+    marginTop: 28,
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 0.5,
+    borderColor: 'rgba(93,5,5,0.25)',
+    alignItems: 'center',
+  },
+  deleteBtnText: { fontFamily: fonts.sans, fontWeight: '600', fontSize: 14, color: colors.burgundy },
+});

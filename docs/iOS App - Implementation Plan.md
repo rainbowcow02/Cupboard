@@ -152,6 +152,14 @@ eas build --platform ios --profile development
 ```
 Install the dev build once, then use `npx expo start --dev-client` for fast JS reloads.
 
+### ⏳ To Do — Blocked on Apple Developer Account
+
+- [ ] **Trigger the EAS development build** once Apple Developer account activates (signed up 2026-05-29, allow 24–48 hrs).
+  - Run: `eas build --platform ios --profile development`
+  - EAS will prompt for Apple login and auto-generate signing certificates
+  - Build takes ~20 min; produces a `.ipa` installable on iPhone via QR code
+  - Everything else is done: secret token stored in EAS, `eas.json` configured, `expo-dev-client` installed, EAS project ID in `app.config.js`
+
 ---
 
 ## Getting It On Your Phone (TestFlight)
