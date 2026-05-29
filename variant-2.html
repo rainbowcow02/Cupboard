@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=390, initial-scale=1.0">
+<title>Variant 2 — Cinematic Scroll</title>
+<style>
+  :root {
+    --pearl: #f9eddd;
+    --moss: #355c44;
+    --supreme-beige: #cca68c;
+    --vintage-burgundy: #5d0505;
+    --blossom-pink: #fc999b;
+    --chardonnay: #fdcb88;
+    --black: #000000;
+    --grey-dark: #6b6b6b;
+    --grey-light: #d9d9d9;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    width: 390px;
+    height: 844px;
+    overflow: hidden;
+    background: var(--black);
+    font-family: 'Avenir', 'Avenir Next', system-ui, sans-serif;
+    position: relative;
+  }
+
+  .bg-blur {
+    position: absolute;
+    inset: 0;
+    background: var(--pearl);
+    transition: background 0.8s ease;
+    z-index: 0;
+  }
+
+  .section-header {
+    position: absolute;
+    top: 52px;
+    left: 24px;
+    z-index: 10;
+  }
+
+  .section-header h2 {
+    font-family: 'DM Serif Display', Georgia, serif;
+    font-size: 28px;
+    color: var(--black);
+  }
+
+  .track-wrap {
+    position: absolute;
+    bottom: 120px;
+    left: 0;
+    right: 0;
+    height: 520px;
+    overflow: hidden;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+  }
+
+  .track {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 0 195px;
+    will-change: transform;
+  }
+
+  .card {
+    flex-shrink: 0;
+    width: 260px;
+    height: 380px;
+    border-radius: 34px;
+    background: #fff;
+    overflow: hidden;
+    transition: transform 0.5s cubic-bezier(0.25,0.46,0.45,0.94),
+                opacity 0.5s ease,
+                box-shadow 0.5s ease;
+    transform-origin: center center;
+  }
+
+  .card.active {
+    transform: scale(1.12);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    opacity: 1;
+  }
+
+  .card.inactive {
+    transform: scale(0.88);
+    opacity: 0.55;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  }
+
+  .card-image {
+    width: 100%;
+    height: 240px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card-image .icon {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    font-size: 64px;
+    opacity: 0.25;
+  }
+
+  .card-body {
+    padding: 16px 18px;
+  }
+
+  .bean-name {
+    font-family: 'DM Serif Display', Georgia, serif;
+    font-size: 16px;
+    color: var(--black);
+    line-height: 1.3;
+    margin-bottom: 5px;
+  }
+
+  .roaster {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--vintage-burgundy);
+    margin-bottom: 12px;
+  }
+
+  .meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .date { font-size: 11px; color: var(--grey-dark); font-weight: 500; }
+  .rating { font-size: 12px; letter-spacing: 0.5px; }
+
+  .progress-strip {
+    position: absolute;
+    bottom: 80px;
+    left: 0; right: 0;
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    z-index: 10;
+  }
+
+  .pip {
+    height: 3px;
+    border-radius: 2px;
+    background: var(--grey-light);
+    transition: width 0.4s ease, background 0.4s ease;
+    width: 16px;
+  }
+  .pip.active { width: 32px; background: var(--moss); }
+</style>
+</head>
+<body>
+
+<div class="bg-blur" id="bgBlur"></div>
+
+<div class="section-header">
+  <h2>Recent Bags</h2>
+</div>
+
+<div class="track-wrap">
+  <div class="track" id="track"></div>
+</div>
+
+<div class="progress-strip" id="pips"></div>
+
+<script>
+const BEANS = [
+  { name: "Devoción Wild Flora\nWashed Ethiopian", roaster: "@Devoción", date: "Yesterday", rating: 5, bg: "linear-gradient(145deg,#cca68c,#fdcb88)", tint: "#f9eddd" },
+  { name: "Onyx Geometry\nNatural Anaerobic", roaster: "@Onyx Coffee Lab", date: "3 days ago", rating: 4, bg: "linear-gradient(145deg,#355c44,#6b8c79)", tint: "#e8f0eb" },
+  { name: "La Cabra Morning\nWashed Colombia", roaster: "@La Cabra", date: "Last week", rating: 5, bg: "linear-gradient(145deg,#fdcb88,#fc999b)", tint: "#fef4e8" },
+  { name: "Intelligentsia Black\nCat Espresso", roaster: "@Intelligentsia", date: "2 weeks ago", rating: 3, bg: "linear-gradient(145deg,#5d0505,#a04040)", tint: "#f5e8e8" },
+  { name: "Blue Bottle Giant\nSteps Ethiopia", roaster: "@Blue Bottle", date: "Last month", rating: 4, bg: "linear-gradient(145deg,#fc999b,#fdcb88)", tint: "#fff0f0" },
+];
+
+const track = document.getElementById('track');
+const pipsEl = document.getElementById('pips');
+const bgBlur = document.getElementById('bgBlur');
+let active = 0;
+let animating = false;
+
+function build() {
+  track.innerHTML = '';
+  pipsEl.innerHTML = '';
+  BEANS.forEach((b, i) => {
+    const card = document.createElement('div');
+    card.className = 'card ' + (i === active ? 'active' : 'inactive');
+    card.innerHTML = `
+      <div class="card-image" style="background:${b.bg}">
+        <div class="icon">☕</div>
+      </div>
+      <div class="card-body">
+        <div class="bean-name">${b.name.replace('\n','<br>')}</div>
+        <div class="roaster">${b.roaster}</div>
+        <div class="meta-row">
+          <span class="date">${b.date}</span>
+          <span class="rating">${'☕'.repeat(b.rating)}${'·'.repeat(5-b.rating)}</span>
+        </div>
+      </div>
+    `;
+    track.appendChild(card);
+    const pip = document.createElement('div');
+    pip.className = 'pip' + (i === active ? ' active' : '');
+    pipsEl.appendChild(pip);
+  });
+  positionTrack();
+  updateBg();
+}
+
+function positionTrack() {
+  const cardW = 260 + 16;
+  const offset = -(active * cardW);
+  track.style.transition = 'transform 0.55s cubic-bezier(0.25,0.46,0.45,0.94)';
+  track.style.transform = `translateX(${offset}px)`;
+}
+
+function updateBg() {
+  bgBlur.style.background = BEANS[active].tint;
+}
+
+function goTo(idx) {
+  if (animating) return;
+  animating = true;
+  active = (idx + BEANS.length) % BEANS.length;
+  const cardEls = track.querySelectorAll('.card');
+  const pipEls = pipsEl.querySelectorAll('.pip');
+  cardEls.forEach((c, i) => {
+    c.className = 'card ' + (i === active ? 'active' : 'inactive');
+  });
+  pipEls.forEach((p, i) => {
+    p.className = 'pip' + (i === active ? ' active' : '');
+  });
+  positionTrack();
+  updateBg();
+  setTimeout(() => { animating = false; }, 560);
+}
+
+build();
+
+let autoIdx = 0;
+setInterval(() => {
+  autoIdx = (autoIdx + 1) % BEANS.length;
+  goTo(autoIdx);
+}, 2000);
+</script>
+</body>
+</html>

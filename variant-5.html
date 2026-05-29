@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=390, initial-scale=1.0">
+<title>Variant 5 — Spatial Grid</title>
+<style>
+  :root {
+    --pearl: #f9eddd;
+    --moss: #355c44;
+    --supreme-beige: #cca68c;
+    --vintage-burgundy: #5d0505;
+    --blossom-pink: #fc999b;
+    --chardonnay: #fdcb88;
+    --black: #000000;
+    --grey-dark: #6b6b6b;
+    --grey-light: #d9d9d9;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    width: 390px;
+    height: 844px;
+    overflow: hidden;
+    background: var(--pearl);
+    font-family: 'Avenir', 'Avenir Next', system-ui, sans-serif;
+    position: relative;
+  }
+
+  .header {
+    padding: 52px 24px 0;
+    position: relative;
+    z-index: 10;
+  }
+
+  .header h2 {
+    font-family: 'DM Serif Display', Georgia, serif;
+    font-size: 28px;
+    color: var(--black);
+  }
+
+  .stage {
+    position: absolute;
+    left: 0; right: 0;
+    top: 120px;
+    bottom: 120px;
+    perspective: 900px;
+    perspective-origin: 50% 45%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    cursor: grab;
+  }
+  .stage:active { cursor: grabbing; }
+
+  .arc {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    will-change: transform;
+  }
+
+  .card {
+    position: absolute;
+    width: 200px;
+    height: 280px;
+    border-radius: 28px;
+    overflow: hidden;
+    top: 50%;
+    left: 50%;
+    margin-left: -100px;
+    margin-top: -140px;
+    transform-style: preserve-3d;
+    will-change: transform;
+    transition: box-shadow 0.3s;
+    cursor: pointer;
+  }
+
+  .card.center-card {
+    box-shadow: 0 16px 48px rgba(0,0,0,0.22);
+    z-index: 5;
+  }
+
+  .card.side-card {
+    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+  }
+
+  .card-image {
+    width: 100%;
+    height: 160px;
+    position: relative;
+  }
+
+  .card-image .icon {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    font-size: 52px; opacity: 0.25;
+  }
+
+  .card-body {
+    padding: 12px 14px 10px;
+    background: #fff;
+    height: 120px;
+  }
+
+  .card-name {
+    font-family: 'DM Serif Display', Georgia, serif;
+    font-size: 13px;
+    color: var(--black);
+    line-height: 1.3;
+    margin-bottom: 4px;
+  }
+
+  .card-roaster {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--vintage-burgundy);
+    margin-bottom: 8px;
+  }
+
+  .card-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .card-date { font-size: 10px; color: var(--grey-dark); font-weight: 500; }
+  .card-rating { font-size: 11px; letter-spacing: 0.5px; }
+
+  .detail-strip {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 120px;
+    padding: 16px 24px;
+    background: linear-gradient(to top, var(--pearl) 70%, transparent);
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+
+  .detail-name {
+    font-family: 'DM Serif Display', Georgia, serif;
+    font-size: 22px;
+    color: var(--black);
+    line-height: 1.2;
+    margin-bottom: 4px;
+  }
+
+  .detail-sub {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .detail-roaster {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--vintage-burgundy);
+  }
+
+  .detail-rating { font-size: 15px; letter-spacing: 1.5px; }
+
+  .nav-dots {
+    position: absolute;
+    bottom: 80px;
+    left: 0; right: 0;
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    z-index: 11;
+  }
+
+  .nav-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--grey-light);
+    transition: background 0.3s, transform 0.3s;
+  }
+  .nav-dot.active { background: var(--moss); transform: scale(1.4); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h2>Recent Bags</h2>
+</div>
+
+<div class="stage" id="stage">
+  <div class="arc" id="arc"></div>
+</div>
+
+<div class="detail-strip" id="detailStrip">
+  <div class="detail-name" id="dName"></div>
+  <div class="detail-sub">
+    <span class="detail-roaster" id="dRoaster"></span>
+    <span class="detail-rating" id="dRating"></span>
+  </div>
+</div>
+
+<div class="nav-dots" id="navDots"></div>
+
+<script>
+const BEANS = [
+  { name: "Devoción Wild Flora\nWashed Ethiopian", roaster: "@Devoción", date: "Yesterday", rating: 5, bg: "linear-gradient(145deg,#cca68c,#fdcb88)" },
+  { name: "Onyx Geometry\nNatural Anaerobic", roaster: "@Onyx Coffee Lab", date: "3 days ago", rating: 4, bg: "linear-gradient(145deg,#355c44,#6b8c79)" },
+  { name: "La Cabra Morning\nWashed Colombia", roaster: "@La Cabra", date: "Last week", rating: 5, bg: "linear-gradient(145deg,#fdcb88,#fc999b)" },
+  { name: "Intelligentsia Black\nCat Espresso", roaster: "@Intelligentsia", date: "2 weeks ago", rating: 3, bg: "linear-gradient(145deg,#5d0505,#a04040)" },
+  { name: "Blue Bottle Giant\nSteps Ethiopia", roaster: "@Blue Bottle", date: "Last month", rating: 4, bg: "linear-gradient(145deg,#fc999b,#fdcb88)" },
+];
+
+const arc = document.getElementById('arc');
+const stage = document.getElementById('stage');
+const navDots = document.getElementById('navDots');
+
+let centerIdx = 0;
+let arcRotation = 0;
+let targetRotation = 0;
+let isDragging = false;
+let dragStartX = 0;
+let dragStartRot = 0;
+let animFrame = null;
+
+const N = BEANS.length;
+const ARC_SPREAD = 32; // degrees between cards
+const ARC_RADIUS = 420; // px
+
+function getCardTransform(beanIdx, center) {
+  const offset = beanIdx - center;
+  const angle = offset * ARC_SPREAD;
+  const rad = (angle * Math.PI) / 180;
+  const x = Math.sin(rad) * ARC_RADIUS;
+  const z = Math.cos(rad) * ARC_RADIUS - ARC_RADIUS;
+  const scale = 1 - Math.abs(offset) * 0.12;
+  const opacity = 1 - Math.abs(offset) * 0.25;
+  return { x, z, angle, scale, opacity };
+}
+
+function buildCards() {
+  arc.innerHTML = '';
+  navDots.innerHTML = '';
+
+  BEANS.forEach((b, i) => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="card-image" style="background:${b.bg}">
+        <div class="icon">☕</div>
+      </div>
+      <div class="card-body">
+        <div class="card-name">${b.name.replace('\n','<br>')}</div>
+        <div class="card-roaster">${b.roaster}</div>
+        <div class="card-meta">
+          <span class="card-date">${b.date}</span>
+          <span class="card-rating">${'☕'.repeat(b.rating)}${'·'.repeat(5-b.rating)}</span>
+        </div>
+      </div>
+    `;
+    card.addEventListener('click', () => goTo(i));
+    arc.appendChild(card);
+
+    const dot = document.createElement('div');
+    dot.className = 'nav-dot';
+    navDots.appendChild(dot);
+  });
+
+  updatePositions();
+  updateDetail();
+}
+
+function updatePositions() {
+  const cardEls = arc.querySelectorAll('.card');
+  const dots = navDots.querySelectorAll('.nav-dot');
+  const floatCenter = ((arcRotation / ARC_SPREAD) % N + N) % N;
+  const snapCenter = Math.round(floatCenter) % N;
+
+  cardEls.forEach((card, i) => {
+    const offset = ((i - floatCenter) + N * 5) % N;
+    const wrappedOffset = offset > N / 2 ? offset - N : offset;
+    const angle = wrappedOffset * ARC_SPREAD;
+    const rad = (angle * Math.PI) / 180;
+    const x = Math.sin(rad) * ARC_RADIUS;
+    const z = Math.cos(rad) * ARC_RADIUS - ARC_RADIUS;
+    const absOff = Math.abs(wrappedOffset);
+    const scale = Math.max(0.6, 1 - absOff * 0.12);
+    const opacity = Math.max(0.2, 1 - absOff * 0.28);
+    const zIndex = Math.round(10 - absOff * 2);
+    card.style.transform = `translate3d(${x}px, 0, ${z}px) scale(${scale})`;
+    card.style.opacity = opacity;
+    card.style.zIndex = zIndex;
+    card.className = 'card ' + (absOff < 0.5 ? 'center-card' : 'side-card');
+  });
+
+  dots.forEach((d, i) => {
+    d.classList.toggle('active', i === snapCenter);
+  });
+
+  if (snapCenter !== centerIdx) {
+    centerIdx = snapCenter;
+    updateDetail();
+  }
+}
+
+function updateDetail() {
+  const b = BEANS[centerIdx];
+  document.getElementById('dName').innerHTML = b.name.replace('\n','<br>');
+  document.getElementById('dRoaster').textContent = b.roaster;
+  document.getElementById('dRating').textContent = '☕'.repeat(b.rating) + '·'.repeat(5-b.rating);
+}
+
+function goTo(idx) {
+  const diff = ((idx - centerIdx) + N) % N;
+  const shortDiff = diff > N / 2 ? diff - N : diff;
+  targetRotation = arcRotation + shortDiff * ARC_SPREAD;
+  startSpring();
+}
+
+let springVel = 0;
+function startSpring() {
+  if (animFrame) cancelAnimationFrame(animFrame);
+  function step() {
+    const dist = targetRotation - arcRotation;
+    springVel = springVel * 0.72 + dist * 0.18;
+    arcRotation += springVel;
+    updatePositions();
+    if (Math.abs(dist) > 0.1 || Math.abs(springVel) > 0.05) {
+      animFrame = requestAnimationFrame(step);
+    } else {
+      arcRotation = targetRotation;
+      springVel = 0;
+      updatePositions();
+    }
+  }
+  animFrame = requestAnimationFrame(step);
+}
+
+stage.addEventListener('pointerdown', e => {
+  isDragging = true;
+  dragStartX = e.clientX;
+  dragStartRot = arcRotation;
+  if (animFrame) cancelAnimationFrame(animFrame);
+  springVel = 0;
+  stage.setPointerCapture(e.pointerId);
+});
+
+stage.addEventListener('pointermove', e => {
+  if (!isDragging) return;
+  const dx = e.clientX - dragStartX;
+  arcRotation = dragStartRot - dx * 0.15;
+  updatePositions();
+});
+
+stage.addEventListener('pointerup', e => {
+  if (!isDragging) return;
+  isDragging = false;
+  targetRotation = Math.round(arcRotation / ARC_SPREAD) * ARC_SPREAD;
+  startSpring();
+});
+
+buildCards();
+
+// Auto-advance
+let autoIdx = 0;
+setInterval(() => {
+  if (!isDragging) {
+    autoIdx = (autoIdx + 1) % N;
+    goTo(autoIdx);
+  }
+}, 2000);
+</script>
+</body>
+</html>

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=390, initial-scale=1.0">
+<title>Variant 3 — Shelf View</title>
+<style>
+  :root {
+    --pearl: #f9eddd;
+    --moss: #355c44;
+    --supreme-beige: #cca68c;
+    --vintage-burgundy: #5d0505;
+    --blossom-pink: #fc999b;
+    --chardonnay: #fdcb88;
+    --black: #000000;
+    --grey-dark: #6b6b6b;
+    --grey-light: #d9d9d9;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    width: 390px;
+    height: 844px;
+    overflow: hidden;
+    background: var(--pearl);
+    font-family: 'Avenir', 'Avenir Next', system-ui, sans-serif;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .header {
+    padding: 52px 24px 16px;
+    flex-shrink: 0;
+  }
+
+  .header h2 {
+    font-family: 'DM Serif Display', Georgia, serif;
+    font-size: 28px;
+    color: var(--black);
+  }
+
+  .shelf {
+    padding: 8px 16px 8px;
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    flex-shrink: 0;
+    scrollbar-width: none;
+  }
+  .shelf::-webkit-scrollbar { display: none; }
+
+  .thumb {
+    flex-shrink: 0;
+    width: 88px;
+    height: 88px;
+    border-radius: 18px;
+    overflow: hidden;
+    cursor: pointer;
+    position: relative;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+
+  .thumb:active { transform: scale(0.95); }
+
+  .thumb.selected {
+    box-shadow: 0 0 0 3px var(--moss), 0 4px 16px rgba(0,0,0,0.15);
+  }
+
+  .thumb-img {
+    width: 100%; height: 100%;
+  }
+
+  .thumb-label {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(0,0,0,0.4);
+    padding: 3px 5px;
+    font-size: 9px;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1.2;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  .detail-panel {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .detail-inner {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+  }
+
+  .detail-card {
+    position: absolute;
+    left: 16px; right: 16px;
+    bottom: 0;
+    border-radius: 34px 34px 0 0;
+    background: #fff;
+    box-shadow: 0 -4px 32px rgba(0,0,0,0.1);
+    overflow: hidden;
+    transform: translateY(100%);
+    transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+    will-change: transform;
+  }
+
+  .detail-card.open {
+    transform: translateY(0);
+  }
+
+  .detail-image {
+    width: 100%;
+    height: 200px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .detail-image .icon {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    font-size: 72px; opacity: 0.22;
+  }
+
+  .detail-body {
+    padding: 20px 22px 24px;
+  }
+
+  .detail-name {
+    font-family: 'DM Serif Display', Georgia, serif;
+    font-size: 22px;
+    color: var(--black);
+    line-height: 1.3;
+    margin-bottom: 6px;
+  }
+
+  .detail-roaster {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--vintage-burgundy);
+    margin-bottom: 14px;
+  }
+
+  .detail-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 14px;
+    border-top: 1px solid var(--grey-light);
+  }
+
+  .detail-date { font-size: 12px; color: var(--grey-dark); font-weight: 500; }
+  .detail-rating { font-size: 16px; letter-spacing: 2px; }
+
+  .detail-tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+
+  .tag {
+    font-size: 11px;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: rgba(53,92,68,0.1);
+    color: var(--moss);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 10px;
+    color: var(--grey-dark);
+    opacity: 0.5;
+  }
+
+  .empty-state .arrow { font-size: 28px; }
+  .empty-state p { font-size: 13px; font-weight: 500; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h2>Recent Bags</h2>
+</div>
+
+<div class="shelf" id="shelf"></div>
+
+<div class="detail-panel" id="detailPanel">
+  <div class="detail-inner">
+    <div class="empty-state" id="emptyState">
+      <div class="arrow">↑</div>
+      <p>Tap a bag to see details</p>
+    </div>
+    <div class="detail-card" id="detailCard">
+      <div class="detail-image" id="detailImage">
+        <div class="icon">☕</div>
+      </div>
+      <div class="detail-body">
+        <div class="detail-name" id="detailName"></div>
+        <div class="detail-roaster" id="detailRoaster"></div>
+        <div class="detail-tags" id="detailTags"></div>
+        <div class="detail-meta">
+          <span class="detail-date" id="detailDate"></span>
+          <span class="detail-rating" id="detailRating"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const BEANS = [
+  { name: "Devoción Wild Flora\nWashed Ethiopian", roaster: "@Devoción", date: "Yesterday", rating: 5, bg: "linear-gradient(145deg,#cca68c,#fdcb88)", tags: ["Washed","Ethiopia","Floral"] },
+  { name: "Onyx Geometry\nNatural Anaerobic", roaster: "@Onyx Coffee Lab", date: "3 days ago", rating: 4, bg: "linear-gradient(145deg,#355c44,#6b8c79)", tags: ["Natural","Colombia","Fermented"] },
+  { name: "La Cabra Morning\nWashed Colombia", roaster: "@La Cabra", date: "Last week", rating: 5, bg: "linear-gradient(145deg,#fdcb88,#fc999b)", tags: ["Washed","Colombia","Citrus"] },
+  { name: "Intelligentsia Black\nCat Espresso", roaster: "@Intelligentsia", date: "2 weeks ago", rating: 3, bg: "linear-gradient(145deg,#5d0505,#a04040)", tags: ["Blend","Espresso","Bold"] },
+  { name: "Blue Bottle Giant\nSteps Ethiopia", roaster: "@Blue Bottle", date: "Last month", rating: 4, bg: "linear-gradient(145deg,#fc999b,#fdcb88)", tags: ["Natural","Ethiopia","Fruity"] },
+];
+
+const shelf = document.getElementById('shelf');
+const detailCard = document.getElementById('detailCard');
+const emptyState = document.getElementById('emptyState');
+let selectedIdx = -1;
+let autoIdx = 0;
+
+function buildShelf() {
+  BEANS.forEach((b, i) => {
+    const thumb = document.createElement('div');
+    thumb.className = 'thumb';
+    thumb.dataset.idx = i;
+    thumb.innerHTML = `
+      <div class="thumb-img" style="background:${b.bg};width:100%;height:100%"></div>
+      <div class="thumb-label">${b.name.split('\n')[0]}</div>
+    `;
+    thumb.addEventListener('click', () => selectBean(i));
+    shelf.appendChild(thumb);
+  });
+}
+
+function selectBean(idx) {
+  if (selectedIdx === idx) return;
+  selectedIdx = idx;
+  document.querySelectorAll('.thumb').forEach((t, i) => {
+    t.classList.toggle('selected', i === idx);
+  });
+  const b = BEANS[idx];
+  document.getElementById('detailImage').style.background = b.bg;
+  document.getElementById('detailName').innerHTML = b.name.replace('\n','<br>');
+  document.getElementById('detailRoaster').textContent = b.roaster;
+  document.getElementById('detailDate').textContent = b.date;
+  document.getElementById('detailRating').textContent = '☕'.repeat(b.rating) + '·'.repeat(5-b.rating);
+  document.getElementById('detailTags').innerHTML = b.tags.map(t => `<span class="tag">${t}</span>`).join('');
+  emptyState.style.display = 'none';
+  detailCard.classList.add('open');
+}
+
+buildShelf();
+
+setInterval(() => {
+  autoIdx = (autoIdx + 1) % BEANS.length;
+  selectBean(autoIdx);
+}, 2000);
+</script>
+</body>
+</html>
