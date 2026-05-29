@@ -1815,6 +1815,246 @@ function BrewForm({ coffee, brew, onClose, onSaved }) {
   );
 }
 
+// ─── Beans Page ───────────────────────────────────────────────────────────────
+
+const ROAST_ORDER = ['Ultralight', 'Light', 'Medium-Light', 'Medium', 'Medium-Dark', 'Dark'];
+
+const BAG_SHADOW_COLOR = {
+  orange: 'rgba(195,114,69,0.4)',
+  blue:   'rgba(21,42,63,0.4)',
+  green:  'rgba(49,95,69,0.4)',
+  white:  'rgba(0,0,0,0.18)',
+};
+
+function BagCarousel({ coffees, onSelect }) {
+  const [activeIdx, setActiveIdx] = React.useState(0);
+  const [heroVisible, setHeroVisible] = React.useState(true);
+  const fadeTimer = React.useRef(null);
+
+  React.useEffect(() => () => { if (fadeTimer.current) clearTimeout(fadeTimer.current); }, []);
+
+  const go = (dir) => {
+    const next = Math.max(0, Math.min(coffees.length - 1, activeIdx + dir));
+    if (next === activeIdx) return;
+    setHeroVisible(false);
+    if (fadeTimer.current) clearTimeout(fadeTimer.current);
+    fadeTimer.current = setTimeout(() => { setActiveIdx(next); setHeroVisible(true); }, 180);
+  };
+
+  if (!coffees.length) return null;
+  const active = coffees[activeIdx];
+
+  return (
+    <div>
+      {/* Card stack — let shadows bleed freely; horizontal clipping is handled by parent */}
+      <div style={{ position: 'relative', height: 280 }}>
+        {coffees.map((coffee, i) => {
+          const pos = i - activeIdx;
+          const isCenter = pos === 0;
+          const hidden = Math.abs(pos) > 1;
+          const shadowColor = BAG_SHADOW_COLOR[coffee.bagImg] || 'rgba(0,0,0,0.18)';
+
+          return (
+            <div
+              key={coffee.id}
+              onClick={() => pos !== 0 ? go(pos > 0 ? 1 : -1) : onSelect?.(coffee.id)}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 'calc(50% - 140px)',
+                width: 280,
+                transform: `translateX(${pos * 191}px) translateY(${isCenter ? 0 : 18}px) rotate(${pos * 5}deg) scale(${isCenter ? 1 : 0.929})`,
+                opacity: hidden ? 0 : 1,
+                zIndex: isCenter ? 2 : 1,
+                cursor: 'pointer',
+                transition: 'transform 0.38s cubic-bezier(0.32,0.72,0,1), opacity 0.2s ease',
+                willChange: 'transform',
+              }}
+            >
+              <div style={{ position: 'relative', width: 280, height: 280 }}>
+                <img
+                  src={`assets/bag-${coffee.bagImg}.webp`}
+                  alt={coffee.bean}
+                  style={{
+                    position: 'absolute',
+                    width: 117.87,
+                    height: 242.41,
+                    left: 82.47,
+                    top: 10.05,
+                    objectFit: 'cover',
+                    filter: `drop-shadow(-4px 4px 34px ${shadowColor})`,
+                    pointerEvents: 'none',
+                  }}
+                />
+                <BagLabel cup={coffee} bagWidth={280} />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Hero text — cross-fades on index change */}
+      <div style={{
+        paddingTop: 8, paddingBottom: 8,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+        opacity: heroVisible ? 1 : 0,
+        transition: 'opacity 0.18s ease',
+      }}>
+        <p style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 15, color: '#355c44', margin: 0, lineHeight: 1.1, textAlign: 'center' }}>
+          {active.roaster}
+        </p>
+        <p style={{ fontFamily: '"Avenir Next Condensed", Avenir, system-ui, sans-serif', fontWeight: 600, fontSize: 28, color: '#000', margin: 0, letterSpacing: '-0.28px', lineHeight: 'normal', textAlign: 'center' }}>
+          {active.bean}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function RecipeCard({ recipe, onSelect }) {
+  const chips = [
+    recipe.brewer,
+    recipe.grind,
+    recipe.beansG && recipe.waterMl ? `${recipe.beansG}g → ${recipe.waterMl}ml` : null,
+    recipe.tempC ? `${recipe.tempC}°C` : null,
+  ].filter(Boolean);
+
+  return (
+    <GlassCard onClick={() => onSelect?.(recipe.coffeeId)}>
+      <div style={{ padding: '16px 20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
+          <p style={{
+            fontFamily: '"Avenir Next Condensed", Avenir, system-ui, sans-serif', fontWeight: 600,
+            fontSize: 17, color: '#000', letterSpacing: '-0.5px', lineHeight: 1.4, margin: 0,
+            minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }}>{recipe.bean}</p>
+          <span style={{ fontSize: 14, lineHeight: 1, flexShrink: 0 }}>
+            {Array.from({ length: recipe.rating || 0 }).map(() => '☕️').join('')}
+          </span>
+        </div>
+        <p style={{
+          fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500,
+          fontSize: 13, color: '#6b6b6b', margin: '0 0 10px', lineHeight: 1.4,
+        }}>
+          {recipe.roaster}{recipe.date ? ` · ${formatDate(recipe.date)}` : ''}
+        </p>
+        {chips.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {chips.map((chip, i) => (
+              <span key={i} style={{
+                padding: '4px 10px', borderRadius: 100,
+                background: 'rgba(0,0,0,0.06)',
+                fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 12, color: '#6b6b6b',
+              }}>{chip}</span>
+            ))}
+          </div>
+        )}
+      </div>
+    </GlassCard>
+  );
+}
+
+function BeansScreen({ coffees }) {
+  const onSelectCoffee = React.useContext(SelectCupContext);
+  const carouselItems = coffees.slice(0, 3);
+
+  const allTopRecipes = React.useMemo(() =>
+    coffees.flatMap(c =>
+      c.brews.map(b => ({
+        ...b,
+        rating: b.rating ?? c.rating,
+        bean: c.bean,
+        roaster: c.roaster,
+        roastLevel: c.roastLevel,
+        coffeeId: c.id,
+      }))
+    ).filter(b => (b.rating ?? 0) >= 4),
+  [coffees]);
+
+  const byRoast = React.useMemo(() => {
+    const groups = {};
+    for (const r of allTopRecipes) {
+      const level = r.roastLevel || 'Unknown';
+      if (!groups[level]) groups[level] = [];
+      groups[level].push(r);
+    }
+    return groups;
+  }, [allTopRecipes]);
+
+  const availableLevels = React.useMemo(() => {
+    const ordered = ROAST_ORDER.filter(l => byRoast[l]?.length > 0);
+    Object.keys(byRoast).forEach(l => {
+      if (!ROAST_ORDER.includes(l) && byRoast[l]?.length > 0) ordered.push(l);
+    });
+    return ordered;
+  }, [byRoast]);
+
+  const defaultLevel = React.useMemo(() =>
+    availableLevels.reduce(
+      (best, l) => (!best || byRoast[l].length > byRoast[best].length ? l : best),
+      null
+    ),
+  [availableLevels, byRoast]);
+
+  const [selectedLevel, setSelectedLevel] = React.useState(defaultLevel);
+
+  React.useEffect(() => {
+    if (selectedLevel === null && defaultLevel) setSelectedLevel(defaultLevel);
+  }, [defaultLevel]);
+
+  const displayedRecipes = selectedLevel ? (byRoast[selectedLevel] || []) : [];
+
+  return (
+    <div className="scrollable" style={{ height: '100%', overflowY: 'auto', paddingBottom: '100px' }}>
+      <div style={{ padding: '16px 24px 0' }}>
+        <h1 style={{ fontFamily: 'DM Serif Display, Georgia, serif', fontSize: 38, color: '#000', margin: 0, letterSpacing: '-1px', lineHeight: 1 }}>
+          Beans
+        </h1>
+      </div>
+
+      <div style={{ marginTop: 24, overflowX: 'clip' }}>
+        <h2 style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 800, fontSize: 21, color: '#000', margin: '0 0 14px', paddingLeft: 24, letterSpacing: '-0.5px', lineHeight: 1.2 }}>
+          Working on
+        </h2>
+        <BagCarousel coffees={carouselItems} onSelect={onSelectCoffee} />
+      </div>
+
+      <div style={{ padding: '28px 24px 0' }}>
+        <h2 style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 800, fontSize: 21, color: '#000', margin: '0 0 14px', letterSpacing: '-0.5px', lineHeight: 1.2 }}>
+          Top Recipes
+        </h2>
+        {availableLevels.length > 0 ? (
+          <>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+              {availableLevels.map(level => (
+                <button key={level} onClick={() => setSelectedLevel(level)} style={{
+                  padding: '8px 14px', borderRadius: 100, border: 'none', cursor: 'pointer',
+                  fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 13,
+                  background: selectedLevel === level ? 'rgba(252,153,155,0.6)' : 'rgba(0,0,0,0.06)',
+                  color: selectedLevel === level ? '#5d0505' : '#6b6b6b',
+                  transition: 'background 0.2s, color 0.2s',
+                }}>{level}</button>
+              ))}
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {displayedRecipes.map((recipe, i) => (
+                <RecipeCard key={recipe.id || `${recipe.coffeeId}-${i}`} recipe={recipe} onSelect={onSelectCoffee} />
+              ))}
+            </div>
+          </>
+        ) : (
+          <p style={{
+            fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 13, color: '#6b6b6b',
+            margin: 0, padding: '24px', textAlign: 'center', lineHeight: 1.5,
+          }}>
+            Log some 4–5 star brews to see top recipes here.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const [activeTab, setActiveTab] = React.useState('home');
   const [prevTab, setPrevTab] = React.useState(null);
@@ -1876,16 +2116,6 @@ function App() {
     setTimeout(() => setPrevTab(null), 320);
   };
 
-  function BeansScreen() {
-    return (
-      <div style={{ flex: 1, background: '#f9eddd', display: 'flex', alignItems: 'center', justifyContent: 'center', paddingBottom: '118px' }}>
-        <p style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 800, fontSize: '17px', lineHeight: 1.4, letterSpacing: '-0.5px', color: '#6b6b6b', margin: 0 }}>
-          Coming soon!
-        </p>
-      </div>
-    );
-  }
-
   const renderScreen = (tabId) => {
     if (tabId === 'home') return (
       <div style={{ position: 'relative', height: '100%' }}>
@@ -1921,7 +2151,7 @@ function App() {
     if (!coffees) return <LoadingScreen />;
     if (tabId === 'search') return <ExploreScreen cups={coffees} />;
     if (tabId === 'add') return <LogCupScreen onSaved={loadCoffees} onDone={() => handleTabChange('home')} />;
-    if (tabId === 'beans') return <BeansScreen />;
+    if (tabId === 'beans') return <BeansScreen coffees={coffees} />;
     return null;
   };
 
