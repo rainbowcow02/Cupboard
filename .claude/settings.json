@@ -15,7 +15,12 @@
       "Bash(curl -s \"http://localhost:5199/\")",
       "Bash(node -e \"const {chromium} = require\\('playwright'\\); console.log\\(!!chromium\\);\")",
       "Bash('/Users/lindsaylee/.cache/ms-playwright/chromium-1223/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing' --headless=new --screenshot=/tmp/cupboard-icons.png --window-size=393,852 --virtual-time-budget=5000 --disable-gpu http://localhost:5200/)",
-      "Bash(kill %1)"
+      "Bash(kill %1)",
+      "Bash(git commit -m ' *)",
+      "Bash(gh pr create --title 'Home tab sorting, filters, and micro-animations' --body ' *)",
+      "Bash(brew install *)",
+      "Bash(git pull *)",
+      "Bash(git branch *)"
     ]
   }
 }
