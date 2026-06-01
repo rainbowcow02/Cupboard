@@ -11,7 +11,7 @@ export default {
     userInterfaceStyle: 'light',
     ios: {
       supportsTablet: false,
-      bundleIdentifier: 'com.cupboard.app',
+      bundleIdentifier: 'com.rainbowcow02.cupboard',
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
       },
