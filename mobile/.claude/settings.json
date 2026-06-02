@@ -4,7 +4,13 @@
       "Bash(find \"/Users/lindsaylee/Documents/Side Projects/Cupboard-mobile\" -maxdepth 3 -name \"*.md\" ! -path \"*/node_modules/*\" 2>/dev/null)",
       "Read(//Users/lindsaylee/Documents/Side Projects/Cupboard-mobile/**)",
       "Bash(git -C \"/Users/lindsaylee/Documents/Side Projects/Cupboard-mobile/mobile\" status)",
-      "Bash(git -C \"/Users/lindsaylee/Documents/Side Projects/Cupboard-mobile/mobile\" diff --stat)"
+      "Bash(git -C \"/Users/lindsaylee/Documents/Side Projects/Cupboard-mobile/mobile\" diff --stat)",
+      "Bash(brew --version)",
+      "Bash(npx expo *)",
+      "WebFetch(domain:expo.dev)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)"
     ]
   },
   "enabledPlugins": {
