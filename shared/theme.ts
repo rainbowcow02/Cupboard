@@ -1,5 +1,6 @@
 export const colors = {
   pearl: '#f9eddd',
+  black: '#000000',
   moss: '#355c44',
   supremeBeige: '#cca68c',
   burgundy: '#5d0505',

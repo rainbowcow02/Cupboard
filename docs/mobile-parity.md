@@ -39,17 +39,17 @@ Status key: ✅ done · ❌ missing · ⚠️ partial · — not applicable
 
 | Item | Web | Mobile | Batch | Success looks like |
 |---|---|---|---|---|
-| Floating glass pill design | ✅ | ❌ | 1 | Tab bar hovers above content as a frosted-glass rounded pill with a visible drop shadow; content scrolls underneath it |
-| Custom SVG icons | ✅ | ❌ | 1 | Each tab shows a clean line-drawn icon (shelf, pin, mug, bean) instead of emoji; active icon fills in moss green |
-| Active tab highlight | ✅ | ❌ | 1 | The active tab label turns Vintage Burgundy and sits inside a soft Blossom Pink tinted highlight within the pill |
+| Floating glass pill design | ✅ | ✅ | 1 | Tab bar hovers above content as a frosted-glass rounded pill with a visible drop shadow; content scrolls underneath it |
+| Custom SVG icons | ✅ | ✅ | 1 | Each tab shows a clean line-drawn icon (shelf, pin, mug, bean) instead of emoji; active icon fills in moss green |
+| Active tab highlight | ✅ | ⚠️ | 1 | The active tab label turns Vintage Burgundy and sits inside a soft Blossom Pink tinted highlight within the pill — pill + burgundy label done; SVG icons don't change fill/color on active state |
 
 ### Home
 
 | Item | Web | Mobile | Batch | Success looks like |
 |---|---|---|---|---|
-| "Cupboard" title + avatar header | ✅ | ❌ | 2 | Top of screen shows "Cupboard" in serif display font on the left and a moss-green circle with "L" on the right |
-| Shelf side margins | ✅ | ❌ | 2 | Shelf image has ~16px of pearl background visible on each side; doesn't bleed to screen edges |
-| Bag images not cropped | ✅ | ❌ | 2 | Full bag silhouette is visible in its shelf slot; no bag appears clipped or zoomed-in |
+| "Cupboard" title + avatar header | ✅ | ✅ | 2 | Top of screen shows "Cupboard" in serif display font on the left and a moss-green circle with "L" on the right |
+| Shelf side margins | ✅ | ✅ | 2 | Shelf image has ~16px of pearl background visible on each side; doesn't bleed to screen edges |
+| Bag images not cropped | ✅ | ✅ | 2 | Full bag silhouette is visible in its shelf slot; no bag appears clipped or zoomed-in |
 | Sort: Recent / A-Z + direction | ✅ | ❌ | Deferred | A sort button near the header lets you toggle Recent vs A-Z and flip the direction; shelf reorders instantly |
 | Filter: Country + Process + Roast | ✅ | ⚠️ | Deferred | Filter sheet has three grouped multi-select lists; each active dimension renders as a text pill (e.g. "Ethiopia, Kenya") truncated at 200px max width; shelf updates live |
 

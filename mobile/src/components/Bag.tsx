@@ -23,7 +23,7 @@ export function Bag({ coffee, width, height, onPress }: BagProps) {
       <Image
         source={BAG_IMAGES[coffee.bagImg]}
         style={styles.image}
-        resizeMode="cover"
+        resizeMode="contain"
       />
       <BagLabel coffee={coffee} bagWidth={width} />
     </View>

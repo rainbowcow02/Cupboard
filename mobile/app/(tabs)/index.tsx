@@ -11,9 +11,11 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Coffee } from '@shared/lib/coffees';
 import { colors, fonts } from '@shared/theme';
 import { ShelfRow } from '../../src/components/ShelfRow';
+import { TAB_BAR_HEIGHT } from '../../src/components/TabBar';
 import { useCoffees } from '../../src/hooks/useCoffees';
 
 const SHELF_DESIGN_WIDTH = 370;
@@ -109,7 +111,8 @@ function ShelfContinued({
 
 export default function HomeScreen() {
   const { width } = useWindowDimensions();
-  const scale = width / SHELF_DESIGN_WIDTH;
+  const insets = useSafeAreaInsets();
+  const scale = (width - 32) / SHELF_DESIGN_WIDTH;
   const router = useRouter();
   const { coffees, loading } = useCoffees();
   const [activeFilter, setActiveFilter] = useState('All');
@@ -144,9 +147,15 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Cupboard</Text>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>L</Text>
+        </View>
+      </View>
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={{ alignItems: 'center' }}
+        contentContainerStyle={{ alignItems: 'center', paddingBottom: TAB_BAR_HEIGHT + insets.bottom }}
         showsVerticalScrollIndicator={false}
       >
         {/* Filter pill row */}
@@ -184,7 +193,6 @@ export default function HomeScreen() {
           <ShelfContinued key={i} coffees={group} scale={scale} onPressCoffee={onPressCoffee} />
         ))}
 
-        <View style={{ height: 32 }} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -194,6 +202,33 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.pearl,
+  },
+  header: {
+    paddingHorizontal: 24,
+    paddingBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  headerTitle: {
+    fontFamily: fonts.serif,
+    fontSize: 38,
+    color: colors.black,
+    letterSpacing: -1,
+  },
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: colors.moss,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    fontFamily: fonts.sans,
+    fontWeight: '600',
+    fontSize: 20,
+    color: colors.pearl,
   },
   scroll: {
     flex: 1,
