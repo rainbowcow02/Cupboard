@@ -1,9 +1,10 @@
-import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
+import BottomSheet, { BottomSheetScrollView, useBottomSheetInternal } from '@gorhom/bottom-sheet';
 import MapboxGL from '@rnmapbox/maps';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { type ReactNode, useCallback, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Bag } from '../../src/components/Bag';
 import { BeanMarker } from '../../src/components/BeanMarker';
@@ -51,6 +52,31 @@ const PILL_H = TAB_BAR_HEIGHT - 16; // exported TAB_BAR_HEIGHT = pill (64) + 16
 const SHEET_TAB_GAP = 16; // gap between sheet bottom and tab bar (clears tab bar shadow)
 const HEADER_H = 84;  // grabber 16 + title section 58 + paddingBottom 10
 const ROW_H    = 104; // paddingVertical 16×2 + 72px bag
+
+// Floating-card background sized to the *visible* height (sheet top → bottom inset), so the
+// rounded bottom corners and drop shadow track the bottom of the card at every snap point —
+// rather than gorhom's default background, which is fixed to the largest snap point.
+function SheetBackground() {
+  const { animatedPosition, animatedLayoutState } = useBottomSheetInternal();
+  const cardStyle = useAnimatedStyle(() => {
+    const visible = animatedLayoutState.get().containerHeight - animatedPosition.get();
+    return { height: visible > 0 ? visible : 0 };
+  });
+  return <Animated.View pointerEvents="none" style={[styles.sheetCard, cardStyle]} />;
+}
+
+// Clips the sheet content to the visible card height so the list never spills past the rounded
+// bottom (and over the tab bar) when the sheet is collapsed. `detached` leaves content overflow
+// visible, so we clip it ourselves here.
+function SheetContentClip({ children }: { children: ReactNode }) {
+  const { animatedPosition, animatedLayoutState } = useBottomSheetInternal();
+  const clipStyle = useAnimatedStyle(() => {
+    const { containerHeight, handleHeight } = animatedLayoutState.get();
+    const visible = containerHeight - animatedPosition.get() - Math.max(handleHeight, 0);
+    return { height: visible > 0 ? visible : 0 };
+  });
+  return <Animated.View style={[styles.sheetClip, clipStyle]}>{children}</Animated.View>;
+}
 
 export default function ExploreScreen() {
   const { coffees } = useCoffees();
@@ -242,54 +268,57 @@ export default function ExploreScreen() {
         ref={sheetRef}
         index={0}
         snapPoints={snapPoints}
+        detached
         topInset={sheetTopInset}
         bottomInset={tabBarInset}
-        backgroundStyle={styles.sheetBg}
+        backgroundComponent={SheetBackground}
         handleIndicatorStyle={styles.grabber}
         style={styles.sheet}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerText}>
-            <Text style={styles.titleText}>{titleText}</Text>
-            <Text style={styles.subtitleText}>{subtitleText}</Text>
-          </View>
-          {selectedOrigin && (
-            <TouchableOpacity
-              onPress={() => handleMarkerPress(selectedOrigin)}
-              style={styles.clearBtn}
-              hitSlop={8}
-            >
-              <Text style={styles.clearBtnText}>✕</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* List */}
-        <BottomSheetScrollView contentContainerStyle={[styles.listContent, { paddingBottom: 16 }]}>
-          {filteredCoffees.map((coffee, i) => (
-            <View key={coffee.id}>
-              <TouchableOpacity
-                style={styles.listItem}
-                onPress={() => router.push(`/coffee/${coffee.id}`)}
-                activeOpacity={0.7}
-              >
-                <View style={styles.bagThumb}>
-                  <Bag coffee={coffee} width={72} height={72} />
-                </View>
-                <View style={styles.listItemText}>
-                  <Text style={styles.beanName} numberOfLines={1}>{coffee.bean}</Text>
-                  <Text style={styles.roasterName} numberOfLines={1}>{coffee.roaster}</Text>
-                  <Text style={styles.originText} numberOfLines={1}>
-                    {ORIGIN_FLAGS[coffee.origin ?? ''] ?? ''} {coffee.origin}
-                  </Text>
-                </View>
-                <Text style={styles.dateText}>{formatDate(coffee.date)}</Text>
-              </TouchableOpacity>
-              {i < filteredCoffees.length - 1 && <View style={styles.divider} />}
+        <SheetContentClip>
+          {/* Header */}
+          <View style={styles.header}>
+            <View style={styles.headerText}>
+              <Text style={styles.titleText}>{titleText}</Text>
+              <Text style={styles.subtitleText}>{subtitleText}</Text>
             </View>
-          ))}
-        </BottomSheetScrollView>
+            {selectedOrigin && (
+              <TouchableOpacity
+                onPress={() => handleMarkerPress(selectedOrigin)}
+                style={styles.clearBtn}
+                hitSlop={8}
+              >
+                <Text style={styles.clearBtnText}>✕</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* List */}
+          <BottomSheetScrollView contentContainerStyle={[styles.listContent, { paddingBottom: 16 }]}>
+            {filteredCoffees.map((coffee, i) => (
+              <View key={coffee.id}>
+                <TouchableOpacity
+                  style={styles.listItem}
+                  onPress={() => router.push(`/coffee/${coffee.id}`)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.bagThumb}>
+                    <Bag coffee={coffee} width={72} height={72} />
+                  </View>
+                  <View style={styles.listItemText}>
+                    <Text style={styles.beanName} numberOfLines={1}>{coffee.bean}</Text>
+                    <Text style={styles.roasterName} numberOfLines={1}>{coffee.roaster}</Text>
+                    <Text style={styles.originText} numberOfLines={1}>
+                      {ORIGIN_FLAGS[coffee.origin ?? ''] ?? ''} {coffee.origin}
+                    </Text>
+                  </View>
+                  <Text style={styles.dateText}>{formatDate(coffee.date)}</Text>
+                </TouchableOpacity>
+                {i < filteredCoffees.length - 1 && <View style={styles.divider} />}
+              </View>
+            ))}
+          </BottomSheetScrollView>
+        </SheetContentClip>
       </BottomSheet>
     </View>
   );
@@ -300,16 +329,22 @@ const styles = StyleSheet.create({
   map: { flex: 1 },
 
   sheet: { marginHorizontal: 16 },
-  sheetBg: {
+  sheetCard: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
     borderRadius: 34,
-    borderBottomLeftRadius: 34,
-    borderBottomRightRadius: 34,
     backgroundColor: 'rgba(245,245,245,0.92)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.12,
     shadowRadius: 20,
     elevation: 8,
+  },
+  sheetClip: {
+    overflow: 'hidden',
+    borderRadius: 34,
   },
   zoomControls: {
     position: 'absolute',
