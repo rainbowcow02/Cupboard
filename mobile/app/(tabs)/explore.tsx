@@ -3,11 +3,14 @@ import MapboxGL from '@rnmapbox/maps';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Pressable, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Bag } from '../../src/components/Bag';
 import { BeanMarker } from '../../src/components/BeanMarker';
+import { TAB_BAR_HEIGHT } from '../../src/components/TabBar';
 import { useCoffees } from '../../src/hooks/useCoffees';
 import { colors, fonts } from '@shared/theme';
-import { Coffee } from '@shared/lib/coffees';
+import { Coffee, formatDate } from '@shared/lib/coffees';
 
 MapboxGL.setAccessToken(
   Constants.expoConfig?.extra?.mapboxToken ?? ''
@@ -43,22 +46,39 @@ const ORIGIN_FLAGS: Record<string, string> = {
   Yemen:       '🇾🇪',
 };
 
-const SNAP_POINTS = ['28%', '40%'];
 const MAPBOX_STYLE = 'mapbox://styles/rainbowcow02/cmpbsoxbv002n01qhe2v56lsw';
-
-const BAG_IMAGES: Record<string, ReturnType<typeof require>> = {
-  white:  require('../../../shared/assets/bag-white.png'),
-  blue:   require('../../../shared/assets/bag-blue.png'),
-  green:  require('../../../shared/assets/bag-green.png'),
-  orange: require('../../../shared/assets/bag-orange.png'),
-};
+const PILL_H = TAB_BAR_HEIGHT - 16; // exported TAB_BAR_HEIGHT = pill (64) + 16
+const HEADER_H = 84;  // grabber 16 + title section 58 + paddingBottom 10
+const ROW_H    = 104; // paddingVertical 16×2 + 72px bag
 
 export default function ExploreScreen() {
   const { coffees } = useCoffees();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { height: screenH } = useWindowDimensions();
+  const mapRef    = useRef<MapboxGL.MapView>(null);
   const cameraRef = useRef<MapboxGL.Camera>(null);
-  const sheetRef = useRef<BottomSheet>(null);
+  const sheetRef  = useRef<BottomSheet>(null);
   const [selectedOrigin, setSelectedOrigin] = useState<string | null>(null);
+
+  // Clearance from screen bottom so the sheet sits above the floating tab bar
+  const tabBarInset = Math.max(insets.bottom, 16) + PILL_H + 16;
+
+  // Pixel snap points — '240' = header + 1.5 rows at any screen size
+  const snapPoints = useMemo(
+    () => [HEADER_H + Math.ceil(1.5 * ROW_H), Math.round((screenH - tabBarInset) * 0.45)],
+    [screenH, tabBarInset],
+  );
+
+  // Zoom buttons sit just above the fully-expanded sheet
+  const zoomBtnBottom = tabBarInset + snapPoints[1] + 14;
+
+  const handleZoom = useCallback(async (delta: number) => {
+    const zoom = await mapRef.current?.getZoom();
+    if (zoom != null) {
+      cameraRef.current?.zoomTo(Math.min(Math.max(zoom + delta, 1.5), 5), 300);
+    }
+  }, []);
 
   const originGroups = useMemo(() =>
     coffees.reduce<Record<string, Coffee[]>>((acc, coffee) => {
@@ -81,8 +101,15 @@ export default function ExploreScreen() {
     if (!isDeselecting) {
       const coords = ORIGIN_COORDS[origin];
       if (coords) {
-        cameraRef.current?.flyTo([coords[1], coords[0]], 900);
-        cameraRef.current?.zoomTo(4, 900);
+        // Offset camera so the pin lands in the visible map area above the expanded sheet
+        const sheetH = (screenH - tabBarInset) * 0.4;
+        cameraRef.current?.setCamera({
+          centerCoordinate: [coords[1], coords[0]],
+          zoomLevel: 4,
+          animationDuration: 900,
+          animationMode: 'flyTo',
+          padding: { paddingBottom: tabBarInset + sheetH, paddingTop: 60, paddingLeft: 0, paddingRight: 0 },
+        });
       }
       sheetRef.current?.snapToIndex(1);
     } else {
@@ -100,7 +127,7 @@ export default function ExploreScreen() {
         );
       }
     }
-  }, [selectedOrigin]);
+  }, [selectedOrigin, screenH, tabBarInset]);
 
   const handleMapPress = useCallback(() => {
     if (selectedOrigin) {
@@ -135,6 +162,7 @@ export default function ExploreScreen() {
   return (
     <View style={styles.container}>
       <MapboxGL.MapView
+        ref={mapRef}
         style={styles.map}
         styleURL={MAPBOX_STYLE}
         projection="mercator"
@@ -166,7 +194,6 @@ export default function ExploreScreen() {
           const coords = ORIGIN_COORDS[origin];
           if (!coords) return null;
           const isSelected = selectedOrigin === origin;
-          const isDimmed = selectedOrigin !== null && !isSelected;
           return (
             <MapboxGL.MarkerView
               key={origin}
@@ -177,17 +204,39 @@ export default function ExploreScreen() {
                 onPress={(e) => { e.stopPropagation(); handleMarkerPress(origin); }}
                 activeOpacity={0.85}
               >
-                <BeanMarker count={group.length} selected={isSelected} dimmed={isDimmed} />
+                <BeanMarker count={group.length} selected={isSelected} />
               </TouchableOpacity>
             </MapboxGL.MarkerView>
           );
         })}
       </MapboxGL.MapView>
 
+      {/* Zoom controls — always visible above the expanded sheet */}
+      <View style={[styles.zoomControls, { bottom: zoomBtnBottom }]} pointerEvents="box-none">
+        <Pressable
+          onPress={() => handleZoom(1)}
+          style={styles.zoomBtn}
+          accessibilityRole="button"
+          accessibilityLabel="Zoom in"
+        >
+          <Text style={styles.zoomBtnText}>+</Text>
+        </Pressable>
+        <Pressable
+          onPress={() => handleZoom(-1)}
+          style={styles.zoomBtn}
+          accessibilityRole="button"
+          accessibilityLabel="Zoom out"
+        >
+          <Text style={styles.zoomBtnText}>−</Text>
+        </Pressable>
+      </View>
+
       <BottomSheet
         ref={sheetRef}
         index={0}
-        snapPoints={SNAP_POINTS}
+        snapPoints={snapPoints}
+        detached
+        bottomInset={tabBarInset}
         backgroundStyle={styles.sheetBg}
         handleIndicatorStyle={styles.grabber}
         style={styles.sheet}
@@ -210,33 +259,29 @@ export default function ExploreScreen() {
         </View>
 
         {/* List */}
-        <BottomSheetScrollView contentContainerStyle={styles.listContent}>
-          {filteredCoffees.map((coffee, i) => {
-            const bagKey = (coffee.bagImg ?? 'white') as keyof typeof BAG_IMAGES;
-            const src = BAG_IMAGES[bagKey] ?? BAG_IMAGES.white;
-            return (
-              <View key={coffee.id}>
-                <TouchableOpacity
-                  style={styles.listItem}
-                  onPress={() => router.push(`/coffee/${coffee.id}`)}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.bagThumb}>
-                    <Image source={src} style={styles.bagImg} resizeMode="contain" />
-                  </View>
-                  <View style={styles.listItemText}>
-                    <Text style={styles.beanName} numberOfLines={1}>{coffee.bean}</Text>
-                    <Text style={styles.roasterName} numberOfLines={1}>{coffee.roaster}</Text>
-                    <Text style={styles.originText} numberOfLines={1}>
-                      {ORIGIN_FLAGS[coffee.origin ?? ''] ?? ''} {coffee.origin}
-                    </Text>
-                  </View>
-                  <Text style={styles.dateText}>{coffee.date}</Text>
-                </TouchableOpacity>
-                {i < filteredCoffees.length - 1 && <View style={styles.divider} />}
-              </View>
-            );
-          })}
+        <BottomSheetScrollView contentContainerStyle={[styles.listContent, { paddingBottom: tabBarInset }]}>
+          {filteredCoffees.map((coffee, i) => (
+            <View key={coffee.id}>
+              <TouchableOpacity
+                style={styles.listItem}
+                onPress={() => router.push(`/coffee/${coffee.id}`)}
+                activeOpacity={0.7}
+              >
+                <View style={styles.bagThumb}>
+                  <Bag coffee={coffee} width={72} height={72} />
+                </View>
+                <View style={styles.listItemText}>
+                  <Text style={styles.beanName} numberOfLines={1}>{coffee.bean}</Text>
+                  <Text style={styles.roasterName} numberOfLines={1}>{coffee.roaster}</Text>
+                  <Text style={styles.originText} numberOfLines={1}>
+                    {ORIGIN_FLAGS[coffee.origin ?? ''] ?? ''} {coffee.origin}
+                  </Text>
+                </View>
+                <Text style={styles.dateText}>{formatDate(coffee.date)}</Text>
+              </TouchableOpacity>
+              {i < filteredCoffees.length - 1 && <View style={styles.divider} />}
+            </View>
+          ))}
         </BottomSheetScrollView>
       </BottomSheet>
     </View>
@@ -250,12 +295,40 @@ const styles = StyleSheet.create({
   sheet: { marginHorizontal: 16 },
   sheetBg: {
     borderRadius: 34,
+    borderBottomLeftRadius: 34,
+    borderBottomRightRadius: 34,
     backgroundColor: 'rgba(245,245,245,0.92)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.12,
     shadowRadius: 20,
     elevation: 8,
+  },
+  zoomControls: {
+    position: 'absolute',
+    right: 16,
+    gap: 8,
+  },
+  zoomBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    borderWidth: 0.5,
+    borderColor: 'rgba(0,0,0,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  zoomBtnText: {
+    fontFamily: fonts.sans,
+    fontSize: 26,
+    fontWeight: '500',
+    color: colors.supremeBeige,
   },
   grabber: { backgroundColor: '#ccc', width: 36, height: 5 },
 
@@ -295,7 +368,7 @@ const styles = StyleSheet.create({
     color: '#727272',
   },
 
-  listContent: { paddingBottom: 16 },
+  listContent: {},
   listItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -309,10 +382,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
-  },
-  bagImg: {
-    width: 36,
-    height: 74,
   },
   listItemText: {
     flex: 1,
