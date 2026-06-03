@@ -1,16 +1,16 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { fonts } from '@shared/theme';
+import BeanIcon from '../../assets/icon-bean.svg';
 
 interface Props {
   count: number;
   selected: boolean;
-  dimmed: boolean;
 }
 
-export function BeanMarker({ count, selected, dimmed }: Props) {
+export function BeanMarker({ count, selected }: Props) {
   return (
-    <View style={[styles.pill, selected ? styles.pillSelected : styles.pillDefault, dimmed && styles.pillDimmed]}>
-      <Text style={styles.bean}>☕</Text>
+    <View style={[styles.pill, selected ? styles.pillSelected : styles.pillDefault]}>
+      <BeanIcon width={17} height={17} />
       <Text style={[styles.count, selected ? styles.countSelected : styles.countDefault]}>
         {count}
       </Text>
@@ -43,18 +43,10 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 4,
   },
-  pillDimmed: {
-    opacity: 0.45,
-  },
-  bean: {
-    fontSize: 13,
-    lineHeight: 17,
-  },
   count: {
     fontFamily: fonts.sans,
     fontWeight: '500',
     fontSize: 15,
-    lineHeight: 17,
   },
   countDefault: {
     color: '#5d0505',
