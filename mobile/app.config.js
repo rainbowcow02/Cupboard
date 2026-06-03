@@ -1,8 +1,10 @@
 // app.config.js replaces app.json so we can add runtime `extra` values.
 // Read in code via: import Constants from 'expo-constants'; Constants.expoConfig.extra.apiUrl
+const IS_DEV = process.env.APP_VARIANT === 'development';
+
 export default {
   expo: {
-    name: 'Cupboard',
+    name: IS_DEV ? 'Cupboard (Dev)' : 'Cupboard',
     slug: 'cupboard',
     scheme: 'cupboard',
     version: '1.0.0',
@@ -11,7 +13,7 @@ export default {
     userInterfaceStyle: 'light',
     ios: {
       supportsTablet: false,
-      bundleIdentifier: 'com.rainbowcow02.cupboard',
+      bundleIdentifier: IS_DEV ? 'com.rainbowcow02.cupboard.dev' : 'com.rainbowcow02.cupboard',
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false,
       },
