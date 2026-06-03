@@ -32,11 +32,13 @@ const TAB_ICONS: Record<string, React.FC<{ width: number; height: number }>> = {
 
 const PILL_H = 64;
 export const TAB_BAR_HEIGHT = PILL_H + 16; // pill + margin above safe area; screens add insets.bottom themselves
-const PILL_PAD = 4; // inner padding on all sides — matches activePill top/bottom (4px) for even visual border
+const PILL_PAD = 2; // horizontal padding inside pill — matches web's 2px
 const SIDE_PADDING = 25;
 const GAP = 16;
 const SEARCH_SIZE = 59;
-const TAB_COUNT = 4;
+const TAB_W = 72;        // fixed tab width — matches web exactly
+const ACTIVE_PILL_W = 76; // matches web's 76px active pill (= TAB_W + 2px bleed each side)
+const TAB_STEP = TAB_W - 8; // = 64px per step, accounting for -8px tab gap
 
 // Matches web's cubic-bezier(0.34, 1.56, 0.64, 1) — slight overshoot bounce
 const SLIDE_SPRING = { damping: 18, stiffness: 220, mass: 0.8 };
@@ -58,11 +60,11 @@ type TabItemProps = {
   route: { key: string; name: string };
   descriptor: { options: { title?: string } };
   isFocused: boolean;
-  tabW: number;
+  isLast: boolean;
   onPress: () => void;
 };
 
-function TabItem({ route, descriptor, isFocused, tabW, onPress }: TabItemProps) {
+function TabItem({ route, descriptor, isFocused, isLast, onPress }: TabItemProps) {
   const scale = useSharedValue(isFocused ? 1.08 : 1);
 
   useEffect(() => {
@@ -79,7 +81,7 @@ function TabItem({ route, descriptor, isFocused, tabW, onPress }: TabItemProps) 
   return (
     <Pressable
       onPress={onPress}
-      style={[styles.tab, { width: tabW }]}
+      style={[styles.tab, { marginRight: isLast ? 0 : -8 }]}
       accessibilityRole="button"
       accessibilityState={isFocused ? { selected: true } : {}}
     >
@@ -125,14 +127,12 @@ export default function TabBar({ state, descriptors, navigation }: BottomTabBarP
   const { width: screenW } = useWindowDimensions();
 
   const pillW = screenW - SIDE_PADDING * 2 - GAP - SEARCH_SIZE;
-  const tabW = (pillW - PILL_PAD * 2) / TAB_COUNT;
 
-  // Active pill offset starts at PILL_PAD so it aligns with the inset tab buttons
-  const activeX = useSharedValue(PILL_PAD + state.index * tabW);
+  const activeX = useSharedValue(state.index * TAB_STEP);
 
   useEffect(() => {
-    activeX.value = withSpring(PILL_PAD + state.index * tabW, SLIDE_SPRING);
-  }, [state.index, tabW]);
+    activeX.value = withSpring(state.index * TAB_STEP, SLIDE_SPRING);
+  }, [state.index]);
 
   const activePillStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: activeX.value }],
@@ -144,14 +144,20 @@ export default function TabBar({ state, descriptors, navigation }: BottomTabBarP
       pointerEvents="box-none"
     >
       {/* Main pill */}
-      <View style={[styles.pillShadow, { width: pillW }, glassShadow]}>
-        <View style={styles.pillInner}>
+      <View style={[styles.pillContainer, { width: pillW }]}>
+        {/* Glass pill — extends 4px beyond the tab container on all sides (matches Figma inset-[-4px]).
+            Split into two layers because iOS shadow + overflow:hidden can't coexist on one element. */}
+        <View style={[styles.outerPillShadow, glassShadow]} />
+        <View style={styles.outerPillClip}>
           <BlurView intensity={40} tint="light" style={StyleSheet.absoluteFill} />
           <View style={[StyleSheet.absoluteFill, styles.glassFill]} />
+        </View>
 
-          {/* Sliding active indicator */}
+        {/* Tab buttons — 268px container clips selection to inner bounds */}
+        <View style={styles.pillInner}>
+          {/* Sliding active indicator — 76px, flush with container edges at endpoints */}
           <Animated.View
-            style={[styles.activePill, { width: tabW }, activePillStyle]}
+            style={[styles.activePill, { width: ACTIVE_PILL_W }, activePillStyle]}
           />
 
           {state.routes.map((route, i) => (
@@ -160,7 +166,7 @@ export default function TabBar({ state, descriptors, navigation }: BottomTabBarP
               route={route}
               descriptor={descriptors[route.key]}
               isFocused={state.index === i}
-              tabW={tabW}
+              isLast={i === state.routes.length - 1}
               onPress={() => {
                 const event = navigation.emit({
                   type: 'tabPress',
@@ -192,12 +198,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: GAP,
   },
-  pillShadow: {
+  pillContainer: {
     height: PILL_H,
+  },
+  outerPillShadow: {
+    position: 'absolute',
+    top: -4,
+    left: -4,
+    right: -4,
+    bottom: -4,
     borderRadius: 100,
   },
+  outerPillClip: {
+    position: 'absolute',
+    top: -4,
+    left: -4,
+    right: -4,
+    bottom: -4,
+    borderRadius: 100,
+    overflow: 'hidden',
+  },
   pillInner: {
-    flex: 1,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     borderRadius: 100,
     overflow: 'hidden',
     flexDirection: 'row',
@@ -208,16 +234,18 @@ const styles = StyleSheet.create({
   },
   activePill: {
     position: 'absolute',
-    top: 4,
-    bottom: 4,
+    top: 0,
+    bottom: 0,
     borderRadius: 100,
     backgroundColor: 'rgba(252, 153, 155, 0.5)',
   },
   tab: {
+    width: TAB_W,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 8,
-    paddingBottom: 8,
+    paddingTop: 6,
+    paddingBottom: 7,
+    paddingHorizontal: 8,
     gap: 3,
   },
   iconWrap: {
@@ -228,10 +256,10 @@ const styles = StyleSheet.create({
   },
   label: {
     fontFamily: 'Avenir',
-    fontSize: 10,
+    fontSize: 12,
     color: colors.burgundy,
     fontWeight: '500',
-    lineHeight: 12,
+    lineHeight: 13,
   },
   searchShadow: {
     width: SEARCH_SIZE,
