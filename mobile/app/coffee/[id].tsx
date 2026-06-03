@@ -161,7 +161,7 @@ export default function CoffeeDetailScreen() {
             <SectionHeader title="Brew recipes" action="+ Add" onAction={() => setAddingBrew(true)} />
             {brews.length === 0 ? (
               <GlassCard>
-                <Text style={styles.emptyBrews}>No brew recipes yet. Tap "+ Add" to log one.</Text>
+                <Text style={styles.emptyBrews}>{'No brew recipes yet. Tap "+ Add" to log one.'}</Text>
               </GlassCard>
             ) : (
               <View style={styles.brewList}>

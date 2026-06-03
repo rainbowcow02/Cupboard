@@ -42,6 +42,12 @@ Status key: ✅ done · ❌ missing · ⚠️ partial · — not applicable
 | Floating glass pill design | ✅ | ✅ | 1 | Tab bar hovers above content as a frosted-glass rounded pill with a visible drop shadow; content scrolls underneath it |
 | Custom SVG icons | ✅ | ✅ | 1 | Each tab shows a clean line-drawn icon (shelf, pin, mug, bean) instead of emoji; active icon fills in moss green |
 | Active tab highlight | ✅ | ⚠️ | 1 | The active tab label turns Vintage Burgundy and sits inside a soft Blossom Pink tinted highlight within the pill — pill + burgundy label done; SVG icons don't change fill/color on active state |
+| Tab order (Home → Explore → Log Cup → Beans) | ✅ | ✅ | — | Tabs appear left-to-right in correct order matching Figma and web |
+| Tab labels | ✅ | ✅ | — | Labels read "Home", "Explore", "Log Cup", "Beans" matching web and Figma exactly |
+| Tab width (72px fixed) | ✅ | ✅ | — | Each tab is 72px wide (fixed), matching web; pill hugs content with no excess glass on the right |
+| Active pill dimensions | ✅ | ✅ | — | Active pill is 76px wide with a 64px step per tab, matching web |
+| Tab gap (−8px overlap) | ✅ | ✅ | — | Non-last tabs have marginRight: −8px; tabs visually overlap by 8px matching Figma |
+| Pill horizontal padding | ✅ | ✅ | — | Pill has 2px horizontal padding each side, matching web's `padding: 0 2px` |
 
 ### Home
 
