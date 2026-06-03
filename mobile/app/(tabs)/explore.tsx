@@ -48,6 +48,7 @@ const ORIGIN_FLAGS: Record<string, string> = {
 
 const MAPBOX_STYLE = 'mapbox://styles/rainbowcow02/cmpbsoxbv002n01qhe2v56lsw';
 const PILL_H = TAB_BAR_HEIGHT - 16; // exported TAB_BAR_HEIGHT = pill (64) + 16
+const SHEET_TAB_GAP = 16; // gap between sheet bottom and tab bar (clears tab bar shadow)
 const HEADER_H = 84;  // grabber 16 + title section 58 + paddingBottom 10
 const ROW_H    = 104; // paddingVertical 16×2 + 72px bag
 
@@ -62,12 +63,18 @@ export default function ExploreScreen() {
   const [selectedOrigin, setSelectedOrigin] = useState<string | null>(null);
 
   // Clearance from screen bottom so the sheet sits above the floating tab bar
-  const tabBarInset = Math.max(insets.bottom, 16) + PILL_H + 16;
+  const tabBarInset = Math.max(insets.bottom, 16) + PILL_H + SHEET_TAB_GAP;
+  // Top gap when fully expanded — matches the 16px side margins, clears the status bar / Dynamic Island
+  const sheetTopInset = insets.top + 16;
 
-  // Pixel snap points — '240' = header + 1.5 rows at any screen size
+  // Pixel snap points — collapsed (header + 1.5 rows), mid (marker-tap target), full (top reaches sheetTopInset)
   const snapPoints = useMemo(
-    () => [HEADER_H + Math.ceil(1.5 * ROW_H), Math.round((screenH - tabBarInset) * 0.45)],
-    [screenH, tabBarInset],
+    () => [
+      HEADER_H + Math.ceil(1.5 * ROW_H),          // collapsed floating card
+      Math.round((screenH - tabBarInset) * 0.45), // mid — marker-tap target
+      screenH - tabBarInset - sheetTopInset,      // full — top edge at sheetTopInset from screen top
+    ],
+    [screenH, tabBarInset, sheetTopInset],
   );
 
   // Zoom buttons sit just above the fully-expanded sheet
@@ -235,7 +242,7 @@ export default function ExploreScreen() {
         ref={sheetRef}
         index={0}
         snapPoints={snapPoints}
-        detached
+        topInset={sheetTopInset}
         bottomInset={tabBarInset}
         backgroundStyle={styles.sheetBg}
         handleIndicatorStyle={styles.grabber}
@@ -259,7 +266,7 @@ export default function ExploreScreen() {
         </View>
 
         {/* List */}
-        <BottomSheetScrollView contentContainerStyle={[styles.listContent, { paddingBottom: tabBarInset }]}>
+        <BottomSheetScrollView contentContainerStyle={[styles.listContent, { paddingBottom: 16 }]}>
           {filteredCoffees.map((coffee, i) => (
             <View key={coffee.id}>
               <TouchableOpacity
