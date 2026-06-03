@@ -48,10 +48,12 @@ const ORIGIN_FLAGS: Record<string, string> = {
 };
 
 const MAPBOX_STYLE = 'mapbox://styles/rainbowcow02/cmpbsoxbv002n01qhe2v56lsw';
+
 const PILL_H = TAB_BAR_HEIGHT - 16; // exported TAB_BAR_HEIGHT = pill (64) + 16
 const SHEET_TAB_GAP = 16; // gap between sheet bottom and tab bar (clears tab bar shadow)
 const HEADER_H = 84;  // grabber 16 + title section 58 + paddingBottom 10
 const ROW_H    = 104; // paddingVertical 16×2 + 72px bag
+const GLOBE_LIFT = 100; // extra clearance so the globe sits above the collapsed sheet
 
 // Floating-card background sized to the *visible* height (sheet top → bottom inset), so the
 // rounded bottom corners and drop shadow track the bottom of the card at every snap point —
@@ -106,12 +108,31 @@ export default function ExploreScreen() {
   // Zoom buttons sit just above the fully-expanded sheet
   const zoomBtnBottom = tabBarInset + snapPoints[1] + 14;
 
+  // Center on the Atlantic so both the Americas and Africa/ME are visible;
+  const cameraDefaultSettings = useMemo(() => ({
+    centerCoordinate: [0, 5] as [number, number],
+    zoomLevel: 1.2,
+  }), []);
+
+  // Persistent viewport padding applied to every camera operation (zoomTo, setCamera, fitBounds)
+  // so the globe stays above the collapsed sheet regardless of zoom level.
+  const cameraPadding = useMemo(() => ({
+    paddingTop: sheetTopInset,
+    paddingBottom: tabBarInset + snapPoints[0] + GLOBE_LIFT,
+    paddingLeft: 0,
+    paddingRight: 0,
+  }), [sheetTopInset, tabBarInset, snapPoints]);
+
   const handleZoom = useCallback(async (delta: number) => {
     const zoom = await mapRef.current?.getZoom();
     if (zoom != null) {
-      cameraRef.current?.zoomTo(Math.min(Math.max(zoom + delta, 1.5), 5), 300);
+      cameraRef.current?.setCamera({
+        zoomLevel: Math.min(Math.max(zoom + delta, 0.5), 14),
+        animationDuration: 300,
+        padding: cameraPadding,
+      });
     }
-  }, []);
+  }, [cameraPadding]);
 
   const originGroups = useMemo(() =>
     coffees.reduce<Record<string, Coffee[]>>((acc, coffee) => {
@@ -138,7 +159,7 @@ export default function ExploreScreen() {
         const sheetH = (screenH - tabBarInset) * 0.4;
         cameraRef.current?.setCamera({
           centerCoordinate: [coords[1], coords[0]],
-          zoomLevel: 4,
+          zoomLevel: 8,
           animationDuration: 900,
           animationMode: 'flyTo',
           padding: { paddingBottom: tabBarInset + sheetH, paddingTop: 60, paddingLeft: 0, paddingRight: 0 },
@@ -155,12 +176,12 @@ export default function ExploreScreen() {
         cameraRef.current?.fitBounds(
           [Math.min(...lngs), Math.min(...lats)],
           [Math.max(...lngs), Math.max(...lats)],
-          [60, 60, 60, 60],
+          [60, 60, tabBarInset + snapPoints[0], 60],
           700,
         );
       }
     }
-  }, [selectedOrigin, screenH, tabBarInset]);
+  }, [selectedOrigin, screenH, tabBarInset, snapPoints]);
 
   const handleMapPress = useCallback(() => {
     if (selectedOrigin) {
@@ -172,11 +193,11 @@ export default function ExploreScreen() {
       cameraRef.current?.fitBounds(
         [Math.min(...lngs), Math.min(...lats)],
         [Math.max(...lngs), Math.max(...lats)],
-        [60, 60, 60, 60],
+        [60, 60, tabBarInset + snapPoints[0], 60],
         700,
       );
     }
-  }, [selectedOrigin]);
+  }, [selectedOrigin, tabBarInset, snapPoints]);
 
   const coffeeCount = filteredCoffees.length;
   const countryCount = selectedOrigin ? 1 : Object.keys(originGroups).length;
@@ -185,20 +206,13 @@ export default function ExploreScreen() {
     : 'All coffees';
   const subtitleText = `${coffeeCount} ${coffeeCount === 1 ? 'coffee' : 'coffees'} · ${countryCount} ${countryCount === 1 ? 'country' : 'countries'}`;
 
-  // Initial camera bounds — fit all origins in view
-  const allCoordValues = Object.values(ORIGIN_COORDS);
-  const initMinLng = Math.min(...allCoordValues.map(([, lng]) => lng));
-  const initMaxLng = Math.max(...allCoordValues.map(([, lng]) => lng));
-  const initMinLat = Math.min(...allCoordValues.map(([lat]) => lat));
-  const initMaxLat = Math.max(...allCoordValues.map(([lat]) => lat));
-
   return (
     <View style={styles.container}>
       <MapboxGL.MapView
         ref={mapRef}
         style={styles.map}
         styleURL={MAPBOX_STYLE}
-        projection="mercator"
+        projection="globe"
         scrollEnabled
         zoomEnabled
         pitchEnabled={false}
@@ -209,18 +223,10 @@ export default function ExploreScreen() {
       >
         <MapboxGL.Camera
           ref={cameraRef}
-          defaultSettings={{
-            bounds: {
-              ne: [initMaxLng, initMaxLat],
-              sw: [initMinLng, initMinLat],
-              paddingTop: 60,
-              paddingBottom: 340,
-              paddingLeft: 60,
-              paddingRight: 60,
-            },
-          }}
-          minZoomLevel={1.5}
-          maxZoomLevel={5}
+          defaultSettings={cameraDefaultSettings}
+          padding={cameraPadding}
+          minZoomLevel={0.5}
+          maxZoomLevel={14}
         />
 
         {Object.entries(originGroups).map(([origin, group]) => {
@@ -247,7 +253,7 @@ export default function ExploreScreen() {
       {/* Zoom controls — always visible above the expanded sheet */}
       <View style={[styles.zoomControls, { bottom: zoomBtnBottom }]} pointerEvents="box-none">
         <Pressable
-          onPress={() => handleZoom(1)}
+          onPress={() => handleZoom(0.75)}
           style={styles.zoomBtn}
           accessibilityRole="button"
           accessibilityLabel="Zoom in"
@@ -255,7 +261,7 @@ export default function ExploreScreen() {
           <Text style={styles.zoomBtnText}>+</Text>
         </Pressable>
         <Pressable
-          onPress={() => handleZoom(-1)}
+          onPress={() => handleZoom(-0.75)}
           style={styles.zoomBtn}
           accessibilityRole="button"
           accessibilityLabel="Zoom out"
