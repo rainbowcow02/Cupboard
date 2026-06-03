@@ -57,12 +57,12 @@ Status key: ✅ done · ❌ missing · ⚠️ partial · — not applicable
 
 | Item | Web | Mobile | Batch | Success looks like |
 |---|---|---|---|---|
-| SVG coffee bean map pins | ✅ | ❌ | 3 | Map pins show a small coffee bean icon instead of the ☕ emoji; looks crisp at all zoom levels |
-| No pin dimming on select | ✅ | ❌ | 3 | Tapping a pin highlights it pink but all other pins stay fully opaque — map stays readable |
-| flyTo brings pin above bottom sheet | ✅ | ⚠️ | 3 | Tapping any pin always animates the map so that pin is centered in the visible area above the sheet, not hidden behind it |
-| Bottom sheet above tab bar | ✅ | ❌ | 3 | The bottom sheet's grabber and content are fully visible above the floating tab bar; nothing is clipped |
-| Date format ("May 9") | ✅ | ❌ | 3 | Dates in the explore list read "May 9" style instead of "2025-05-09" |
-| Bag thumbnails show label text | ✅ | ❌ | 3 | Each row in the sheet shows the colored bag with bean name and roaster text overlaid, matching the style on the home shelf |
+| SVG coffee bean map pins | ✅ | ✅ | 3 | Map pins show a small coffee bean icon instead of the ☕ emoji; looks crisp at all zoom levels |
+| No pin dimming on select | ✅ | ✅ | 3 | Tapping a pin highlights it pink but all other pins stay fully opaque — map stays readable |
+| flyTo brings pin above bottom sheet | ✅ | ✅ | 3 | Tapping any pin always animates the map so that pin is centered in the visible area above the sheet, not hidden behind it |
+| Bottom sheet above tab bar | ✅ | ✅ | 3 | The bottom sheet's grabber and content are fully visible above the floating tab bar; nothing is clipped |
+| Date format ("May 9") | ✅ | ✅ | 3 | Dates in the explore list read "May 9" style instead of "2025-05-09" |
+| Bag thumbnails show label text | ✅ | ✅ | 3 | Each row in the sheet shows the colored bag with bean name and roaster text overlaid, matching the style on the home shelf |
 
 ### Coffee Detail
 

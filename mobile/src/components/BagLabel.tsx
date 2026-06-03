@@ -30,10 +30,13 @@ export function BagLabel({ coffee, bagWidth }: BagLabelProps) {
   const dividerColor = lightBag ? 'rgba(0,0,0,0.4)' : 'rgba(249,237,221,0.4)';
 
   const scale = bagWidth / 300;
-  const labelWidth = Math.max(70, Math.round(115 * scale));
-  const beanFontSize = Math.max(16, Math.round(24 * scale));
-  const subFontSize = Math.max(7, Math.round(9 * scale));
-  const dividerMy = Math.max(4, Math.round(12 * scale));
+  // Below 80px (explore thumbnails) use lower minimums so text scales down
+  // rather than overflowing a narrow bag.
+  const small = bagWidth < 80;
+  const labelWidth  = small ? Math.round(115 * scale)   : Math.max(70, Math.round(115 * scale));
+  const beanFontSize = small ? Math.max(8, Math.round(24 * scale)) : Math.max(16, Math.round(24 * scale));
+  const subFontSize  = small ? Math.max(5, Math.round(9 * scale))  : Math.max(7,  Math.round(9 * scale));
+  const dividerMy    = small ? Math.max(2, Math.round(12 * scale)) : Math.max(4,  Math.round(12 * scale));
 
   const flag = coffee.origin ? (ORIGIN_FLAGS[coffee.origin] || '') : '';
 
@@ -41,15 +44,14 @@ export function BagLabel({ coffee, bagWidth }: BagLabelProps) {
     <View style={styles.container} pointerEvents="none">
       <View style={{ width: labelWidth, alignItems: 'center' }}>
         <Text
-          style={[styles.beanName, { fontSize: beanFontSize, color: inkColor }]}
-          numberOfLines={2}
-          adjustsFontSizeToFit
+          style={[styles.beanName, { fontSize: beanFontSize, lineHeight: Math.round(beanFontSize * 1.2), color: inkColor }]}
+          numberOfLines={3}
         >
           {coffee.bean}
         </Text>
         <Text
           style={[styles.roaster, { fontSize: subFontSize, color: subColor }]}
-          numberOfLines={1}
+          numberOfLines={2}
         >
           {coffee.roaster}
         </Text>
@@ -73,7 +75,6 @@ const styles = StyleSheet.create({
   beanName: {
     fontFamily: fonts.condensed,
     fontWeight: '600',
-    lineHeight: undefined,
     textAlign: 'center',
     letterSpacing: -0.9,
   },
