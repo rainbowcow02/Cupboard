@@ -4,7 +4,6 @@ import {
   ActivityIndicator,
   Image,
   SafeAreaView,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -15,6 +14,7 @@ import { Coffee } from '@shared/lib/coffees';
 import { colors, fonts } from '@shared/theme';
 import { FilterSheet } from '../../src/components/FilterSheet';
 import { FilterSortBar } from '../../src/components/FilterSortBar';
+import { PageHeader } from '../../src/components/PageHeader';
 import { ShelfRow } from '../../src/components/ShelfRow';
 import { TAB_BAR_HEIGHT } from '../../src/components/TabBar';
 import { useCoffees } from '../../src/hooks/useCoffees';
@@ -154,27 +154,24 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Cupboard</Text>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>L</Text>
-        </View>
-      </View>
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={{ alignItems: 'center', paddingBottom: TAB_BAR_HEIGHT + insets.bottom }}
-        showsVerticalScrollIndicator={false}
+      <PageHeader
+        title="Cupboard"
+        avatarInitial="L"
+        stickyContent={
+          <FilterSortBar
+            sortMode={sortMode}
+            sortDir={sortDir}
+            onSortChipPress={handleSortChipPress}
+            filters={filters}
+            onClearFilter={handleClearFilter}
+            onOpenFilterSheet={setFilterSheetKey}
+          />
+        }
+        scrollViewProps={{
+          contentContainerStyle: { alignItems: 'center', paddingBottom: TAB_BAR_HEIGHT + insets.bottom },
+          showsVerticalScrollIndicator: false,
+        }}
       >
-        {/* Filter & sort pill row */}
-        <FilterSortBar
-          sortMode={sortMode}
-          sortDir={sortDir}
-          onSortChipPress={handleSortChipPress}
-          filters={filters}
-          onClearFilter={handleClearFilter}
-          onOpenFilterSheet={setFilterSheetKey}
-        />
-
         {/* Loading indicator on top of sample data */}
         {loading && (
           <View style={styles.loadingBadge}>
@@ -188,8 +185,7 @@ export default function HomeScreen() {
         {continuedGroups.map((group, i) => (
           <ShelfContinued key={i} coffees={group} scale={scale} onPressCoffee={onPressCoffee} />
         ))}
-
-      </ScrollView>
+      </PageHeader>
       <FilterSheet
         filterKey={filterSheetKey}
         coffees={coffees}
@@ -207,36 +203,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.pearl,
-  },
-  header: {
-    paddingHorizontal: 24,
-    paddingBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  headerTitle: {
-    fontFamily: fonts.serif,
-    fontSize: 38,
-    color: colors.black,
-    letterSpacing: -1,
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: colors.moss,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    fontFamily: fonts.sans,
-    fontWeight: '600',
-    fontSize: 20,
-    color: colors.pearl,
-  },
-  scroll: {
-    flex: 1,
   },
   loadingBadge: {
     flexDirection: 'row',

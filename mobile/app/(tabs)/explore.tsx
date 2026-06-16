@@ -309,7 +309,7 @@ export default function ExploreScreen() {
                   activeOpacity={0.7}
                 >
                   <View style={styles.bagThumb}>
-                    <Bag coffee={coffee} width={72} height={72} />
+                    <Bag coffee={coffee} width={72} height={72} beanNameOnly />
                   </View>
                   <View style={styles.listItemText}>
                     <Text style={styles.beanName} numberOfLines={1}>{coffee.bean}</Text>

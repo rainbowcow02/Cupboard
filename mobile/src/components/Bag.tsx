@@ -15,9 +15,10 @@ interface BagProps {
   width: number;
   height: number;
   onPress?: () => void;
+  beanNameOnly?: boolean;
 }
 
-export function Bag({ coffee, width, height, onPress }: BagProps) {
+export function Bag({ coffee, width, height, onPress, beanNameOnly = false }: BagProps) {
   const content = (
     <View style={{ width, height, position: 'relative' }}>
       <Image
@@ -25,7 +26,7 @@ export function Bag({ coffee, width, height, onPress }: BagProps) {
         style={styles.image}
         resizeMode="contain"
       />
-      <BagLabel coffee={coffee} bagWidth={width} />
+      <BagLabel coffee={coffee} bagWidth={width} beanNameOnly={beanNameOnly} />
     </View>
   );
 

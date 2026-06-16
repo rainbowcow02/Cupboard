@@ -21,9 +21,10 @@ const ORIGIN_FLAGS: Record<string, string> = {
 interface BagLabelProps {
   coffee: Coffee;
   bagWidth: number;
+  beanNameOnly?: boolean;
 }
 
-export function BagLabel({ coffee, bagWidth }: BagLabelProps) {
+export function BagLabel({ coffee, bagWidth, beanNameOnly = false }: BagLabelProps) {
   const lightBag = coffee.bagImg === 'white';
   const inkColor = lightBag ? '#000000' : '#f9eddd';
   const subColor = lightBag ? '#6b6b6b' : 'rgba(249,237,221,0.7)';
@@ -34,7 +35,9 @@ export function BagLabel({ coffee, bagWidth }: BagLabelProps) {
   // rather than overflowing a narrow bag.
   const small = bagWidth < 80;
   const labelWidth  = small ? Math.round(115 * scale)   : Math.max(70, Math.round(115 * scale));
-  const beanFontSize = small ? Math.max(8, Math.round(24 * scale)) : Math.max(16, Math.round(24 * scale));
+  const beanFontSize = small
+    ? Math.max(8, Math.round(24 * scale))
+    : Math.max(16, Math.round(24 * scale));
   const subFontSize  = small ? Math.max(5, Math.round(9 * scale))  : Math.max(7,  Math.round(9 * scale));
   const dividerMy    = small ? Math.max(2, Math.round(12 * scale)) : Math.max(4,  Math.round(12 * scale));
 
@@ -45,20 +48,23 @@ export function BagLabel({ coffee, bagWidth }: BagLabelProps) {
       <View style={{ width: labelWidth, alignItems: 'center' }}>
         <Text
           style={[styles.beanName, { fontSize: beanFontSize, lineHeight: Math.round(beanFontSize * 1.2), color: inkColor }]}
-          numberOfLines={3}
+          numberOfLines={4}
         >
           {coffee.bean}
         </Text>
-        <Text
-          style={[styles.roaster, { fontSize: subFontSize, color: subColor }]}
-          numberOfLines={2}
-        >
-          {coffee.roaster}
-        </Text>
-        <View style={[styles.divider, { backgroundColor: dividerColor, marginVertical: dividerMy }]} />
-        <Text style={[styles.origin, { fontSize: subFontSize, color: subColor }]} numberOfLines={1}>
-          {flag ? `${flag} ` : ''}{coffee.origin}
-        </Text>
+        {!beanNameOnly && (
+          <>
+            <Text
+              style={[styles.roaster, { fontSize: subFontSize, color: subColor }]}
+            >
+              {coffee.roaster}
+            </Text>
+            <View style={[styles.divider, { backgroundColor: dividerColor, marginVertical: dividerMy }]} />
+            <Text style={[styles.origin, { fontSize: subFontSize, color: subColor }]} numberOfLines={1}>
+              {flag ? `${flag} ` : ''}{coffee.origin}
+            </Text>
+          </>
+        )}
       </View>
     </View>
   );
@@ -84,7 +90,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     letterSpacing: 0.9,
     textTransform: 'uppercase',
-    marginTop: 4,
+    marginTop: 8,
   },
   divider: {
     width: 18,
