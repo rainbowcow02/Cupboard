@@ -101,7 +101,7 @@ export function BrewCard({ brew, onPress }: Props) {
           <Divider />
           <View style={styles.section}>
             <Text style={[styles.detailLabel, { marginBottom: 8 }]}>Recipe</Text>
-            <Text style={styles.detailValue}>{brew.recipeToTest}</Text>
+            <Text style={styles.bodyText}>{brew.recipeToTest}</Text>
           </View>
         </>
       )}
@@ -111,7 +111,7 @@ export function BrewCard({ brew, onPress }: Props) {
           <Divider />
           <View style={styles.section}>
             <Text style={[styles.detailLabel, { marginBottom: 8 }]}>Tasting notes</Text>
-            <Text style={styles.detailValue}>{brew.tastingNotes}</Text>
+            <Text style={styles.bodyText}>{brew.tastingNotes}</Text>
           </View>
         </>
       )}
@@ -121,7 +121,7 @@ export function BrewCard({ brew, onPress }: Props) {
           <Divider />
           <View style={styles.section}>
             <Text style={[styles.detailLabel, { marginBottom: 8 }]}>Brew notes</Text>
-            <Text style={styles.detailValue}>{brew.brewNotes}</Text>
+            <Text style={styles.bodyText}>{brew.brewNotes}</Text>
           </View>
         </>
       )}
@@ -149,6 +149,15 @@ const styles = StyleSheet.create({
   detailRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 16 },
   detailLabel: { fontFamily: fonts.sans, fontWeight: '500', fontSize: 13, color: colors.greyDark, flexShrink: 0, lineHeight: 20 },
   detailValue: { fontFamily: fonts.sans, fontWeight: '400', fontSize: 15, color: colors.greyDark, textAlign: 'right', lineHeight: 22, flex: 1 },
+  bodyText: {
+    fontFamily: fonts.sans,
+    fontWeight: '400',
+    fontSize: 15,
+    color: colors.greyDark,
+    textAlign: 'left',
+    alignSelf: 'stretch',
+    lineHeight: 22,
+  },
   section: { padding: 16, paddingHorizontal: 24 },
   pourRow: { flexDirection: 'row', alignItems: 'center', gap: 8, lineHeight: 22 },
   agitation: { marginTop: 6, paddingTop: 6, borderTopWidth: 0.5, borderTopColor: '#E7E7E7' },

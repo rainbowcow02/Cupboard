@@ -74,12 +74,16 @@ Status key: ✅ done · ❌ missing · ⚠️ partial · — not applicable
 | Item | Web | Mobile | Batch | Success looks like |
 |---|---|---|---|---|
 | Bean name in Avenir Condensed | ✅ | ✅ | — | Bean names use Avenir Condensed everywhere (detail hero, explore list, shelf labels) — intentional DS choice |
-| Roaster/bean name spacing | ✅ | ❌ | 4 | Roaster name and bean name have comfortable vertical breathing room; roaster reads as a clear sub-label |
+| Roaster/bean name spacing | ✅ | ✅ | 4 | Roaster name and bean name have comfortable vertical breathing room; roaster reads as a clear sub-label |
 | Back button top padding | ✅ | ❌ | 4 | Back chevron sits clearly below the status bar with visible padding above it; doesn't feel crammed into the top edge |
-| GlassCard opacity | ✅ | ❌ | 4 | Detail cards look like frosted glass with a solid-enough background to read text clearly; not see-through to the pearl background behind |
-| ☕ cup rating (not stars) | ✅ | ❌ | 4 | Brew ratings show ☕ cups at full vs faded opacity, consistent with the web's visual language |
-| Dripper/Filter row padding | ✅ | ❌ | 4 | Dripper and Filter paper labels align with the padding of all other detail rows; they don't sit flush against the card edge |
-| Origin mini-map | ✅ | ❌ | 4 (defer) | A small inset map (~120px tall) below the origin card shows a zoomed-out view centered on the bean's country of origin |
+| GlassCard readability | ✅ | ✅ | 4 | Detail card text is clearly legible on pearl background — white underlay + tint + reduced blur match web contrast |
+| GlassCard sheen gradient | ✅ | ⚠️ | 4 | Diagonal sheen approximated with skew overlay; true CSS gradient still deferred (no `expo-linear-gradient`) |
+| ☕ cup rating (not stars) | ✅ | ✅ | 4 | Brew ratings show a colored pill (gold ≥4, pink <4) with ☕️ emoji cups, matching web's visual language |
+| Dripper/Filter row padding | ✅ | ✅ | 4 | Dripper and Filter paper labels align with the padding of all other detail rows; no longer sit flush against the card edge |
+| BrewCard notes left-aligned | ✅ | ✅ | 4 | Tasting notes, brew notes, and recipe fallback body text are left-aligned block prose, not right-aligned like label-value rows |
+| Origin mini-map | ✅ | ✅ | 4 | A small inset map (~120px tall) below the origin rows shows a zoomed-out view centered on the bean's country of origin |
+| Bag hero size + shadow | ✅ | ✅ | 4 | Hero bag is 300×300 with drop shadow matching web |
+| Section spacing (36px / 8px) | ✅ | ✅ | 4 | Section container gap 36px; section header-to-content gap 8px |
 
 ### Log Cup
 
