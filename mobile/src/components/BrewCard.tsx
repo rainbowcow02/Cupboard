@@ -1,5 +1,4 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import Svg, { Polygon } from 'react-native-svg';
 import { Brew, formatDate, parseRecipe } from '@shared/lib/coffees';
 import { colors, fonts } from '@shared/theme';
 
@@ -9,19 +8,12 @@ interface Props {
 }
 
 function CupRating({ rating }: { rating?: number }) {
-  const r = rating ?? 0;
+  if (!rating || rating <= 0) return null;
+  const bg = rating >= 4 ? 'rgba(253,203,136,0.6)' : 'rgba(252,153,155,0.6)';
+  const cups = '☕️'.repeat(rating);
   return (
-    <View style={styles.ratingRow}>
-      {[1, 2, 3, 4, 5].map((n) => (
-        <Svg key={n} width={14} height={14} viewBox="0 0 9 9">
-          <Polygon
-            points="4.5,0.5 5.6,3.2 8.5,3.4 6.4,5.3 7.1,8.1 4.5,6.6 1.9,8.1 2.6,5.3 0.5,3.4 3.4,3.2"
-            fill={n <= r ? colors.moss : 'none'}
-            stroke={n <= r ? colors.moss : colors.greyLight}
-            strokeWidth={0.75}
-          />
-        </Svg>
-      ))}
+    <View style={[styles.ratingPill, { backgroundColor: bg }]}>
+      <Text style={styles.ratingText}>{cups}</Text>
     </View>
   );
 }
@@ -32,7 +24,7 @@ function Divider() {
 
 function Row({ label, value }: { label: string; value?: string | null }) {
   return (
-    <View style={styles.detailRow}>
+    <View style={[styles.detailRow, styles.section]}>
       <Text style={styles.detailLabel}>{label}</Text>
       <Text style={styles.detailValue}>{value || '—'}</Text>
     </View>
@@ -147,7 +139,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   date: { fontFamily: fonts.condensed, fontWeight: '600', fontSize: 17, color: '#000', letterSpacing: -0.5, lineHeight: 24 },
-  ratingRow: { flexDirection: 'row', gap: 2, alignItems: 'center' },
+  ratingPill: { borderRadius: 100, padding: 8, alignItems: 'center', justifyContent: 'center' },
+  ratingText: { fontFamily: fonts.condensed, fontWeight: '600', fontSize: 17, letterSpacing: -0.5, lineHeight: 24 },
   stats: { flexDirection: 'row', justifyContent: 'space-between', padding: 16, paddingHorizontal: 24 },
   statCol: { alignItems: 'center', gap: 4 },
   statLabel: { fontFamily: fonts.sans, fontWeight: '500', fontSize: 13, color: colors.greyDark },

@@ -23,12 +23,12 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.12,
-    shadowRadius: 20,
+    shadowRadius: 40,
     elevation: 8,
   },
   tint: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(245,245,245,0.55)',
+    backgroundColor: 'rgba(245,245,245,0.6)',
   },
   content: {
     position: 'relative',
