@@ -61,6 +61,21 @@ export interface Coffee {
   brews: Brew[];
 }
 
+export const ORIGIN_FLAGS: Record<string, string> = {
+  Ethiopia: '🇪🇹',
+  Colombia: '🇨🇴',
+  Panama: '🇵🇦',
+  Peru: '🇵🇪',
+  Guatemala: '🇬🇹',
+  Kenya: '🇰🇪',
+  Brazil: '🇧🇷',
+  'Costa Rica': '🇨🇷',
+  Bolivia: '🇧🇴',
+  Honduras: '🇭🇳',
+  Rwanda: '🇷🇼',
+  Yemen: '🇾🇪',
+};
+
 const BAG_IMGS: BagImg[] = ['white', 'blue', 'green', 'orange'];
 
 function hashString(s: string): number {

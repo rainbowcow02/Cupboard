@@ -236,6 +236,8 @@ Your Notion table is a **single flat table** — each row is one cup, with bean 
 
 ## 12\. To Do
 
+- [ ] **Custom app icons for dev/preview builds** — create badged icon variants (1024×1024 PNG) so dev and preview builds are visually distinct from production on the home screen. Update `eas.json` to set `APP_VARIANT=preview` for the preview profile, and update `app.config.js` to select the correct icon asset per variant.
+
 - [ ] **Fix mobile load performance** — app loads slowly on mobile due to three issues:
   1. Unoptimized PNG assets (~18 MB total): convert shelf and bag images to WebP at quality 80–85 for an estimated 60–75% size reduction
   2. Mapbox GL JS (~1 MB) loaded synchronously in `<head>`, blocking first render — add `defer` and/or lazy-load only when Explore tab is opened
