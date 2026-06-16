@@ -11,7 +11,7 @@ Tracks feature and visual parity between the web app and the Expo mobile app. Up
 
 **Batch 2 — Home visual regressions** *(most visible on first open)*
 - `index.tsx`: page header (title + avatar), shelf side margins, bag `resizeMode` fix
-- Filter/sort deferred to its own feature session
+- Filter/sort: ported in a later session (see Home table below)
 
 **Batch 3 — Explore functional fixes** *(all quick, makes the tab usable)*
 - `explore.tsx`: bottom sheet above tab bar, remove pin dimming, flyTo reliability, date format, bag thumbnails with labels
@@ -25,7 +25,6 @@ Tracks feature and visual parity between the web app and the Expo mobile app. Up
 - `[id].tsx`: origin mini-map *(most complex — defer if time-constrained)*
 
 **Deferred — Feature work** *(separate focused sessions)*
-- Home filter/sort (bottom sheet, multi-select state, sort logic, active filter pills)
 - Log missing fields (brewNotes, recipeToTest, tastingNotes, altitude)
 - Beans tab (carousel + Top Recipes)
 
@@ -56,8 +55,8 @@ Status key: ✅ done · ❌ missing · ⚠️ partial · — not applicable
 | "Cupboard" title + avatar header | ✅ | ✅ | 2 | Top of screen shows "Cupboard" in serif display font on the left and a moss-green circle with "L" on the right |
 | Shelf side margins | ✅ | ✅ | 2 | Shelf image has ~16px of pearl background visible on each side; doesn't bleed to screen edges |
 | Bag images not cropped | ✅ | ✅ | 2 | Full bag silhouette is visible in its shelf slot; no bag appears clipped or zoomed-in |
-| Sort: Recent / A-Z + direction | ✅ | ❌ | Deferred | A sort button near the header lets you toggle Recent vs A-Z and flip the direction; shelf reorders instantly |
-| Filter: Country + Process + Roast | ✅ | ⚠️ | Deferred | Filter sheet has three grouped multi-select lists; each active dimension renders as a text pill (e.g. "Ethiopia, Kenya") truncated at 200px max width; shelf updates live |
+| Sort: Recent / A-Z + direction | ✅ | ✅ | — | A sort pill near the header lets you toggle Recent vs A-Z and flip the direction (chevron flips, 0.15s); shelf reorders instantly |
+| Filter: Country + Process + Roast | ✅ | ✅ | — | Filter bottom sheet has three grouped multi-select lists (with country flags); each active dimension renders as a text pill (e.g. "ethiopia, kenya") truncated at 200px max width with an inline ✕ to clear; shelf updates live |
 
 ### Explore
 
