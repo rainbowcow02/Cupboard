@@ -1,3 +1,4 @@
+import { StyleSheet } from 'react-native';
 import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
 
@@ -12,10 +13,17 @@ export function SortChevron({ flipped, color }: SortChevronProps) {
   }));
 
   return (
-    <Animated.View style={style}>
+    <Animated.View style={[styles.chevron, style]}>
       <Svg width={9} height={6} viewBox="0 0 9 6" fill="none">
         <Path d="M0 0L9 0L4.5 6Z" fill={color} />
       </Svg>
     </Animated.View>
   );
 }
+
+const styles = StyleSheet.create({
+  chevron: {
+    marginTop: -4
+    ,
+  },
+});
