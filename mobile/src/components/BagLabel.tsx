@@ -48,7 +48,7 @@ export function BagLabel({ coffee, bagWidth, beanNameOnly = false }: BagLabelPro
       <View style={{ width: labelWidth, alignItems: 'center' }}>
         <Text
           style={[styles.beanName, { fontSize: beanFontSize, lineHeight: Math.round(beanFontSize * 1.2), color: inkColor }]}
-          numberOfLines={beanNameOnly ? 4 : 3}
+          numberOfLines={4}
         >
           {coffee.bean}
         </Text>
