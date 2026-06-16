@@ -51,7 +51,6 @@ export function BagLabel({ coffee, bagWidth }: BagLabelProps) {
         </Text>
         <Text
           style={[styles.roaster, { fontSize: subFontSize, color: subColor }]}
-          numberOfLines={2}
         >
           {coffee.roaster}
         </Text>
@@ -84,7 +83,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     letterSpacing: 0.9,
     textTransform: 'uppercase',
-    marginTop: 4,
+    marginTop: 8,
   },
   divider: {
     width: 18,
