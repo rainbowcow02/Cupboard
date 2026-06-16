@@ -15,6 +15,8 @@ const SCROLL_COLLAPSE_THRESHOLD = 40;
 const SCROLL_EXPAND_THRESHOLD = 40;
 const HEADER_CONTENT_HEIGHT = 48;
 const COLLAPSED_TITLE_OFFSET = 10;
+const EXPANDED_ROW_RISE = 8;
+const EXPANDED_ROW_MIN_SCALE = 0.92;
 const STICKY_CONTENT_GAP_EXPANDED = 16;
 const STICKY_CONTENT_GAP_COLLAPSED = 4;
 
@@ -59,6 +61,10 @@ export function PageHeader({ title, avatarInitial, children, stickyContent, scro
 
   const expandedStyle = useAnimatedStyle(() => ({
     opacity: 1 - collapseProgress.value,
+    transform: [
+      { translateY: -EXPANDED_ROW_RISE * collapseProgress.value },
+      { scale: 1 - (1 - EXPANDED_ROW_MIN_SCALE) * collapseProgress.value },
+    ],
   }));
 
   const collapsedStyle = useAnimatedStyle(() => ({
