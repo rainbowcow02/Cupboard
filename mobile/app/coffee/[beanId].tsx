@@ -3,18 +3,18 @@ import { useCallback, useState } from 'react';
 import {
   Image,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import Animated, { useAnimatedRef, useScrollViewOffset } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { Brew, Coffee } from '@shared/lib/coffees';
 import { colors, fonts } from '@shared/theme';
 import { BagLabel } from '../../src/components/BagLabel';
 import { BrewCard } from '../../src/components/BrewCard';
-import { GlassCard } from '../../src/components/GlassCard';
+import { Card } from '../../src/components/Card';
 import { OriginMap } from '../../src/components/OriginMap';
 import { useCoffees } from '../../src/hooks/useCoffees';
 import { BrewForm } from './BrewForm';
@@ -64,6 +64,8 @@ export default function CoffeeDetailScreen() {
   const { coffees, refresh } = useCoffees();
   const [addingBrew, setAddingBrew] = useState(false);
   const [editingBrew, setEditingBrew] = useState<Brew | null>(null);
+  const scrollRef = useAnimatedRef<Animated.ScrollView>();
+  const scrollY = useScrollViewOffset(scrollRef);
 
   const coffee = coffees.find((c) => c.id === beanId) as Coffee | undefined;
 
@@ -107,13 +109,15 @@ export default function CoffeeDetailScreen() {
         </Svg>
       </Pressable>
 
-      <ScrollView
+      <Animated.ScrollView
+        ref={scrollRef}
         style={styles.scroll}
         contentContainerStyle={[
           styles.scrollContent,
           { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 32 },
         ]}
         showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16}
       >
         {/* Bag hero */}
         <View style={styles.hero}>
@@ -136,11 +140,11 @@ export default function CoffeeDetailScreen() {
         {/* Sections */}
         <View style={styles.sections}>
           {/* Details glass card */}
-          <GlassCard>
+          <Card>
             <DetailRow label="Roast" value={coffee.roastLevel} />
             <DetailRow label="Process" value={coffee.process} />
             <DetailRow label="Variety" value={coffee.variety} last />
-          </GlassCard>
+          </Card>
 
           {/* Tasting notes chips */}
           {tastingNotes.length > 0 && (
@@ -159,7 +163,7 @@ export default function CoffeeDetailScreen() {
           {/* Origin */}
           <View style={styles.section}>
             <SectionHeader title="Origin" />
-            <GlassCard>
+            <Card>
               <DetailRow label="Country" value={`${flag} ${coffee.origin ?? ''}`} />
               <DetailRow label="Region" value={coffee.region} last={!coffee.altitude} />
               {coffee.altitude && <DetailRow label="Altitude" value={coffee.altitude} last />}
@@ -168,22 +172,24 @@ export default function CoffeeDetailScreen() {
                   <OriginMap country={coffee.origin} />
                 </View>
               )}
-            </GlassCard>
+            </Card>
           </View>
 
           {/* Brew recipes */}
           <View style={styles.section}>
             <SectionHeader title="Brew recipes" action="+ Add" onAction={() => setAddingBrew(true)} />
             {brews.length === 0 ? (
-              <GlassCard>
+              <Card>
                 <Text style={styles.emptyBrews}>{'No brew recipes yet. Tap "+ Add" to log one.'}</Text>
-              </GlassCard>
+              </Card>
             ) : (
               <View style={styles.brewList}>
                 {brews.map((b, i) => (
                   <BrewCard
                     key={b.id ?? i}
                     brew={b}
+                    scrollRef={scrollRef}
+                    scrollY={scrollY}
                     onEdit={b.id ? () => setEditingBrew(b) : undefined}
                   />
                 ))}
@@ -191,7 +197,7 @@ export default function CoffeeDetailScreen() {
             )}
           </View>
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
 
       {(addingBrew || editingBrew) && coffee && (
         <BrewForm coffee={coffee} brew={editingBrew} onClose={onBrewClose} onSaved={onBrewSaved} />

@@ -19,7 +19,7 @@ Tracks feature and visual parity between the web app and the Expo mobile app. Up
 - `BagLabel.tsx`: proportional label sizing for small thumbnails
 
 **Batch 4 — Coffee Detail polish** *(fast one-liners + one heavier item)*
-- `GlassCard.tsx`: card opacity
+- `Card.tsx`: shared white card shell for detail, origin, and brew cards
 - `BrewCard.tsx`: ☕ cup rating, Dripper/Filter row padding
 - `[id].tsx`: back button padding, roaster/bean spacing, scroll bottom padding
 - `[id].tsx`: origin mini-map *(most complex — defer if time-constrained)*
@@ -76,8 +76,8 @@ Status key: ✅ done · ❌ missing · ⚠️ partial · — not applicable
 | Bean name in Avenir Condensed | ✅ | ✅ | — | Bean names use Avenir Condensed everywhere (detail hero, explore list, shelf labels) — intentional DS choice |
 | Roaster/bean name spacing | ✅ | ✅ | 4 | Roaster name and bean name have comfortable vertical breathing room; roaster reads as a clear sub-label |
 | Back button top padding | ✅ | ❌ | 4 | Back chevron sits clearly below the status bar with visible padding above it; doesn't feel crammed into the top edge |
-| GlassCard readability | ✅ | ✅ | 4 | Detail card text is clearly legible on pearl background — white underlay + tint + reduced blur match web contrast |
-| GlassCard sheen gradient | ✅ | ⚠️ | 4 | Diagonal sheen approximated with skew overlay; true CSS gradient still deferred (no `expo-linear-gradient`) |
+| Card readability (detail / origin / brew) | ✅ | ✅ | 4 | All coffee detail cards use shared `Card` with solid white fill — text clearly legible on pearl background |
+| Card visual style | ✅ | ✅ | 4 | Mobile uses solid white cards matching brew recipe cards; web glass sheen deferred |
 | ☕ cup rating (not stars) | ✅ | ✅ | 4 | Brew ratings show a colored pill (gold ≥4, pink <4) with ☕️ emoji cups, matching web's visual language |
 | Dripper/Filter row padding | ✅ | ✅ | 4 | Dripper and Filter paper labels align with the padding of all other detail rows; no longer sit flush against the card edge |
 | BrewCard default/expanded states | ✅ | ✅ | — | Collapsed card leads with truncated burgundy Thoughts highlight, stats, and brew time; "See more" reveals grinder, equipment, pours, tasting notes (bold Smell:/Taste:), and Reflections (bold Thoughts:/To Try:); expand/collapse uses pour-reveal accordion animation (mobile-only) |

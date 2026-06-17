@@ -3,26 +3,31 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Easing,
   interpolate,
+  runOnJS,
+  scrollTo,
+  type AnimatedRef,
   type SharedValue,
+  useAnimatedReaction,
   useAnimatedStyle,
   useSharedValue,
-  withDelay,
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import { Brew, formatDate, parseRecipe } from '@shared/lib/coffees';
 import { colors, fonts } from '@shared/theme';
+import { Card } from './Card';
 import { SortChevron } from './SortChevron';
 
 const EXPAND_DURATION = 450;
 const COLLAPSE_FADE_DURATION = 120;
 const EXPAND_EASING = Easing.out(Easing.cubic);
-const COLLAPSE_FADE_EASING = Easing.out(Easing.cubic);
 const COLLAPSE_SPRING = { damping: 22, stiffness: 140, mass: 0.85 };
 
 interface Props {
   brew: Brew;
   onEdit?: () => void;
+  scrollRef?: AnimatedRef<Animated.ScrollView>;
+  scrollY?: SharedValue<number>;
 }
 
 interface ParsedReflections {
@@ -127,8 +132,8 @@ function ExpandLink({ expanded, onPress }: { expanded: boolean; onPress: () => v
 }
 
 function useAccordionStyle(
+  isExpanded: boolean,
   heightProgress: SharedValue<number>,
-  contentFade: SharedValue<number>,
   contentHeight: SharedValue<number>,
 ) {
   return useAnimatedStyle(() => {
@@ -137,10 +142,11 @@ function useAccordionStyle(
       [0, 0.3, 0.75, 0.85, 1],
       [0, 0, 0.9, 1, 1],
     );
-    const isCollapsing = contentFade.value < 1;
+    const progress = Math.max(0, heightProgress.value);
+    const isCollapsing = !isExpanded && progress > 0;
     return {
-      height: contentHeight.value * heightProgress.value,
-      opacity: isCollapsing ? contentFade.value : expandOpacity,
+      height: contentHeight.value * progress,
+      opacity: isCollapsing ? progress : expandOpacity,
       transform: [{
         translateY: isCollapsing
           ? 0
@@ -150,20 +156,67 @@ function useAccordionStyle(
   });
 }
 
+function useCollapseBottomLock(
+  isAnimatingCollapse: SharedValue<boolean>,
+  heightProgress: SharedValue<number>,
+  usesSplitAccordion: boolean,
+  topContentHeight: SharedValue<number>,
+  bottomContentHeight: SharedValue<number>,
+  allContentHeight: SharedValue<number>,
+  scrollRef?: AnimatedRef<Animated.ScrollView>,
+  collapseStartScrollY?: SharedValue<number>,
+) {
+  const cardLockStyle = useAnimatedStyle(() => {
+    const progress = Math.max(0, heightProgress.value);
+    const totalHeight = usesSplitAccordion
+      ? topContentHeight.value + bottomContentHeight.value
+      : allContentHeight.value;
+    const offset =
+      isAnimatingCollapse.value ? totalHeight * (1 - progress) : 0;
+    return {
+      transform: [{ translateY: offset }],
+    };
+  });
+
+  useAnimatedReaction(
+    () => ({
+      progress: heightProgress.value,
+      animating: isAnimatingCollapse.value,
+    }),
+    ({ progress, animating }) => {
+      if (!animating || !scrollRef || !collapseStartScrollY) {
+        return;
+      }
+      const totalHeight = usesSplitAccordion
+        ? topContentHeight.value + bottomContentHeight.value
+        : allContentHeight.value;
+      const offset = totalHeight * (1 - Math.max(0, progress));
+      scrollTo(
+        scrollRef,
+        0,
+        collapseStartScrollY.value - offset,
+        false,
+      );
+    },
+  );
+
+  return cardLockStyle;
+}
+
 function AccordionSection({
+  isExpanded,
   heightProgress,
-  contentFade,
   contentHeight,
   expanded,
   children,
 }: {
+  isExpanded: boolean;
   heightProgress: SharedValue<number>;
-  contentFade: SharedValue<number>;
   contentHeight: SharedValue<number>;
   expanded: boolean;
   children: ReactNode;
 }) {
-  const accordionStyle = useAccordionStyle(heightProgress, contentFade, contentHeight);
+  const accordionStyle = useAccordionStyle(isExpanded, heightProgress, contentHeight);
 
   return (
     <Animated.View
@@ -322,17 +375,20 @@ function EquipmentAndRecipe({ brew, parsed }: { brew: Brew; parsed: ReturnType<t
   );
 }
 
-export function BrewCard({ brew, onEdit }: Props) {
+export function BrewCard({ brew, onEdit, scrollRef, scrollY }: Props) {
   const [expanded, setExpanded] = useState(false);
+  const [collapseSettled, setCollapseSettled] = useState(true);
   const heightProgress = useSharedValue(0);
-  const contentFade = useSharedValue(1);
+  const isAnimatingCollapse = useSharedValue(false);
+  const collapseStartScrollY = useSharedValue(0);
   const topContentHeight = useSharedValue(0);
   const bottomContentHeight = useSharedValue(0);
   const allContentHeight = useSharedValue(0);
 
   useEffect(() => {
     if (expanded) {
-      contentFade.value = 1;
+      isAnimatingCollapse.value = false;
+      setCollapseSettled(false);
       heightProgress.value = withTiming(1, {
         duration: EXPAND_DURATION,
         easing: EXPAND_EASING,
@@ -340,15 +396,18 @@ export function BrewCard({ brew, onEdit }: Props) {
       return;
     }
 
-    contentFade.value = withTiming(0, {
-      duration: COLLAPSE_FADE_DURATION,
-      easing: COLLAPSE_FADE_EASING,
+    isAnimatingCollapse.value = true;
+    if (scrollY) {
+      collapseStartScrollY.value = scrollY.value;
+    }
+    setCollapseSettled(false);
+    heightProgress.value = withSpring(0, COLLAPSE_SPRING, (finished) => {
+      if (finished) {
+        isAnimatingCollapse.value = false;
+        runOnJS(setCollapseSettled)(true);
+      }
     });
-    heightProgress.value = withDelay(
-      COLLAPSE_FADE_DURATION,
-      withSpring(0, COLLAPSE_SPRING),
-    );
-  }, [expanded, heightProgress, contentFade]);
+  }, [expanded, heightProgress, isAnimatingCollapse, collapseStartScrollY, scrollY]);
 
   const hasRatio = brew.beansG && brew.waterMl;
   const ratio = hasRatio ? `1:${(brew.waterMl! / brew.beansG!).toFixed(1)}` : '—';
@@ -365,13 +424,26 @@ export function BrewCard({ brew, onEdit }: Props) {
       reflections,
   );
 
+  const usesSplitAccordion = hasExpandableContent && Boolean(brewTime);
+
+  const cardLockStyle = useCollapseBottomLock(
+    isAnimatingCollapse,
+    heightProgress,
+    usesSplitAccordion,
+    topContentHeight,
+    bottomContentHeight,
+    allContentHeight,
+    scrollRef,
+    scrollY ? collapseStartScrollY : undefined,
+  );
+
   return (
-    <Pressable
-      onLongPress={onEdit}
-      style={styles.card}
-      accessibilityRole="summary"
-      accessibilityLabel={`Brew on ${formatDate(brew.date)}`}
-    >
+    <Animated.View style={cardLockStyle}>
+      <Card
+        onLongPress={onEdit}
+        accessibilityRole="summary"
+        accessibilityLabel={`Brew on ${formatDate(brew.date)}`}
+      >
       <View style={styles.header}>
         <Text style={styles.date}>{formatDate(brew.date)}</Text>
         <CupRating rating={brew.rating} />
@@ -398,20 +470,20 @@ export function BrewCard({ brew, onEdit }: Props) {
         brewTime ? (
           <>
             <AccordionSection
+              isExpanded={expanded}
               heightProgress={heightProgress}
-              contentFade={contentFade}
               contentHeight={topContentHeight}
               expanded={expanded}
             >
               <EquipmentAndRecipe brew={brew} parsed={parsed} />
             </AccordionSection>
 
-            {!expanded ? (
+            {!expanded && collapseSettled ? (
               <View style={styles.insetDivider}>
                 <Divider />
               </View>
             ) : null}
-            <View style={[styles.rowBlock, !expanded ? styles.brewTimeRow : null]}>
+            <View style={[styles.rowBlock, !expanded && collapseSettled ? styles.brewTimeRow : null]}>
               <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>Brew time</Text>
                 <Text style={styles.statValue}>{brewTime}</Text>
@@ -420,8 +492,8 @@ export function BrewCard({ brew, onEdit }: Props) {
             </View>
 
             <AccordionSection
+              isExpanded={expanded}
               heightProgress={heightProgress}
-              contentFade={contentFade}
               contentHeight={bottomContentHeight}
               expanded={expanded}
             >
@@ -430,8 +502,8 @@ export function BrewCard({ brew, onEdit }: Props) {
           </>
         ) : (
           <AccordionSection
+            isExpanded={expanded}
             heightProgress={heightProgress}
-            contentFade={contentFade}
             contentHeight={allContentHeight}
             expanded={expanded}
           >
@@ -458,12 +530,12 @@ export function BrewCard({ brew, onEdit }: Props) {
           <ExpandLink expanded={expanded} onPress={() => setExpanded((v) => !v)} />
         </View>
       ) : null}
-    </Pressable>
+    </Card>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: '#fff', borderRadius: 34, overflow: 'hidden' },
   header: {
     flexDirection: 'row',
     alignItems: 'flex-start',
