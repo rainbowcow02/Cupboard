@@ -93,9 +93,15 @@ export default function CoffeeDetailScreen() {
   const flag = ORIGIN_FLAGS[coffee.origin ?? ''] ?? '';
 
   return (
-    <View style={[styles.screen, { paddingTop: insets.top }]}>
-      {/* Back button */}
-      <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
+    <View style={styles.screen}>
+      {/* Back button — floats over scroll content with no background fill */}
+      <Pressable
+        onPress={() => router.back()}
+        style={[styles.backBtn, { top: 16 }]}
+        hitSlop={8}
+        accessibilityRole="button"
+        accessibilityLabel="Go back"
+      >
         <Svg width={14} height={22} viewBox="0 0 14 22" fill="none">
           <Path d="M12 2L3 11L12 20" stroke={colors.burgundy} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
         </Svg>
@@ -103,7 +109,10 @@ export default function CoffeeDetailScreen() {
 
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 32 }]}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 32 },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         {/* Bag hero */}
@@ -194,10 +203,9 @@ export default function CoffeeDetailScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.pearl },
   scroll: { flex: 1 },
-  scrollContent: { paddingTop: 52 },
+  scrollContent: {},
   backBtn: {
     position: 'absolute',
-    top: 12,
     left: 8,
     zIndex: 10,
     width: 44,
