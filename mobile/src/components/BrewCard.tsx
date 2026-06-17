@@ -93,6 +93,12 @@ function ExpandLink({ expanded, onPress }: { expanded: boolean; onPress: () => v
       style={styles.expandLink}
       accessibilityRole="button"
       accessibilityLabel={expanded ? 'See less' : 'See more'}
+      accessibilityState={{ expanded }}
+      accessibilityHint={
+        expanded
+          ? 'Collapses brew details'
+          : 'Expands grinder, recipe, tasting notes, and reflections'
+      }
     >
       <Text style={styles.expandLinkText}>{expanded ? 'See less' : 'See more'}</Text>
       <SortChevron flipped={expanded} color={colors.greyDark} />
@@ -424,13 +430,20 @@ const styles = StyleSheet.create({
     color: colors.greyDark,
     lineHeight: 22.5,
   },
-  expandFooter: { paddingBottom: 16, paddingHorizontal: 24, alignItems: 'center' },
-  expandLink: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  expandFooter: { paddingTop: 8, paddingBottom: 16 },
+  expandLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    alignSelf: 'stretch',
+    paddingHorizontal: 24,
+  },
   expandLinkText: {
     fontFamily: fonts.sans,
     fontWeight: '500',
-    fontSize: 12,
+    fontSize: 14,
     color: colors.greyDark,
-    lineHeight: 13,
+    lineHeight: 21,
   },
 });

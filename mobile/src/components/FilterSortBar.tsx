@@ -108,7 +108,11 @@ export function FilterSortBar({
             {(textStyle) => (
               <>
                 <Animated.Text style={[styles.pillText, textStyle]}>{chip.label}</Animated.Text>
-                <SortChevron flipped={flipped} color={active ? '#ffffff' : colors.black} />
+                <SortChevron
+                  flipped={flipped}
+                  color={active ? '#ffffff' : colors.black}
+                  style={styles.sortChevron}
+                />
               </>
             )}
           </Pill>
@@ -181,5 +185,8 @@ const styles = StyleSheet.create({
   pillClear: {
     fontSize: 12,
     opacity: 0.85,
+  },
+  sortChevron: {
+    marginTop: -4,
   },
 });
