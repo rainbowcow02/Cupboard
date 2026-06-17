@@ -271,7 +271,7 @@ export function BrewCard({ brew, onEdit }: Props) {
               <Divider />
             </View>
           ) : null}
-          <View style={[styles.rowBlock, styles.brewTimeRow]}>
+          <View style={[styles.rowBlock, !expanded ? styles.brewTimeRow : null]}>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Brew time</Text>
               <Text style={styles.statValue}>{brewTime}</Text>
