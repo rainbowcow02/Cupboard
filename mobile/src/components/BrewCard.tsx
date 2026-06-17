@@ -1,8 +1,24 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  Easing,
+  interpolate,
+  type SharedValue,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 import { Brew, formatDate, parseRecipe } from '@shared/lib/coffees';
 import { colors, fonts } from '@shared/theme';
 import { SortChevron } from './SortChevron';
+
+const EXPAND_DURATION = 450;
+const COLLAPSE_FADE_DURATION = 120;
+const EXPAND_EASING = Easing.out(Easing.cubic);
+const COLLAPSE_FADE_EASING = Easing.out(Easing.cubic);
+const COLLAPSE_SPRING = { damping: 22, stiffness: 140, mass: 0.85 };
 
 interface Props {
   brew: Brew;
@@ -101,8 +117,69 @@ function ExpandLink({ expanded, onPress }: { expanded: boolean; onPress: () => v
       }
     >
       <Text style={styles.expandLinkText}>{expanded ? 'See less' : 'See more'}</Text>
-      <SortChevron flipped={expanded} color={colors.greyDark} />
+      <SortChevron
+        flipped={expanded}
+        color={colors.greyDark}
+        duration={expanded ? EXPAND_DURATION : COLLAPSE_FADE_DURATION}
+      />
     </Pressable>
+  );
+}
+
+function useAccordionStyle(
+  heightProgress: SharedValue<number>,
+  contentFade: SharedValue<number>,
+  contentHeight: SharedValue<number>,
+) {
+  return useAnimatedStyle(() => {
+    const expandOpacity = interpolate(
+      heightProgress.value,
+      [0, 0.3, 0.75, 0.85, 1],
+      [0, 0, 0.9, 1, 1],
+    );
+    const isCollapsing = contentFade.value < 1;
+    return {
+      height: contentHeight.value * heightProgress.value,
+      opacity: isCollapsing ? contentFade.value : expandOpacity,
+      transform: [{
+        translateY: isCollapsing
+          ? 0
+          : interpolate(heightProgress.value, [0, 1], [-4, 0]),
+      }],
+    };
+  });
+}
+
+function AccordionSection({
+  heightProgress,
+  contentFade,
+  contentHeight,
+  expanded,
+  children,
+}: {
+  heightProgress: SharedValue<number>;
+  contentFade: SharedValue<number>;
+  contentHeight: SharedValue<number>;
+  expanded: boolean;
+  children: ReactNode;
+}) {
+  const accordionStyle = useAccordionStyle(heightProgress, contentFade, contentHeight);
+
+  return (
+    <Animated.View
+      style={[styles.accordion, accordionStyle]}
+      importantForAccessibility={expanded ? 'auto' : 'no-hide-descendants'}
+    >
+      <View
+        collapsable={false}
+        style={styles.accordionContent}
+        onLayout={(e) => {
+          contentHeight.value = e.nativeEvent.layout.height;
+        }}
+      >
+        {children}
+      </View>
+    </Animated.View>
   );
 }
 
@@ -177,8 +254,102 @@ function NotesSection({ title, children }: { title: string; children: ReactNode 
   );
 }
 
+function NotesAndReflections({
+  brew,
+  reflections,
+}: {
+  brew: Brew;
+  reflections: ParsedReflections | null;
+}) {
+  return (
+    <>
+      {brew.tastingNotes ? (
+        <NotesSection title="Tasting notes">
+          <TastingNotesBody text={brew.tastingNotes} />
+        </NotesSection>
+      ) : null}
+
+      {reflections ? (
+        <View style={styles.reflectionsSection}>
+          <Text style={styles.sectionTitle}>Reflections</Text>
+          <ReflectionsBody parsed={reflections} />
+        </View>
+      ) : null}
+    </>
+  );
+}
+
+function EquipmentAndRecipe({ brew, parsed }: { brew: Brew; parsed: ReturnType<typeof parseRecipe> }) {
+  return (
+    <>
+      <View style={styles.insetDivider}>
+        <Divider />
+      </View>
+      <Row label="Grinder" value={brew.grinder} />
+      <Row label="Dripper" value={brew.brewer} />
+      <Row label="Filter paper" value={brew.filter} />
+
+      {parsed && parsed.pours.length > 0 ? (
+        <>
+          <Divider />
+          <View style={styles.pourSection}>
+            {parsed.pours.map(({ step, amount, technique }) => (
+              <View key={step} style={styles.pourRow}>
+                <Text style={styles.pourStep}>{step}</Text>
+                <Text style={styles.pourAmount}>{amount}</Text>
+                {technique ? <Text style={styles.pourTechnique}>{technique}</Text> : null}
+              </View>
+            ))}
+            {parsed.agitation ? (
+              <Text style={[styles.detailLabel, styles.agitation]}>{parsed.agitation}</Text>
+            ) : null}
+          </View>
+          <Divider />
+        </>
+      ) : null}
+
+      {!parsed && brew.recipeToTest ? (
+        <>
+          <Divider />
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Recipe</Text>
+            <Text style={styles.bodyText}>{brew.recipeToTest}</Text>
+          </View>
+          <Divider />
+        </>
+      ) : null}
+    </>
+  );
+}
+
 export function BrewCard({ brew, onEdit }: Props) {
   const [expanded, setExpanded] = useState(false);
+  const heightProgress = useSharedValue(0);
+  const contentFade = useSharedValue(1);
+  const topContentHeight = useSharedValue(0);
+  const bottomContentHeight = useSharedValue(0);
+  const allContentHeight = useSharedValue(0);
+
+  useEffect(() => {
+    if (expanded) {
+      contentFade.value = 1;
+      heightProgress.value = withTiming(1, {
+        duration: EXPAND_DURATION,
+        easing: EXPAND_EASING,
+      });
+      return;
+    }
+
+    contentFade.value = withTiming(0, {
+      duration: COLLAPSE_FADE_DURATION,
+      easing: COLLAPSE_FADE_EASING,
+    });
+    heightProgress.value = withDelay(
+      COLLAPSE_FADE_DURATION,
+      withSpring(0, COLLAPSE_SPRING),
+    );
+  }, [expanded, heightProgress, contentFade]);
+
   const hasRatio = brew.beansG && brew.waterMl;
   const ratio = hasRatio ? `1:${(brew.waterMl! / brew.beansG!).toFixed(1)}` : '—';
   const parsed = parseRecipe(brew.recipeToTest);
@@ -223,75 +394,63 @@ export function BrewCard({ brew, onEdit }: Props) {
         ))}
       </View>
 
-      {expanded ? (
+      {hasExpandableContent ? (
+        brewTime ? (
+          <>
+            <AccordionSection
+              heightProgress={heightProgress}
+              contentFade={contentFade}
+              contentHeight={topContentHeight}
+              expanded={expanded}
+            >
+              <EquipmentAndRecipe brew={brew} parsed={parsed} />
+            </AccordionSection>
+
+            {!expanded ? (
+              <View style={styles.insetDivider}>
+                <Divider />
+              </View>
+            ) : null}
+            <View style={[styles.rowBlock, !expanded ? styles.brewTimeRow : null]}>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Brew time</Text>
+                <Text style={styles.statValue}>{brewTime}</Text>
+              </View>
+              {expanded ? <Divider /> : null}
+            </View>
+
+            <AccordionSection
+              heightProgress={heightProgress}
+              contentFade={contentFade}
+              contentHeight={bottomContentHeight}
+              expanded={expanded}
+            >
+              <NotesAndReflections brew={brew} reflections={reflections} />
+            </AccordionSection>
+          </>
+        ) : (
+          <AccordionSection
+            heightProgress={heightProgress}
+            contentFade={contentFade}
+            contentHeight={allContentHeight}
+            expanded={expanded}
+          >
+            <EquipmentAndRecipe brew={brew} parsed={parsed} />
+            <NotesAndReflections brew={brew} reflections={reflections} />
+          </AccordionSection>
+        )
+      ) : brewTime ? (
         <>
           <View style={styles.insetDivider}>
             <Divider />
           </View>
-          <Row label="Grinder" value={brew.grinder} />
-          <Row label="Dripper" value={brew.brewer} />
-          <Row label="Filter paper" value={brew.filter} />
-
-          {parsed && parsed.pours.length > 0 ? (
-            <>
-              <Divider />
-              <View style={styles.pourSection}>
-                {parsed.pours.map(({ step, amount, technique }) => (
-                  <View key={step} style={styles.pourRow}>
-                    <Text style={styles.pourStep}>{step}</Text>
-                    <Text style={styles.pourAmount}>{amount}</Text>
-                    {technique ? <Text style={styles.pourTechnique}>{technique}</Text> : null}
-                  </View>
-                ))}
-                {parsed.agitation ? (
-                  <Text style={[styles.detailLabel, styles.agitation]}>{parsed.agitation}</Text>
-                ) : null}
-              </View>
-              <Divider />
-            </>
-          ) : null}
-
-          {!parsed && brew.recipeToTest ? (
-            <>
-              <Divider />
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Recipe</Text>
-                <Text style={styles.bodyText}>{brew.recipeToTest}</Text>
-              </View>
-              <Divider />
-            </>
-          ) : null}
-        </>
-      ) : null}
-
-      {brewTime ? (
-        <>
-          {!expanded ? (
-            <View style={styles.insetDivider}>
-              <Divider />
-            </View>
-          ) : null}
-          <View style={[styles.rowBlock, !expanded ? styles.brewTimeRow : null]}>
+          <View style={[styles.rowBlock, styles.brewTimeRow]}>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Brew time</Text>
               <Text style={styles.statValue}>{brewTime}</Text>
             </View>
-            {expanded ? <Divider /> : null}
           </View>
         </>
-      ) : null}
-
-      {expanded && brew.tastingNotes ? (
-        <NotesSection title="Tasting notes">
-          <TastingNotesBody text={brew.tastingNotes} />
-        </NotesSection>
-      ) : null}
-
-      {expanded && reflections ? (
-        <View style={styles.reflectionsSection}>
-          <Text style={styles.sectionTitle}>Reflections</Text>
-          <ReflectionsBody parsed={reflections} />
-        </View>
       ) : null}
 
       {hasExpandableContent ? (
@@ -442,6 +601,8 @@ const styles = StyleSheet.create({
     lineHeight: 22.5,
   },
   expandFooter: { paddingTop: 8, paddingBottom: 16 },
+  accordion: { overflow: 'hidden' },
+  accordionContent: { position: 'absolute', left: 0, right: 0, top: 0 },
   expandLink: {
     flexDirection: 'row',
     alignItems: 'center',

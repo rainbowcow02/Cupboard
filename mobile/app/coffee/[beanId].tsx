@@ -58,14 +58,14 @@ function SectionHeader({ title, action, onAction }: { title: string; action?: st
 }
 
 export default function CoffeeDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { beanId } = useLocalSearchParams<{ beanId: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { coffees, refresh } = useCoffees();
   const [addingBrew, setAddingBrew] = useState(false);
   const [editingBrew, setEditingBrew] = useState<Brew | null>(null);
 
-  const coffee = coffees.find((c) => c.id === id) as Coffee | undefined;
+  const coffee = coffees.find((c) => c.id === beanId) as Coffee | undefined;
 
   const onBrewClose = useCallback(() => {
     setAddingBrew(false);

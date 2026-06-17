@@ -28,7 +28,7 @@ export default function RootLayout() {
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="(tabs)" />
             <Stack.Screen
-              name="coffee/[id]"
+              name="coffee/[beanId]"
               options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
             />
           </Stack>

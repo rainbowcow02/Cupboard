@@ -6,11 +6,12 @@ interface SortChevronProps {
   flipped: boolean;
   color: string;
   style?: StyleProp<ViewStyle>;
+  duration?: number;
 }
 
-export function SortChevron({ flipped, color, style }: SortChevronProps) {
+export function SortChevron({ flipped, color, style, duration = 150 }: SortChevronProps) {
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ rotate: withTiming(flipped ? '180deg' : '0deg', { duration: 150 }) }],
+    transform: [{ rotate: withTiming(flipped ? '180deg' : '0deg', { duration }) }],
   }));
 
   return (

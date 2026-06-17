@@ -80,7 +80,7 @@ Status key: ✅ done · ❌ missing · ⚠️ partial · — not applicable
 | GlassCard sheen gradient | ✅ | ⚠️ | 4 | Diagonal sheen approximated with skew overlay; true CSS gradient still deferred (no `expo-linear-gradient`) |
 | ☕ cup rating (not stars) | ✅ | ✅ | 4 | Brew ratings show a colored pill (gold ≥4, pink <4) with ☕️ emoji cups, matching web's visual language |
 | Dripper/Filter row padding | ✅ | ✅ | 4 | Dripper and Filter paper labels align with the padding of all other detail rows; no longer sit flush against the card edge |
-| BrewCard default/expanded states | ✅ | ✅ | — | Collapsed card leads with truncated burgundy Thoughts highlight, stats, and brew time; "See more" reveals grinder, equipment, pours, tasting notes (bold Smell:/Taste:), and Reflections (bold Thoughts:/To Try:) |
+| BrewCard default/expanded states | ✅ | ✅ | — | Collapsed card leads with truncated burgundy Thoughts highlight, stats, and brew time; "See more" reveals grinder, equipment, pours, tasting notes (bold Smell:/Taste:), and Reflections (bold Thoughts:/To Try:); expand/collapse uses pour-reveal accordion animation (mobile-only) |
 | BrewCard pour structure (Recipe to test) | ✅ | ✅ | — | Free-form `recipeToTest` text parses into Bloom/P1/P2… rows with amount + technique columns via shared `parseRecipe()` in `shared/lib/coffees.ts`; raw recipe fallback when parsing fails |
 | BrewCard notes left-aligned | ✅ | ✅ | 4 | Tasting notes, brew notes, and recipe fallback body text are left-aligned block prose, not right-aligned like label-value rows |
 | Origin mini-map | ✅ | ✅ | 4 | A small inset map (~120px tall) below the origin rows shows a zoomed-out view centered on the bean's country of origin |
