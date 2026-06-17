@@ -18,6 +18,7 @@ export interface Cup {
   altitude?: string;
   bagImg?: BagImg;
   brewer?: string;
+  grinder?: string;
   filter?: string;
   grind?: string;
   tempC?: number;
@@ -30,6 +31,7 @@ export interface Cup {
 
 export interface Brew {
   id: string | number;
+  grinder?: string;
   brewer?: string;
   filter?: string;
   grind?: string;
@@ -140,6 +142,7 @@ export function groupIntoCoffees(rows: Cup[]): Coffee[] {
       brews: sorted
         .map((r) => ({
           id: r.id,
+          grinder: r.grinder,
           brewer: r.brewer,
           filter: r.filter,
           grind: r.grind,

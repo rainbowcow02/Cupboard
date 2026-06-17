@@ -61,6 +61,8 @@ export function BrewCard({ brew, onPress }: Props) {
       </View>
 
       <Divider />
+      <Row label="Grinder" value={brew.grinder} />
+      <Divider />
       <Row label="Dripper" value={brew.brewer} />
       <Divider />
       <Row label="Filter paper" value={brew.filter} />
