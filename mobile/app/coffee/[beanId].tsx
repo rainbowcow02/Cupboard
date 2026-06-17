@@ -190,6 +190,7 @@ export default function CoffeeDetailScreen() {
                     brew={b}
                     scrollRef={scrollRef}
                     scrollY={scrollY}
+                    isLastInList={i === brews.length - 1}
                     onEdit={b.id ? () => setEditingBrew(b) : undefined}
                   />
                 ))}
