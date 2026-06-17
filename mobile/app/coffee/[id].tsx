@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
   detailRowOuter: { paddingHorizontal: 24, paddingTop: 16 },
   detailRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 16, paddingBottom: 16 },
   detailLabel: { fontFamily: fonts.sans, fontWeight: '500', fontSize: 13, color: colors.greyDark, flexShrink: 0 },
-  detailValue: { fontFamily: fonts.sans, fontWeight: '400', fontSize: 15, color: colors.greyDark, textAlign: 'right', lineHeight: 22, flex: 1 },
+  detailValue: { fontFamily: fonts.sans, fontWeight: '400', fontSize: 15, color: colors.black, textAlign: 'right', lineHeight: 22, flex: 1 },
   divider: { height: 0.5, backgroundColor: '#E7E7E7' },
   chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 100, backgroundColor: 'rgba(252,153,155,0.22)' },
