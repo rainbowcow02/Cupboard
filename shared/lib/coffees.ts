@@ -179,6 +179,31 @@ export interface Recipe {
   agitation: string | null;
 }
 
+function cleanPourTechnique(raw: string): string {
+  const trimmed = raw.trim().replace(/\.\s*$/, '');
+  const dotIdx = trimmed.indexOf('. ');
+  if (dotIdx === -1) return trimmed;
+  const after = trimmed.slice(dotIdx + 2);
+  if (/cafec|filter|grinder|dripper|switch|chemex|brew\s*time|my\s+grinder/i.test(after)) {
+    return trimmed.slice(0, dotIdx).trim();
+  }
+  return trimmed;
+}
+
+function looksLikePourMetadata(candidate: string): boolean {
+  return /^\d+[gml°C/]|\(\d|→\d|\d+:\d+|ratio|temp|grind|switch|chemex|v60|filter|grinder/i.test(
+    candidate,
+  );
+}
+
+function bloomPreText(text: string, bloomMatchIndex: number): string {
+  const beforeBloom = text.slice(Math.max(0, bloomMatchIndex - 60), bloomMatchIndex);
+  const preMatch = beforeBloom.match(/(?:^|[,\s])([^,→\n]+?)\s*$/);
+  if (!preMatch) return '';
+  const candidate = preMatch[1].trim();
+  return candidate && !looksLikePourMetadata(candidate) ? candidate : '';
+}
+
 export function parseRecipe(text: string | null | undefined): Recipe | null {
   if (!text) return null;
 
@@ -196,16 +221,21 @@ export function parseRecipe(text: string | null | undefined): Recipe | null {
   }
 
   const pours: PourStep[] = [];
-  const re = /\b(bloom|p(\d+))\s*[-→>]+\s*(\d+\s*(?:g|ml)?)\s*([^,→\n]*)/gi;
+  const re = /\b(bloom|p(\d+))\s*[-→>]+\s*(\d+(?:ml|g)?)\s*([^,→\n]*)/gi;
   let m: RegExpExecArray | null;
   let lastMatchEnd = -1;
   while ((m = re.exec(text)) !== null) {
     const step = m[2] ? `P${m[2]}` : 'Bloom';
     const rawAmt = m[3].trim();
     const amount = /^\d+$/.test(rawAmt) ? `${rawAmt}ml` : rawAmt;
-    let technique = m[4].trim();
-    if (step === 'Bloom' && bloomDuration) {
-      technique = technique ? `${technique}, ${bloomDuration}` : bloomDuration;
+    let technique = cleanPourTechnique(m[4]);
+    if (step === 'Bloom') {
+      if (!technique) {
+        technique = bloomPreText(text, m.index);
+      }
+      if (!technique && bloomDuration) {
+        technique = bloomDuration;
+      }
     }
     pours.push({ step, amount, technique });
     lastMatchEnd = re.lastIndex;

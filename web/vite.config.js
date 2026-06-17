@@ -1,5 +1,9 @@
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Dev-only: run the serverless handlers in api/ inside the Vite dev server, so
 // `npm run dev` serves the Notion proxy with no Vercel CLI needed. In
@@ -63,6 +67,9 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react(), devApiPlugin()],
+    resolve: {
+      alias: { '@shared': path.resolve(__dirname, '../shared') },
+    },
     server: {
       host: true, // expose on local network so mobile devices can connect
     },

@@ -81,6 +81,7 @@ Status key: ✅ done · ❌ missing · ⚠️ partial · — not applicable
 | ☕ cup rating (not stars) | ✅ | ✅ | 4 | Brew ratings show a colored pill (gold ≥4, pink <4) with ☕️ emoji cups, matching web's visual language |
 | Dripper/Filter row padding | ✅ | ✅ | 4 | Dripper and Filter paper labels align with the padding of all other detail rows; no longer sit flush against the card edge |
 | BrewCard default/expanded states | ✅ | ✅ | — | Collapsed card leads with truncated burgundy Thoughts highlight, stats, and brew time; "See more" reveals grinder, equipment, pours, tasting notes (bold Smell:/Taste:), and Reflections (bold Thoughts:/To Try:) |
+| BrewCard pour structure (Recipe to test) | ✅ | ✅ | — | Free-form `recipeToTest` text parses into Bloom/P1/P2… rows with amount + technique columns via shared `parseRecipe()` in `shared/lib/coffees.ts`; raw recipe fallback when parsing fails |
 | BrewCard notes left-aligned | ✅ | ✅ | 4 | Tasting notes, brew notes, and recipe fallback body text are left-aligned block prose, not right-aligned like label-value rows |
 | Origin mini-map | ✅ | ✅ | 4 | A small inset map (~120px tall) below the origin rows shows a zoomed-out view centered on the bean's country of origin |
 | Bag hero size + shadow | ✅ | ✅ | 4 | Hero bag is 300×300 with drop shadow matching web |
@@ -92,7 +93,7 @@ Status key: ✅ done · ❌ missing · ⚠️ partial · — not applicable
 |---|---|---|---|---|
 | Brew notes field | ✅ | ❌ | Deferred | A multiline text field in the Brew section for freeform notes about the brew session |
 | Tasting notes field | ✅ | ❌ | Deferred | A multiline text field for per-brew tasting impressions, distinct from the bean-level comma-separated notes |
-| Recipe to test field | ✅ | ❌ | Deferred | A multiline text field for pour-step recipes; saved data renders as parsed pour cards on the detail screen |
+| Recipe to test field | ✅ | ❌ | Deferred | A multiline text field for pour-step recipes; saved data renders as parsed pour cards on the detail screen (display/parser done; log form still missing) |
 | Altitude field | ✅ | ❌ | Deferred | A text input in the Bean section for origin altitude (e.g. "1800–2200 masl"); appears in the origin detail card |
 
 ### Beans Tab

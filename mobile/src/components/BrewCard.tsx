@@ -225,7 +225,9 @@ export function BrewCard({ brew, onEdit }: Props) {
 
       {expanded ? (
         <>
-          <Divider />
+          <View style={styles.insetDivider}>
+            <Divider />
+          </View>
           <Row label="Grinder" value={brew.grinder} />
           <Row label="Dripper" value={brew.brewer} />
           <Row label="Filter paper" value={brew.filter} />
@@ -234,10 +236,11 @@ export function BrewCard({ brew, onEdit }: Props) {
             <>
               <Divider />
               <View style={styles.pourSection}>
-                {parsed.pours.map(({ step, amount }) => (
+                {parsed.pours.map(({ step, amount, technique }) => (
                   <View key={step} style={styles.pourRow}>
                     <Text style={styles.pourStep}>{step}</Text>
                     <Text style={styles.pourAmount}>{amount}</Text>
+                    {technique ? <Text style={styles.pourTechnique}>{technique}</Text> : null}
                   </View>
                 ))}
                 {parsed.agitation ? (
@@ -403,7 +406,15 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     width: 60,
   },
-  agitation: { marginTop: 6, paddingTop: 6, borderTopWidth: 0.5, borderTopColor: '#E7E7E7' },
+  pourTechnique: {
+    flex: 1,
+    fontFamily: fonts.sans,
+    fontWeight: '500',
+    fontSize: 13,
+    color: colors.greyDark,
+    lineHeight: 20,
+  },
+  agitation: { marginTop: 10},
   section: { padding: 16, paddingHorizontal: 24 },
   sectionTitle: {
     fontFamily: fonts.sans,

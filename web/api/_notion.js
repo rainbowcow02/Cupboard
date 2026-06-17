@@ -181,6 +181,7 @@ export function cupToProperties(cup) {
   setSelect(c.process, cup.process);
   setSelect(c.roastLevel, cup.roastLevel);
   setSelect(c.brewer, cup.brewer);
+  setSelect(c.grinder, cup.grinder);
   setSelect(c.filter, cup.filter);
   setSelect(c.grind, cup.grind);
 
