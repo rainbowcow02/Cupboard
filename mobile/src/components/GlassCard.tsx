@@ -9,8 +9,10 @@ interface Props {
 export function GlassCard({ children, style }: Props) {
   return (
     <View style={[styles.outer, style]}>
-      <BlurView intensity={60} tint="light" style={StyleSheet.absoluteFill} />
+      <BlurView intensity={24} tint="light" style={StyleSheet.absoluteFill} />
+      <View style={styles.whiteFill} />
       <View style={styles.tint} />
+      <View style={styles.sheen} />
       <View style={styles.content}>{children}</View>
     </View>
   );
@@ -23,12 +25,21 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.12,
-    shadowRadius: 20,
+    shadowRadius: 40,
     elevation: 8,
+  },
+  whiteFill: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255,255,255,0.88)',
   },
   tint: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(245,245,245,0.55)',
+    backgroundColor: 'rgba(245,245,245,0.6)',
+  },
+  sheen: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255,255,255,0.09)',
+    transform: [{ skewX: '-12deg' }, { scaleX: 1.4 }],
   },
   content: {
     position: 'relative',

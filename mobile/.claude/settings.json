@@ -15,6 +15,9 @@
       "Bash(npx tsc *)",
       "Bash(npx eslint *)",
       "Bash(git checkout *)"
+    ],
+    "additionalDirectories": [
+      "/Users/lindsaylee/Documents/Side Projects/Cupboard-mobile/docs"
     ]
   },
   "enabledPlugins": {

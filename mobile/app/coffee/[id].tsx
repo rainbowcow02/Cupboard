@@ -10,11 +10,12 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
-import { Brew, Coffee, formatDate } from '@shared/lib/coffees';
+import { Brew, Coffee } from '@shared/lib/coffees';
 import { colors, fonts } from '@shared/theme';
 import { BagLabel } from '../../src/components/BagLabel';
 import { BrewCard } from '../../src/components/BrewCard';
 import { GlassCard } from '../../src/components/GlassCard';
+import { OriginMap } from '../../src/components/OriginMap';
 import { useCoffees } from '../../src/hooks/useCoffees';
 import { BrewForm } from './BrewForm';
 
@@ -92,9 +93,15 @@ export default function CoffeeDetailScreen() {
   const flag = ORIGIN_FLAGS[coffee.origin ?? ''] ?? '';
 
   return (
-    <View style={[styles.screen, { paddingTop: insets.top }]}>
-      {/* Back button */}
-      <Pressable onPress={() => router.back()} style={styles.backBtn} hitSlop={8}>
+    <View style={styles.screen}>
+      {/* Back button — floats over scroll content with no background fill */}
+      <Pressable
+        onPress={() => router.back()}
+        style={[styles.backBtn, { top: 16 }]}
+        hitSlop={8}
+        accessibilityRole="button"
+        accessibilityLabel="Go back"
+      >
         <Svg width={14} height={22} viewBox="0 0 14 22" fill="none">
           <Path d="M12 2L3 11L12 20" stroke={colors.burgundy} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
         </Svg>
@@ -102,18 +109,21 @@ export default function CoffeeDetailScreen() {
 
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 32 }]}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 32 },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         {/* Bag hero */}
         <View style={styles.hero}>
-          <View style={{ position: 'relative', width: 260, height: 260 }}>
+          <View style={styles.heroBagWrap}>
             <Image
               source={BAG_IMAGES[coffee.bagImg] ?? BAG_IMAGES.white}
               style={styles.bagImage}
               resizeMode="contain"
             />
-            <BagLabel coffee={coffee} bagWidth={260} />
+            <BagLabel coffee={coffee} bagWidth={300} />
           </View>
         </View>
 
@@ -153,6 +163,11 @@ export default function CoffeeDetailScreen() {
               <DetailRow label="Country" value={`${flag} ${coffee.origin ?? ''}`} />
               <DetailRow label="Region" value={coffee.region} last={!coffee.altitude} />
               {coffee.altitude && <DetailRow label="Altitude" value={coffee.altitude} last />}
+              {coffee.origin && (
+                <View style={styles.originMapWrap}>
+                  <OriginMap country={coffee.origin} />
+                </View>
+              )}
             </GlassCard>
           </View>
 
@@ -188,10 +203,9 @@ export default function CoffeeDetailScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.pearl },
   scroll: { flex: 1 },
-  scrollContent: { paddingTop: 52 },
+  scrollContent: {},
   backBtn: {
     position: 'absolute',
-    top: 0,
     left: 8,
     zIndex: 10,
     width: 44,
@@ -201,18 +215,30 @@ const styles = StyleSheet.create({
   },
   hero: {
     alignItems: 'center',
+    paddingTop: 24,
     paddingHorizontal: 24,
     paddingBottom: 24,
   },
-  bagImage: { width: 260, height: 260 },
-  titleBlock: { paddingHorizontal: 24, paddingBottom: 16, gap: 4 },
-  roaster: { fontFamily: fonts.sans, fontWeight: '500', fontSize: 15, color: colors.moss, lineHeight: 20 },
-  bean: { fontFamily: fonts.condensed, fontWeight: '600', fontSize: 42, color: '#000', lineHeight: 46, letterSpacing: -0.5 },
-  sections: { paddingHorizontal: 24, gap: 32 },
-  section: { gap: 12 },
+  heroBagWrap: {
+    position: 'relative',
+    width: 300,
+    height: 300,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 18 },
+    shadowOpacity: 0.18,
+    shadowRadius: 13,
+    elevation: 12,
+  },
+  bagImage: { width: 300, height: 300 },
+  titleBlock: { paddingHorizontal: 24, paddingVertical: 16, gap: 16 },
+  roaster: { fontFamily: fonts.sans, fontWeight: '500', fontSize: 15, color: colors.moss, lineHeight: 17 },
+  bean: { fontFamily: fonts.condensed, fontWeight: '600', fontSize: 48, color: colors.black, lineHeight: 54, letterSpacing: -0.5 },
+  sections: { paddingHorizontal: 24, gap: 36 },
+  section: { gap: 8 },
   sectionHeader: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
-  sectionTitle: { fontFamily: fonts.serif, fontSize: 22, color: '#000', lineHeight: 30 },
+  sectionTitle: { fontFamily: fonts.serif, fontSize: 22, color: colors.black, lineHeight: 30 },
   sectionAction: { fontFamily: fonts.sans, fontWeight: '500', fontSize: 12, color: colors.burgundy },
+  originMapWrap: { paddingHorizontal: 24, paddingBottom: 24 },
   detailRowOuter: { paddingHorizontal: 24, paddingTop: 16 },
   detailRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 16, paddingBottom: 16 },
   detailLabel: { fontFamily: fonts.sans, fontWeight: '500', fontSize: 13, color: colors.greyDark, flexShrink: 0 },
