@@ -184,7 +184,7 @@ export default function CoffeeDetailScreen() {
                   <BrewCard
                     key={b.id ?? i}
                     brew={b}
-                    onPress={b.id ? () => setEditingBrew(b) : undefined}
+                    onEdit={b.id ? () => setEditingBrew(b) : undefined}
                   />
                 ))}
               </View>
