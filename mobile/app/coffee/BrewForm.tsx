@@ -18,6 +18,9 @@ import { createCup, updateCup, deleteCup } from '../../src/lib/api';
 interface Props {
   coffee: Coffee;
   brew?: Brew | null;
+  templateBrew?: Brew | null;
+  embedded?: boolean;
+  title?: string;
   onClose: () => void;
   onSaved: () => Promise<void>;
 }
@@ -32,19 +35,29 @@ function toISODate(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
-export function BrewForm({ coffee, brew, onClose, onSaved }: Props) {
+export function BrewForm({
+  coffee,
+  brew,
+  templateBrew,
+  embedded = false,
+  title,
+  onClose,
+  onSaved,
+}: Props) {
   const editing = !!brew;
+  const source = brew ?? templateBrew;
   const insets = useSafeAreaInsets();
 
   const [form, setForm] = useState({
-    brewer: brew?.brewer ?? '',
-    filter: brew?.filter ?? '',
-    grind: brew?.grind ?? '',
-    beansG: brew?.beansG != null ? String(brew.beansG) : '',
-    waterMl: brew?.waterMl != null ? String(brew.waterMl) : '',
-    tempC: brew?.tempC != null ? String(brew.tempC) : '',
-    date: toDateInput(brew?.date),
-    rating: brew?.rating ?? 0,
+    brewer: source?.brewer ?? '',
+    filter: source?.filter ?? '',
+    grind: source?.grind ?? '',
+    beansG: source?.beansG != null ? String(source.beansG) : '',
+    waterMl: source?.waterMl != null ? String(source.waterMl) : '',
+    tempC: source?.tempC != null ? String(source.tempC) : '',
+    recipeToTest: source?.recipeToTest ?? '',
+    date: toDateInput(editing ? brew?.date : undefined),
+    rating: editing ? (brew?.rating ?? 0) : 0,
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -65,6 +78,7 @@ export function BrewForm({ coffee, brew, onClose, onSaved }: Props) {
         beansG: form.beansG ? Number(form.beansG) : undefined,
         waterMl: form.waterMl ? Number(form.waterMl) : undefined,
         tempC: form.tempC ? Number(form.tempC) : undefined,
+        recipeToTest: form.recipeToTest.trim() || undefined,
         date: toISODate(form.date),
         rating: form.rating || undefined,
       };
@@ -105,29 +119,37 @@ export function BrewForm({ coffee, brew, onClose, onSaved }: Props) {
     }
   };
 
+  const screenTitle = title ?? (editing ? 'Edit Brew' : templateBrew ? 'Tweak recipe' : 'New recipe');
+
   return (
-    <View style={[styles.sheet, { paddingTop: insets.top }]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={onClose} hitSlop={8}>
-          <Text style={styles.cancel}>Cancel</Text>
-        </Pressable>
-        <Text style={styles.title}>{editing ? 'Edit Brew' : 'New Brew'}</Text>
-        <Pressable onPress={save} disabled={saving} hitSlop={8}>
-          <Text style={[styles.saveBtn, saving && styles.saveBtnDisabled]}>
-            {saving ? 'Saving…' : 'Save'}
-          </Text>
-        </Pressable>
-      </View>
+    <View style={[embedded ? styles.embedded : styles.sheet, !embedded && { paddingTop: insets.top }]}>
+      {!embedded ? (
+        <View style={styles.header}>
+          <Pressable onPress={onClose} hitSlop={8} accessibilityRole="button" accessibilityLabel="Cancel">
+            <Text style={styles.cancel}>Cancel</Text>
+          </Pressable>
+          <Text style={styles.title}>{screenTitle}</Text>
+          <Pressable onPress={save} disabled={saving} hitSlop={8} accessibilityRole="button" accessibilityLabel="Save brew">
+            <Text style={[styles.saveBtn, saving && styles.saveBtnDisabled]}>
+              {saving ? 'Saving…' : 'Save'}
+            </Text>
+          </Pressable>
+        </View>
+      ) : null}
 
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 48 }]}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: (embedded ? 24 : insets.bottom + 48) },
+        ]}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={styles.subtitle}>
-          Brew recipe for <Text style={styles.subtitleBold}>{coffee.bean}</Text> · {coffee.roaster}
-        </Text>
+        {embedded ? null : (
+          <Text style={styles.subtitle}>
+            Brew recipe for <Text style={styles.subtitleBold}>{coffee.bean}</Text> · {coffee.roaster}
+          </Text>
+        )}
 
         {error && <View style={styles.errorBox}><Text style={styles.errorText}>{error}</Text></View>}
 
@@ -150,9 +172,22 @@ export function BrewForm({ coffee, brew, onClose, onSaved }: Props) {
               <TextInput style={fieldInputStyle} value={form.waterMl} onChangeText={set('waterMl')} placeholder="300" placeholderTextColor={colors.greyDark} keyboardType="decimal-pad" returnKeyType="next" />
             </FormField>
             <FormField label="Temp °C">
-              <TextInput style={fieldInputStyle} value={form.tempC} onChangeText={set('tempC')} placeholder="94" placeholderTextColor={colors.greyDark} keyboardType="decimal-pad" returnKeyType="done" />
+              <TextInput style={fieldInputStyle} value={form.tempC} onChangeText={set('tempC')} placeholder="94" placeholderTextColor={colors.greyDark} keyboardType="decimal-pad" returnKeyType="next" />
             </FormField>
           </View>
+
+          <FormField label="Pour structure">
+            <TextInput
+              style={[fieldInputStyle, styles.recipeInput]}
+              value={form.recipeToTest}
+              onChangeText={set('recipeToTest')}
+              placeholder={'Bloom → 40ml swirl, P1 → 120ml center pour, brew time 2:45'}
+              placeholderTextColor={colors.greyDark}
+              multiline
+              textAlignVertical="top"
+              returnKeyType="done"
+            />
+          </FormField>
 
           <FormField label="Date">
             <DateField
@@ -174,6 +209,18 @@ export function BrewForm({ coffee, brew, onClose, onSaved }: Props) {
             </Text>
           </Pressable>
         )}
+
+        {embedded ? (
+          <Pressable
+            onPress={save}
+            disabled={saving}
+            style={[styles.embeddedSaveBtn, saving && styles.embeddedSaveBtnDisabled]}
+            accessibilityRole="button"
+            accessibilityLabel="Save cup"
+          >
+            <Text style={styles.embeddedSaveBtnText}>{saving ? 'Saving…' : 'Save cup'}</Text>
+          </Pressable>
+        ) : null}
       </ScrollView>
     </View>
   );
@@ -184,6 +231,10 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: colors.pearl,
     zIndex: 10,
+  },
+  embedded: {
+    flex: 1,
+    backgroundColor: colors.pearl,
   },
   header: {
     flexDirection: 'row',
@@ -204,6 +255,7 @@ const styles = StyleSheet.create({
   errorText: { fontFamily: fonts.sans, fontWeight: '500', fontSize: 13, color: colors.burgundy },
   fields: { gap: 14 },
   row: { flexDirection: 'row', gap: 10 },
+  recipeInput: { minHeight: 96, paddingTop: 12 },
   datePicker: { alignSelf: 'flex-start', marginTop: 2 },
   deleteBtn: {
     marginTop: 28,
@@ -214,4 +266,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   deleteBtnText: { fontFamily: fonts.sans, fontWeight: '600', fontSize: 14, color: colors.burgundy },
+  embeddedSaveBtn: {
+    marginTop: 28,
+    backgroundColor: colors.burgundy,
+    borderRadius: 100,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  embeddedSaveBtnDisabled: { backgroundColor: '#b9a99a' },
+  embeddedSaveBtnText: {
+    fontFamily: fonts.sans,
+    fontWeight: '800',
+    fontSize: 15,
+    color: colors.pearl,
+  },
 });

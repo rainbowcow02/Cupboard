@@ -92,11 +92,20 @@ Status key: ✅ done · ❌ missing · ⚠️ partial · — not applicable
 
 ### Log Cup
 
+Mobile intentionally diverges from web here. Web is a single flat "coffee + brew" form. Mobile now uses a **bean-first, recipe-aware flow**: (1) pick the bean (search your cupboard or add a new coffee), (2) choose how to brew — same recipe again, tweak an existing recipe, or new recipe, (3) log the cup. The form fields underneath reuse the shared `BrewForm`/`createCup` data model so saved data is identical to web.
+
 | Item | Web | Mobile | Batch | Success looks like |
 |---|---|---|---|---|
+| Bean-first log flow | ❌ | ✅ | — | Log tab opens on a clean hero — "What are we brewing today?" in large serif — with two options beneath: "Choose a coffee" (→ searchable cupboard list) and "Add a new coffee" (→ new-coffee form); tapping a bean advances the flow instead of showing a flat form |
+| Recipe choice step | ❌ | ✅ | — | After picking a bean with existing recipes, mobile asks: "Same recipe again", "Tweak a recipe", or "New recipe" — each routing to the appropriate next step |
+| Repeat-recipe quick log | ❌ | ✅ | — | "Same recipe again" → pick a past brew → a read-only recipe summary (brewer, ratio, grind, temp, parsed pour steps) with just Date + Rating to fill in, then Save |
+| Tweak-recipe flow | ❌ | ✅ | — | "Tweak a recipe" → pick a past brew → `BrewForm` pre-filled with that recipe's values (including pour structure) so the user can adjust before saving a new cup |
+| New-recipe flow | ❌ | ✅ | — | "New recipe" (or any bean with no recipes yet) → blank `BrewForm` for a fresh pour structure, ratio, and temperature |
+| New coffee step | ❌ | ✅ | — | "+ New coffee" → bean detail form (bean, roaster, country, process, roast, region, variety, tasting notes) → continues into the new-recipe `BrewForm` |
+| Back navigation through steps | ❌ | ✅ | — | A Back affordance in the log header steps backward through bean → choice → recipe pick → form without losing the selected bean |
 | Brew notes field | ✅ | ❌ | Deferred | A multiline text field in the Brew section for freeform notes about the brew session |
 | Tasting notes field | ✅ | ❌ | Deferred | A multiline text field for per-brew tasting impressions, distinct from the bean-level comma-separated notes |
-| Recipe to test field | ✅ | ❌ | Deferred | A multiline text field for pour-step recipes; saved data renders as parsed pour cards on the detail screen (display/parser done; log form still missing) |
+| Recipe to test field | ✅ | ✅ | — | Multiline "Pour structure" field in `BrewForm` (new/tweak steps); saved data renders as parsed pour cards on the detail screen and as a read-only summary in the repeat-recipe quick log |
 | Altitude field | ✅ | ❌ | Deferred | A text input in the Bean section for origin altitude (e.g. "1800–2200 masl"); appears in the origin detail card |
 
 ### Beans Tab
