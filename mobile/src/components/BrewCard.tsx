@@ -1,35 +1,30 @@
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { LayoutChangeEvent, Pressable, StyleSheet, Text, View } from 'react-native';
-import Animated, {
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import {
+  Animated,
   Easing,
-  interpolate,
-  runOnJS,
-  scrollTo,
-  type AnimatedRef,
-  type SharedValue,
-  useAnimatedStyle,
-  useSharedValue,
-  withDelay,
-  withTiming,
-} from 'react-native-reanimated';
+  LayoutChangeEvent,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { Brew, formatDate, parseRecipe } from '@shared/lib/coffees';
 import { colors, fonts } from '@shared/theme';
 import { Card } from './Card';
 import { SortChevron } from './SortChevron';
 
-const EXPAND_DURATION = 450;
-const COLLAPSE_FADE_DURATION = 150;
-const COLLAPSE_BREATH_DELAY = 80;
-const COLLAPSE_HEIGHT_DURATION = 280;
-const EXPAND_EASING = Easing.out(Easing.cubic);
-const COLLAPSE_EASING = Easing.out(Easing.cubic);
+const ANIMATION_DURATION = 320;
+const ANIMATION_EASING = Easing.out(Easing.cubic);
 
 interface Props {
   brew: Brew;
   onEdit?: () => void;
-  scrollRef?: AnimatedRef<Animated.ScrollView>;
-  scrollY?: SharedValue<number>;
-  isLastInList?: boolean;
+  getCurrentScrollY?: () => number;
+  scrollToY?: (y: number) => void;
+}
+
+interface AnchorSnapshot {
+  screenY: number;
 }
 
 interface ParsedReflections {
@@ -124,85 +119,8 @@ function ExpandLink({ expanded, onPress }: { expanded: boolean; onPress: () => v
       }
     >
       <Text style={styles.expandLinkText}>{expanded ? 'See less' : 'See more'}</Text>
-      <SortChevron
-        flipped={expanded}
-        color={colors.greyDark}
-        duration={expanded ? EXPAND_DURATION : COLLAPSE_FADE_DURATION}
-      />
+      <SortChevron flipped={expanded} color={colors.greyDark} />
     </Pressable>
-  );
-}
-
-function useAccordionStyle(
-  isExpanded: boolean,
-  heightProgress: SharedValue<number>,
-  collapseOpacity: SharedValue<number>,
-  contentHeight: SharedValue<number>,
-) {
-  return useAnimatedStyle(() => {
-    const expandOpacity = interpolate(
-      heightProgress.value,
-      [0, 0.3, 0.75, 0.85, 1],
-      [0, 0, 0.9, 1, 1],
-    );
-    const progress = Math.max(0, heightProgress.value);
-    const isCollapsing = !isExpanded && progress > 0;
-    return {
-      height: contentHeight.value * progress,
-      opacity: isCollapsing ? collapseOpacity.value : expandOpacity,
-      transform: [{
-        translateY: isCollapsing
-          ? 0
-          : interpolate(heightProgress.value, [0, 1], [-4, 0]),
-      }],
-    };
-  });
-}
-
-function useCollapseWrapperStyle(wrapperMinHeight: SharedValue<number>) {
-  return useAnimatedStyle(() => ({
-    minHeight: wrapperMinHeight.value,
-    justifyContent: 'flex-end',
-  }));
-}
-
-function AccordionSection({
-  isExpanded,
-  heightProgress,
-  collapseOpacity,
-  contentHeight,
-  expanded,
-  children,
-}: {
-  isExpanded: boolean;
-  heightProgress: SharedValue<number>;
-  collapseOpacity: SharedValue<number>;
-  contentHeight: SharedValue<number>;
-  expanded: boolean;
-  children: ReactNode;
-}) {
-  const accordionStyle = useAccordionStyle(
-    isExpanded,
-    heightProgress,
-    collapseOpacity,
-    contentHeight,
-  );
-
-  return (
-    <Animated.View
-      style={[styles.accordion, accordionStyle]}
-      importantForAccessibility={expanded ? 'auto' : 'no-hide-descendants'}
-    >
-      <View
-        collapsable={false}
-        style={styles.accordionContent}
-        onLayout={(e) => {
-          contentHeight.value = e.nativeEvent.layout.height;
-        }}
-      >
-        {children}
-      </View>
-    </Animated.View>
   );
 }
 
@@ -345,23 +263,27 @@ function EquipmentAndRecipe({ brew, parsed }: { brew: Brew; parsed: ReturnType<t
   );
 }
 
-export function BrewCard({
-  brew,
-  onEdit,
-  scrollRef,
-  scrollY,
-  isLastInList = false,
-}: Props) {
-  const [expanded, setExpanded] = useState(false);
-  const [collapseWrapperActive, setCollapseWrapperActive] = useState(false);
-  const heightProgress = useSharedValue(0);
-  const collapseOpacity = useSharedValue(1);
-  const wrapperMinHeight = useSharedValue(0);
-  const collapseExpandedHeight = useSharedValue(0);
-  const measuredOuterHeight = useSharedValue(0);
-  const topContentHeight = useSharedValue(0);
-  const bottomContentHeight = useSharedValue(0);
-  const allContentHeight = useSharedValue(0);
+function BrewTimeRow({ brewTime }: { brewTime: string }) {
+  return (
+    <View style={styles.rowBlock}>
+      <View style={styles.detailRow}>
+        <Text style={styles.detailLabel}>Brew time</Text>
+        <Text style={styles.statValue}>{brewTime}</Text>
+      </View>
+      <Divider />
+    </View>
+  );
+}
+
+export function BrewCard({ brew, onEdit, getCurrentScrollY, scrollToY }: Props) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [expandedHeight, setExpandedHeight] = useState(0);
+
+  const buttonRef = useRef<View>(null);
+  const anchorRef = useRef<AnchorSnapshot | null>(null);
+  const hasInitializedLayoutRef = useRef(false);
+  const heightAnimation = useRef(new Animated.Value(0)).current;
+  const opacityAnimation = useRef(new Animated.Value(0)).current;
 
   const parsed = parseRecipe(brew.recipeToTest);
   const reflections = parseReflections(reflectionsText(brew));
@@ -376,98 +298,115 @@ export function BrewCard({
       reflections,
   );
 
-  const usesSplitAccordion = hasExpandableContent && Boolean(brewTime);
+  const hasRatio = brew.beansG && brew.waterMl;
+  const ratio = hasRatio ? `1:${(brew.waterMl! / brew.beansG!).toFixed(1)}` : '—';
 
-  const finishCollapse = useCallback((accordionH: number) => {
-    wrapperMinHeight.value = 0;
-    setCollapseWrapperActive(false);
-    if (scrollRef && scrollY && !isLastInList && accordionH > 0) {
-      scrollTo(scrollRef, 0, scrollY.value - accordionH, false);
-    }
-  }, [
-    wrapperMinHeight,
-    scrollRef,
-    scrollY,
-    isLastInList,
-  ]);
-
-  const scheduleFinishCollapse = useCallback((accordionH: number) => {
-    requestAnimationFrame(() => {
-      finishCollapse(accordionH);
-    });
-  }, [finishCollapse]);
-
-  const handleExpandToggle = () => {
-    if (expanded) {
-      collapseExpandedHeight.value = measuredOuterHeight.value;
-    }
-    setExpanded((v) => !v);
-  };
+  const recordExpandedHeight = useCallback((event: LayoutChangeEvent) => {
+    const height = event.nativeEvent.layout.height;
+    setExpandedHeight((current) => (Math.abs(current - height) < 0.5 ? current : height));
+  }, []);
 
   useEffect(() => {
-    if (expanded) {
-      setCollapseWrapperActive(false);
-      wrapperMinHeight.value = 0;
-      collapseOpacity.value = 1;
-      heightProgress.value = withTiming(1, {
-        duration: EXPAND_DURATION,
-        easing: EXPAND_EASING,
+    if (expandedHeight <= 0) {
+      return;
+    }
+
+    const targetHeight = isExpanded ? expandedHeight : 0;
+    const targetOpacity = isExpanded ? 1 : 0;
+    let collapseScrollListener: string | undefined;
+
+    if (!hasInitializedLayoutRef.current) {
+      heightAnimation.setValue(targetHeight);
+      opacityAnimation.setValue(targetOpacity);
+      hasInitializedLayoutRef.current = true;
+      return;
+    }
+
+    heightAnimation.stopAnimation((startHeight) => {
+      const anchor = anchorRef.current;
+      const startScrollY = getCurrentScrollY?.() ?? 0;
+
+      if (!isExpanded && anchor && scrollToY) {
+        collapseScrollListener = heightAnimation.addListener(({ value }) => {
+          scrollToY(startScrollY + value - startHeight);
+        });
+      }
+
+      Animated.parallel([
+        Animated.timing(heightAnimation, {
+          duration: ANIMATION_DURATION,
+          easing: ANIMATION_EASING,
+          toValue: targetHeight,
+          useNativeDriver: false,
+        }),
+        Animated.timing(opacityAnimation, {
+          duration: Math.round(ANIMATION_DURATION * 0.7),
+          easing: ANIMATION_EASING,
+          toValue: targetOpacity,
+          useNativeDriver: true,
+        }),
+      ]).start(({ finished }) => {
+        if (collapseScrollListener) {
+          heightAnimation.removeListener(collapseScrollListener);
+        }
+
+        const buttonNode = buttonRef.current;
+        if (!finished || !anchor || !buttonNode || !scrollToY) {
+          anchorRef.current = null;
+          return;
+        }
+
+        buttonNode.measureInWindow((_x, screenY) => {
+          const nextScrollY = (getCurrentScrollY?.() ?? 0) + screenY - anchor.screenY;
+          scrollToY(nextScrollY);
+          anchorRef.current = null;
+        });
+      });
+    });
+
+    return () => {
+      if (collapseScrollListener) {
+        heightAnimation.removeListener(collapseScrollListener);
+      }
+      heightAnimation.stopAnimation();
+      opacityAnimation.stopAnimation();
+    };
+  }, [
+    expandedHeight,
+    isExpanded,
+    heightAnimation,
+    opacityAnimation,
+    getCurrentScrollY,
+    scrollToY,
+  ]);
+
+  const toggleCard = useCallback(() => {
+    const nextExpanded = !isExpanded;
+    const buttonNode = buttonRef.current;
+
+    if (!nextExpanded && buttonNode) {
+      buttonNode.measureInWindow((_x, screenY) => {
+        anchorRef.current = { screenY };
+        setIsExpanded(false);
       });
       return;
     }
 
-    const expandedH = collapseExpandedHeight.value;
-    if (expandedH <= 0) {
-      return;
-    }
+    anchorRef.current = null;
+    setIsExpanded(nextExpanded);
+  }, [isExpanded]);
 
-    const accordionH = usesSplitAccordion
-      ? topContentHeight.value + bottomContentHeight.value
-      : allContentHeight.value;
+  const hasMeasurement = expandedHeight > 0;
 
-    setCollapseWrapperActive(true);
-    wrapperMinHeight.value = expandedH;
-    collapseOpacity.value = withTiming(0, {
-      duration: COLLAPSE_FADE_DURATION,
-      easing: COLLAPSE_EASING,
-    });
-    heightProgress.value = withDelay(
-      COLLAPSE_FADE_DURATION + COLLAPSE_BREATH_DELAY,
-      withTiming(0, {
-        duration: COLLAPSE_HEIGHT_DURATION,
-        easing: COLLAPSE_EASING,
-      }, (finished) => {
-        if (!finished) {
-          return;
-        }
-        runOnJS(scheduleFinishCollapse)(accordionH);
-      }),
-    );
-  }, [
-    expanded,
-    heightProgress,
-    collapseOpacity,
-    wrapperMinHeight,
-    collapseExpandedHeight,
-    topContentHeight,
-    bottomContentHeight,
-    allContentHeight,
-    usesSplitAccordion,
-    scheduleFinishCollapse,
-  ]);
+  const bodyContent = (
+    <>
+      <EquipmentAndRecipe brew={brew} parsed={parsed} />
+      {brewTime ? <BrewTimeRow brewTime={brewTime} /> : null}
+      <NotesAndReflections brew={brew} reflections={reflections} />
+    </>
+  );
 
-  const hasRatio = brew.beansG && brew.waterMl;
-  const ratio = hasRatio ? `1:${(brew.waterMl! / brew.beansG!).toFixed(1)}` : '—';
-
-  const collapseWrapperStyle = useCollapseWrapperStyle(wrapperMinHeight);
-
-  const handleOuterLayout = useCallback((e: LayoutChangeEvent) => {
-    if (expanded) {
-      measuredOuterHeight.value = e.nativeEvent.layout.height;
-    }
-  }, [expanded, measuredOuterHeight]);
-
-  const cardBody = (
+  return (
     <Card
       onLongPress={onEdit}
       accessibilityRole="summary"
@@ -496,91 +435,31 @@ export function BrewCard({
       </View>
 
       {hasExpandableContent ? (
-        brewTime ? (
-          <>
-            <AccordionSection
-              isExpanded={expanded}
-              heightProgress={heightProgress}
-              collapseOpacity={collapseOpacity}
-              contentHeight={topContentHeight}
-              expanded={expanded}
-            >
-              <EquipmentAndRecipe brew={brew} parsed={parsed} />
-            </AccordionSection>
-
-            {!expanded ? (
-              <View style={styles.insetDivider}>
-                <Divider />
-              </View>
-            ) : null}
-            <View style={[styles.rowBlock, !expanded ? styles.brewTimeRow : null]}>
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Brew time</Text>
-                <Text style={styles.statValue}>{brewTime}</Text>
-              </View>
-              {expanded ? <Divider /> : null}
-            </View>
-
-            <AccordionSection
-              isExpanded={expanded}
-              heightProgress={heightProgress}
-              collapseOpacity={collapseOpacity}
-              contentHeight={bottomContentHeight}
-              expanded={expanded}
-            >
-              <NotesAndReflections brew={brew} reflections={reflections} />
-            </AccordionSection>
-          </>
-        ) : (
-          <AccordionSection
-            isExpanded={expanded}
-            heightProgress={heightProgress}
-            collapseOpacity={collapseOpacity}
-            contentHeight={allContentHeight}
-            expanded={expanded}
-          >
-            <EquipmentAndRecipe brew={brew} parsed={parsed} />
-            <NotesAndReflections brew={brew} reflections={reflections} />
-          </AccordionSection>
-        )
-      ) : brewTime ? (
         <>
-          <View style={styles.insetDivider}>
-            <Divider />
+          {hasMeasurement ? (
+            <Animated.View style={[styles.animatedBody, { height: heightAnimation }]}>
+              <Animated.View style={[styles.bodyLayer, { opacity: opacityAnimation }]}>
+                {bodyContent}
+              </Animated.View>
+            </Animated.View>
+          ) : null}
+
+          <View
+            style={styles.measurementHost}
+            pointerEvents="none"
+            onLayout={recordExpandedHeight}
+          >
+            {bodyContent}
           </View>
-          <View style={[styles.rowBlock, styles.brewTimeRow]}>
-            <View style={styles.detailRow}>
-              <Text style={styles.detailLabel}>Brew time</Text>
-              <Text style={styles.statValue}>{brewTime}</Text>
+
+          <View style={styles.expandFooter}>
+            <View ref={buttonRef} collapsable={false}>
+              <ExpandLink expanded={isExpanded} onPress={toggleCard} />
             </View>
           </View>
         </>
       ) : null}
-
-      {hasExpandableContent ? (
-        <View style={styles.expandFooter}>
-          <ExpandLink expanded={expanded} onPress={handleExpandToggle} />
-        </View>
-      ) : null}
     </Card>
-  );
-
-  if (collapseWrapperActive) {
-    return (
-      <Animated.View
-        style={collapseWrapperStyle}
-        onLayout={handleOuterLayout}
-        collapsable={false}
-      >
-        {cardBody}
-      </Animated.View>
-    );
-  }
-
-  return (
-    <View onLayout={handleOuterLayout}>
-      {cardBody}
-    </View>
   );
 }
 
@@ -643,7 +522,6 @@ const styles = StyleSheet.create({
   divider: { height: 0.5, backgroundColor: '#E7E7E7' },
   insetDivider: { paddingHorizontal: 24 },
   rowBlock: { paddingTop: 16, paddingHorizontal: 24, gap: 16 },
-  brewTimeRow: { paddingBottom: 16 },
   detailRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -722,8 +600,23 @@ const styles = StyleSheet.create({
     lineHeight: 22.5,
   },
   expandFooter: { paddingTop: 8, paddingBottom: 16 },
-  accordion: { overflow: 'hidden' },
-  accordionContent: { position: 'absolute', left: 0, right: 0, top: 0 },
+  animatedBody: {
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  bodyLayer: {
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+  },
+  measurementHost: {
+    left: 0,
+    opacity: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+  },
   expandLink: {
     flexDirection: 'row',
     alignItems: 'center',

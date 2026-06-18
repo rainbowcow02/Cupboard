@@ -9,7 +9,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import Animated, { useAnimatedRef, useScrollViewOffset } from 'react-native-reanimated';
+import Animated, { useAnimatedRef } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { Brew, Coffee } from '@shared/lib/coffees';
@@ -68,7 +68,6 @@ export default function CoffeeDetailScreen() {
   const [addingBrew, setAddingBrew] = useState(false);
   const [editingBrew, setEditingBrew] = useState<Brew | null>(null);
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
-  const scrollY = useScrollViewOffset(scrollRef);
 
   // TEMP: synchronous scroll channel for BrewCardAccordionTest harness
   const scrollViewRef = useRef<Animated.ScrollView | null>(null);
@@ -216,9 +215,8 @@ export default function CoffeeDetailScreen() {
                   <BrewCard
                     key={b.id ?? i}
                     brew={b}
-                    scrollRef={scrollRef}
-                    scrollY={scrollY}
-                    isLastInList={false}
+                    getCurrentScrollY={getCurrentScrollY}
+                    scrollToY={scrollToY}
                     onEdit={b.id ? () => setEditingBrew(b) : undefined}
                   />
                 ))
