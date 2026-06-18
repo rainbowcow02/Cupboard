@@ -14,6 +14,7 @@ import { Brew, Coffee } from '@shared/lib/coffees';
 import { colors, fonts } from '@shared/theme';
 import { BagLabel } from '../../src/components/BagLabel';
 import { BrewCard } from '../../src/components/BrewCard';
+import { BrewCardAccordionTest } from '../../src/components/BrewCardAccordionTest';
 import { Card } from '../../src/components/Card';
 import { OriginMap } from '../../src/components/OriginMap';
 import { useCoffees } from '../../src/hooks/useCoffees';
@@ -178,24 +179,31 @@ export default function CoffeeDetailScreen() {
           {/* Brew recipes */}
           <View style={styles.section}>
             <SectionHeader title="Brew recipes" action="+ Add" onAction={() => setAddingBrew(true)} />
-            {brews.length === 0 ? (
-              <Card>
-                <Text style={styles.emptyBrews}>{'No brew recipes yet. Tap "+ Add" to log one.'}</Text>
-              </Card>
-            ) : (
-              <View style={styles.brewList}>
-                {brews.map((b, i) => (
+            <View style={styles.brewList}>
+              {brews.length === 0 ? (
+                <Card>
+                  <Text style={styles.emptyBrews}>{'No brew recipes yet. Tap "+ Add" to log one.'}</Text>
+                </Card>
+              ) : (
+                brews.map((b, i) => (
                   <BrewCard
                     key={b.id ?? i}
                     brew={b}
                     scrollRef={scrollRef}
                     scrollY={scrollY}
-                    isLastInList={i === brews.length - 1}
+                    isLastInList={false}
                     onEdit={b.id ? () => setEditingBrew(b) : undefined}
                   />
-                ))}
-              </View>
-            )}
+                ))
+              )}
+              {/* TEMP: BrewCard accordion debug */}
+              {Array.from({ length: 5 }, (_, i) => (
+                <BrewCardAccordionTest
+                  key={`accordion-test-${i}`}
+                  label={`#${i + 1}`}
+                />
+              ))}
+            </View>
           </View>
         </View>
       </Animated.ScrollView>
