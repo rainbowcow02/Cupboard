@@ -11,9 +11,9 @@ import {
 } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Path } from 'react-native-svg';
 import { Brew, Coffee } from '@shared/lib/coffees';
 import { colors, fonts } from '@shared/theme';
+import { BackButton } from '../../src/components/BackButton';
 import { BagLabel } from '../../src/components/BagLabel';
 import { BrewCard } from '../../src/components/BrewCard';
 import { Card } from '../../src/components/Card';
@@ -112,17 +112,7 @@ export default function CoffeeDetailScreen() {
   return (
     <View style={styles.screen}>
       {/* Back button — floats over scroll content with no background fill */}
-      <Pressable
-        onPress={() => router.back()}
-        style={[styles.backBtn, { top: 16 }]}
-        hitSlop={8}
-        accessibilityRole="button"
-        accessibilityLabel="Go back"
-      >
-        <Svg width={14} height={22} viewBox="0 0 14 22" fill="none">
-          <Path d="M12 2L3 11L12 20" stroke={colors.burgundy} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
-        </Svg>
-      </Pressable>
+      <BackButton onPress={() => router.back()} style={[styles.backBtn, { top: 16 }]} />
 
       <Animated.ScrollView
         ref={scrollViewRef}

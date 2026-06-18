@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, fonts } from '@shared/theme';
+import { BackButton } from '../BackButton';
 
 interface Props {
   title?: string;
@@ -21,11 +22,7 @@ export function LogHeader({
   return (
     <View style={styles.header}>
       <View style={styles.headerSide}>
-        {onBack ? (
-          <Pressable onPress={onBack} hitSlop={8} accessibilityRole="button" accessibilityLabel="Go back">
-            <Text style={styles.back}>Back</Text>
-          </Pressable>
-        ) : null}
+        {onBack ? <BackButton onPress={onBack} /> : null}
       </View>
       <View style={styles.headerCenter}>
         {title ? <Text style={styles.title}>{title}</Text> : null}
@@ -66,12 +63,6 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     gap: 4,
-  },
-  back: {
-    fontFamily: fonts.sans,
-    fontWeight: '500',
-    fontSize: 15,
-    color: colors.greyDark,
   },
   title: {
     fontFamily: fonts.serif,
