@@ -16,6 +16,7 @@ import { FilterSheet } from '../../src/components/FilterSheet';
 import { FilterSortBar } from '../../src/components/FilterSortBar';
 import { PageHeader } from '../../src/components/PageHeader';
 import { ShelfRow } from '../../src/components/ShelfRow';
+import { BottomChromeScrim } from '../../src/components/surfaces/BottomChromeScrim';
 import { TAB_BAR_HEIGHT } from '../../src/components/TabBar';
 import { useCoffees } from '../../src/hooks/useCoffees';
 import { EMPTY_FILTERS, FilterKey, sortAndFilterCoffees, SortDir, SortMode } from '../../src/lib/coffeeFilters';
@@ -56,13 +57,6 @@ function ShelvesStart({
         <ShelfRow type="open"   leftCoffee={c[4]} rightCoffee={c[5]} scale={scale} onPressCoffee={onPressCoffee} />
         <ShelfRow type="normal" leftCoffee={c[6]} rightCoffee={c[7]} scale={scale} onPressCoffee={onPressCoffee} />
       </View>
-      <View style={StyleSheet.absoluteFill} pointerEvents="none">
-        <Image
-          source={require('../../../shared/assets/shelf-v2-frame.png')}
-          style={{ width: shelfW, height: shelfH }}
-          resizeMode="cover"
-        />
-      </View>
     </View>
   );
 }
@@ -99,13 +93,6 @@ function ShelfContinued({
         <ShelfRow type="normal" leftCoffee={c[0]} rightCoffee={c[1]} scale={scale} onPressCoffee={onPressCoffee} />
         <ShelfRow type="open"   leftCoffee={c[2]} rightCoffee={c[3]} scale={scale} onPressCoffee={onPressCoffee} />
         <ShelfRow type="normal" leftCoffee={c[4]} rightCoffee={c[5]} scale={scale} onPressCoffee={onPressCoffee} />
-      </View>
-      <View style={StyleSheet.absoluteFill} pointerEvents="none">
-        <Image
-          source={require('../../../shared/assets/shelfcontinue-v2-frame.png')}
-          style={{ width: shelfW, height: shelfH }}
-          resizeMode="cover"
-        />
       </View>
     </View>
   );
@@ -154,6 +141,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <BottomChromeScrim />
       <PageHeader
         title="Cupboard"
         avatarInitial="L"

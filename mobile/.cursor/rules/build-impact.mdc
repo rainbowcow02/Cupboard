@@ -1,0 +1,33 @@
+---
+description: Flag whether a change hot-reloads, needs a dev build refresh, or needs a new .ipa
+alwaysApply: true
+---
+
+# Build Impact Notice
+
+For every change that touches app code or config, end with a one-line **Build impact** note telling the user which of these applies:
+
+- 🔥 **Hot reload** — Fast Refresh picks it up automatically, no action needed.
+- 🔄 **Manual refresh** — change is in JS but won't hot-reload; reload the app in the dev client (shake → Reload, or press `r` in the Metro terminal).
+- 📦 **New .ipa build** — native code changed; a new EAS/dev build + reinstall is required. The existing dev build will break until rebuilt.
+
+## How to classify
+
+**🔥 Hot reload** — most day-to-day work:
+- Edits to React components, hooks, styles, `StyleSheet`, theme tokens
+- Changes to TS/JS logic, screens, navigation params, copy
+
+**🔄 Manual refresh** — JS-only but not reliably hot-reloaded:
+- Changes to app entry / root layout, `app/_layout.tsx` providers
+- Global state init, module-level constants, env values read at startup
+- New asset (image/font) references added at runtime
+- Changes to `metro.config.js`, `babel.config.js` (also restart Metro)
+
+**📦 New .ipa build** — anything native:
+- Adding/removing/upgrading a package with native code (requires `pod install`)
+- Changes to `app.json` / `app.config.*` native fields: `plugins`, permissions, `ios`/`android` config, `scheme`, bundle id, `newArchEnabled`
+- New native config plugins, `expo-*` modules that add native code
+- Changes to native folders (`ios/`, `android/`) or `Info.plist` / entitlements
+- Bumping the Expo SDK or React Native version
+
+When in doubt between refresh and new build, say so and explain why (e.g. "this adds a package — check if it has native code per AGENTS.md").

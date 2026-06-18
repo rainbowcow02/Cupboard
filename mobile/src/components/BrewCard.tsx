@@ -11,6 +11,7 @@ import {
 import { Brew, formatDate, parseRecipe } from '@shared/lib/coffees';
 import { colors, fonts } from '@shared/theme';
 import { Card } from './Card';
+import { CupRating } from './CupRating';
 import { SortChevron } from './SortChevron';
 
 const ANIMATION_DURATION = 320;
@@ -75,17 +76,6 @@ function parseTastingNotes(text: string | undefined): { smell: string; taste: st
     taste: tasteMatch?.[1]?.trim() ?? '',
     raw: false,
   };
-}
-
-function CupRating({ rating }: { rating?: number }) {
-  if (!rating || rating <= 0) return null;
-  const bg = rating >= 4 ? 'rgba(253,203,136,0.6)' : 'rgba(252,153,155,0.4)';
-  const cups = '☕️'.repeat(rating);
-  return (
-    <View style={[styles.ratingPill, { backgroundColor: bg }]}>
-      <Text style={styles.ratingText}>{cups}</Text>
-    </View>
-  );
 }
 
 function Divider() {
@@ -476,14 +466,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 17,
     color: colors.black,
-    letterSpacing: -0.5,
-    lineHeight: 24,
-  },
-  ratingPill: { borderRadius: 100, padding: 8, alignItems: 'center', justifyContent: 'center' },
-  ratingText: {
-    fontFamily: fonts.condensed,
-    fontWeight: '600',
-    fontSize: 17,
     letterSpacing: -0.5,
     lineHeight: 24,
   },

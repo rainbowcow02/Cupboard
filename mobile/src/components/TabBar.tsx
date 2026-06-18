@@ -9,19 +9,19 @@ import {
 } from 'react-native';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BlurView } from 'expo-blur';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
 import Svg, { Circle, Path } from 'react-native-svg';
-import { colors } from '@shared/theme';
+import { colors, surfaces } from '@shared/theme';
 
 import MugIcon from '../../assets/icon-mug.svg';
 import PinIcon from '../../assets/icon-pin.svg';
 import LogIcon from '../../assets/icon-log.svg';
 import BeanIcon from '../../assets/icon-bean.svg';
+import { FloatingSurfacePill } from './surfaces/FloatingSurfacePill';
 
 const TAB_ICONS: Record<string, React.FC<{ width: number; height: number }>> = {
   index: MugIcon,
@@ -44,14 +44,17 @@ const TAB_STEP = TAB_W - 8; // = 64px per step, accounting for -8px tab gap
 const SLIDE_SPRING = { damping: 18, stiffness: 220, mass: 0.8 };
 const SCALE_SPRING = { damping: 14, stiffness: 250 };
 
-const glassShadow = Platform.select({
+const pillShadow = Platform.select({
   ios: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 20,
+    shadowColor: surfaces.shadow.shadowColor,
+    shadowOffset: surfaces.shadow.shadowOffset,
+    shadowOpacity: surfaces.shadow.shadowOpacity,
+    shadowRadius: surfaces.shadow.shadowRadius,
   },
-  android: { elevation: 12 },
+  android: { elevation: surfaces.shadow.elevation },
+  web: {
+    boxShadow: '0 8px 40px rgba(0, 0, 0, 0.12)',
+  },
 });
 
 // ─── Tab item (own scale animation) ───────────────────────────────────────────
@@ -97,10 +100,9 @@ function TabItem({ route, descriptor, isFocused, isLast, onPress }: TabItemProps
 
 function SearchButton() {
   return (
-    <View style={[styles.searchShadow, glassShadow]}>
+    <View style={[styles.searchShadow, pillShadow]}>
       <View style={styles.searchInner}>
-        <BlurView intensity={40} tint="light" style={StyleSheet.absoluteFill} />
-        <View style={[StyleSheet.absoluteFill, styles.glassFill]} />
+        <FloatingSurfacePill borderRadius={SEARCH_SIZE / 2} />
         <Svg width={28} height={28} viewBox="0 0 24 24" fill="none">
           <Circle
             cx={11} cy={11} r={7}
@@ -143,19 +145,13 @@ export default function TabBar({ state, descriptors, navigation }: BottomTabBarP
       style={[styles.container, { bottom: Math.max(insets.bottom, 16) }]}
       pointerEvents="box-none"
     >
-      {/* Main pill */}
       <View style={[styles.pillContainer, { width: pillW }]}>
-        {/* Glass pill — extends 4px beyond the tab container on all sides (matches Figma inset-[-4px]).
-            Split into two layers because iOS shadow + overflow:hidden can't coexist on one element. */}
-        <View style={[styles.outerPillShadow, glassShadow]} />
+        <View style={[styles.outerPillShadow, pillShadow]} />
         <View style={styles.outerPillClip}>
-          <BlurView intensity={40} tint="light" style={StyleSheet.absoluteFill} />
-          <View style={[StyleSheet.absoluteFill, styles.glassFill]} />
+          <FloatingSurfacePill />
         </View>
 
-        {/* Tab buttons — 268px container clips selection to inner bounds */}
         <View style={styles.pillInner}>
-          {/* Sliding active indicator — 76px, flush with container edges at endpoints */}
           <Animated.View
             style={[styles.activePill, { width: ACTIVE_PILL_W }, activePillStyle]}
           />
@@ -207,7 +203,7 @@ const styles = StyleSheet.create({
     left: -4,
     right: -4,
     bottom: -4,
-    borderRadius: 100,
+    borderRadius: surfaces.pillRadius,
   },
   outerPillClip: {
     position: 'absolute',
@@ -215,7 +211,7 @@ const styles = StyleSheet.create({
     left: -4,
     right: -4,
     bottom: -4,
-    borderRadius: 100,
+    borderRadius: surfaces.pillRadius,
     overflow: 'hidden',
   },
   pillInner: {
@@ -224,19 +220,16 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    borderRadius: 100,
+    borderRadius: surfaces.pillRadius,
     overflow: 'hidden',
     flexDirection: 'row',
     paddingHorizontal: PILL_PAD,
-  },
-  glassFill: {
-    backgroundColor: 'rgba(255,255,255,0.45)',
   },
   activePill: {
     position: 'absolute',
     top: 0,
     bottom: 0,
-    borderRadius: 100,
+    borderRadius: surfaces.pillRadius,
     backgroundColor: 'rgba(252, 153, 155, 0.5)',
   },
   tab: {

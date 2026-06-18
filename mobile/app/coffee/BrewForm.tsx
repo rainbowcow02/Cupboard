@@ -1,4 +1,3 @@
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { useState } from 'react';
 import {
   Pressable,
@@ -11,6 +10,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Brew, Coffee } from '@shared/lib/coffees';
 import { colors, fonts } from '@shared/theme';
+import { DateField } from '../../src/components/DateField';
 import { FormField, fieldInputStyle } from '../../src/components/FormField';
 import { RatingInput } from '../../src/components/RatingInput';
 import { createCup, updateCup, deleteCup } from '../../src/lib/api';
@@ -155,13 +155,10 @@ export function BrewForm({ coffee, brew, onClose, onSaved }: Props) {
           </View>
 
           <FormField label="Date">
-            <DateTimePicker
+            <DateField
               value={form.date}
-              mode="date"
-              display="compact"
-              onChange={(_, d) => d && setForm((f) => ({ ...f, date: d }))}
+              onChange={(date) => setForm((f) => ({ ...f, date }))}
               style={styles.datePicker}
-              themeVariant="light"
             />
           </FormField>
 
