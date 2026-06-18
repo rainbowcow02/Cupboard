@@ -1,5 +1,5 @@
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
-import MapboxGL from '@rnmapbox/maps';
+import MapboxGL, { type MapState } from '@rnmapbox/maps';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -42,6 +42,13 @@ const HEADER_H = 84;  // grabber 16 + title section 58 + paddingBottom 10
 const ROW_H    = 104; // paddingVertical 16×2 + 72px bag
 const SHEET_BOTTOM_PAD = 16;
 const GLOBE_LIFT = 100; // extra clearance so the globe sits above the collapsed sheet
+// Equatorial, straight-on framing — both hemispheres visible above the bottom sheet.
+const GLOBE_HOME = {
+  centerCoordinate: [0, 0] as [number, number],
+  zoomLevel: 1.0,
+};
+const GLOBE_VIEW_MAX_ZOOM = 1.5; // at or below = fully zoomed-out globe home
+const PIN_VIEW_MAX_ZOOM = 3;     // above this, stale pin padding may still apply
 
 export default function ExploreScreen() {
   const { coffees } = useCoffees();
@@ -51,6 +58,11 @@ export default function ExploreScreen() {
   const mapRef    = useRef<MapboxGL.MapView>(null);
   const cameraRef = useRef<MapboxGL.Camera>(null);
   const sheetRef  = useRef<BottomSheet>(null);
+  // True after a pin fly-to until the camera is restored to globe home.
+  const pinViewActiveRef = useRef(false);
+  // True while one of our own setCamera animations is in flight, so the
+  // camera-change listeners don't react to (and fight) the animation frames.
+  const programmaticAnimRef = useRef(false);
   const [selectedOrigin, setSelectedOrigin] = useState<string | null>(null);
   const [sheetIndex, setSheetIndex] = useState(0);
 
@@ -121,27 +133,82 @@ export default function ExploreScreen() {
   }, []);
 
   const cameraDefaultSettings = useMemo(() => ({
-    centerCoordinate: [0, 5] as [number, number],
-    zoomLevel: 1.2,
+    centerCoordinate: GLOBE_HOME.centerCoordinate,
+    zoomLevel: GLOBE_HOME.zoomLevel,
   }), []);
 
+  // Stable resting padding: depends only on safe-area insets + the constant peek
+  // height, NOT on snapPoints. This keeps the globe's focal point fixed across
+  // pin select/deselect so the sphere never drifts when the sheet resizes.
   const cameraPadding = useMemo(() => ({
     paddingTop: sheetTopInset,
-    paddingBottom: tabBarInset + snapPoints[0] + GLOBE_LIFT,
+    paddingBottom: tabBarInset + peekH + GLOBE_LIFT,
     paddingLeft: 0,
     paddingRight: 0,
-  }), [sheetTopInset, tabBarInset, snapPoints]);
+  }), [sheetTopInset, tabBarInset, peekH]);
+
+  const animateCamera = useCallback((config: Parameters<NonNullable<typeof cameraRef.current>['setCamera']>[0]) => {
+    programmaticAnimRef.current = true;
+    cameraRef.current?.setCamera(config);
+  }, []);
+
+  // Settle to a clean, straight-on globe WITHOUT snapping longitude/latitude:
+  // we keep the user's current center and only correct zoom, tilt, and padding.
+  const settleToGlobe = useCallback((animationDuration = 300) => {
+    pinViewActiveRef.current = false;
+    animateCamera({
+      zoomLevel: GLOBE_HOME.zoomLevel,
+      heading: 0,
+      pitch: 0,
+      padding: cameraPadding,
+      animationDuration,
+      animationMode: animationDuration >= 500 ? 'flyTo' : 'easeTo',
+    });
+  }, [cameraPadding, animateCamera]);
+
+  const restoreGlobePadding = useCallback((animationDuration = 300) => {
+    animateCamera({
+      padding: cameraPadding,
+      animationDuration,
+    });
+  }, [cameraPadding, animateCamera]);
+
+  const maybeRestoreFromPinView = useCallback((zoom: number) => {
+    if (!pinViewActiveRef.current) return;
+
+    if (zoom <= GLOBE_VIEW_MAX_ZOOM) {
+      settleToGlobe(300);
+      return;
+    }
+
+    if (zoom <= PIN_VIEW_MAX_ZOOM) {
+      restoreGlobePadding(300);
+    }
+  }, [settleToGlobe, restoreGlobePadding]);
 
   const handleZoom = useCallback(async (delta: number) => {
     const zoom = await mapRef.current?.getZoom();
-    if (zoom != null) {
-      cameraRef.current?.setCamera({
-        zoomLevel: Math.min(Math.max(zoom + delta, 0.5), 14),
-        animationDuration: 300,
-        padding: cameraPadding,
-      });
+    if (zoom == null) return;
+
+    const nextZoom = Math.min(Math.max(zoom + delta, 0.5), 14);
+
+    if (pinViewActiveRef.current) {
+      // Coming out of a focused pin: once we cross back to globe scale, settle to a
+      // clean sphere; otherwise keep the pin's framing while zooming.
+      if (nextZoom <= GLOBE_VIEW_MAX_ZOOM) {
+        settleToGlobe(300);
+        return;
+      }
+      animateCamera({ zoomLevel: nextZoom, animationDuration: 300 });
+      return;
     }
-  }, [cameraPadding]);
+
+    animateCamera({
+      zoomLevel: nextZoom,
+      animationDuration: 300,
+      padding: cameraPadding,
+    });
+  }, [cameraPadding, settleToGlobe, animateCamera]);
 
   const handleMarkerPress = useCallback((origin: string) => {
     const isDeselecting = selectedOrigin === origin;
@@ -150,17 +217,7 @@ export default function ExploreScreen() {
       setSheetIndex(0);
       setSelectedOrigin(null);
       sheetRef.current?.snapToIndex(0);
-      const allCoords = Object.values(ORIGIN_COORDS).map(([lat, lng]) => [lng, lat] as [number, number]);
-      if (allCoords.length > 0) {
-        const lngs = allCoords.map(c => c[0]);
-        const lats = allCoords.map(c => c[1]);
-        cameraRef.current?.fitBounds(
-          [Math.min(...lngs), Math.min(...lats)],
-          [Math.max(...lngs), Math.max(...lats)],
-          [60, 60, tabBarInset + snapPoints[0], 60],
-          700,
-        );
-      }
+      settleToGlobe(700);
       return;
     }
 
@@ -171,32 +228,46 @@ export default function ExploreScreen() {
       const originCount = originGroups[origin]?.length ?? 0;
       const contentH = HEADER_H + originCount * ROW_H + SHEET_BOTTOM_PAD;
       const hugH = Math.min(contentH, fullSnapH);
-      cameraRef.current?.setCamera({
+      pinViewActiveRef.current = true;
+      // Same paddingTop as the globe profile — only the bottom grows to clear the
+      // taller pin sheet — so entering/leaving a pin shifts the focal point as
+      // little as possible.
+      animateCamera({
         centerCoordinate: [coords[1], coords[0]],
         zoomLevel: 8,
         animationDuration: 900,
         animationMode: 'flyTo',
-        padding: { paddingBottom: tabBarInset + hugH, paddingTop: 60, paddingLeft: 0, paddingRight: 0 },
+        padding: { paddingBottom: tabBarInset + hugH, paddingTop: sheetTopInset, paddingLeft: 0, paddingRight: 0 },
       });
     }
-  }, [selectedOrigin, tabBarInset, snapPoints, originGroups, fullSnapH]);
+  }, [selectedOrigin, tabBarInset, sheetTopInset, originGroups, fullSnapH, settleToGlobe, animateCamera]);
+
+  const handleMapIdle = useCallback((state: MapState) => {
+    // Our own animation has come to rest; stop suppressing corrections.
+    programmaticAnimRef.current = false;
+    maybeRestoreFromPinView(state.properties.zoom);
+  }, [maybeRestoreFromPinView]);
+
+  const handleCameraChanged = useCallback((state: MapState) => {
+    if (state.gestures.isGestureActive) {
+      // The user grabbed the map — cancel any in-flight programmatic suppression
+      // so their gesture is honored and later settles correctly.
+      programmaticAnimRef.current = false;
+      return;
+    }
+    // Ignore frames produced by our own fly-to / settle animations.
+    if (programmaticAnimRef.current) return;
+    maybeRestoreFromPinView(state.properties.zoom);
+  }, [maybeRestoreFromPinView]);
 
   const handleMapPress = useCallback(() => {
     if (selectedOrigin) {
       setSheetIndex(0);
       setSelectedOrigin(null);
       sheetRef.current?.snapToIndex(0);
-      const allCoords = Object.values(ORIGIN_COORDS).map(([lat, lng]) => [lng, lat] as [number, number]);
-      const lngs = allCoords.map(c => c[0]);
-      const lats = allCoords.map(c => c[1]);
-      cameraRef.current?.fitBounds(
-        [Math.min(...lngs), Math.min(...lats)],
-        [Math.max(...lngs), Math.max(...lats)],
-        [60, 60, tabBarInset + snapPoints[0], 60],
-        700,
-      );
+      settleToGlobe(700);
     }
-  }, [selectedOrigin, tabBarInset, snapPoints]);
+  }, [selectedOrigin, settleToGlobe]);
 
   const coffeeCount = filteredCoffees.length;
   const countryCount = selectedOrigin ? 1 : Object.keys(originGroups).length;
@@ -219,6 +290,8 @@ export default function ExploreScreen() {
         attributionEnabled={false}
         logoEnabled={false}
         onPress={handleMapPress}
+        onMapIdle={handleMapIdle}
+        onCameraChanged={handleCameraChanged}
       >
         <MapboxGL.Camera
           ref={cameraRef}
@@ -236,7 +309,8 @@ export default function ExploreScreen() {
             <MapboxGL.MarkerView
               key={origin}
               coordinate={[coords[1], coords[0]]}
-              anchor={{ x: 0.5, y: 0.5 }}
+              anchor={{ x: 0.5, y: 1 }}
+              allowOverlap
             >
               <TouchableOpacity
                 onPress={(e) => { e.stopPropagation(); handleMarkerPress(origin); }}
