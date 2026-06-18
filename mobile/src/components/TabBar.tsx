@@ -14,7 +14,6 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
-import Svg, { Circle, Path } from 'react-native-svg';
 import { colors, surfaces } from '@shared/theme';
 
 import MugIcon from '../../assets/icon-mug.svg';
@@ -22,6 +21,7 @@ import PinIcon from '../../assets/icon-pin.svg';
 import LogIcon from '../../assets/icon-log.svg';
 import BeanIcon from '../../assets/icon-bean.svg';
 import { FloatingSurfacePill } from './surfaces/FloatingSurfacePill';
+import { SearchIcon } from './SearchIcon';
 
 const TAB_ICONS: Record<string, React.FC<{ width: number; height: number }>> = {
   index: MugIcon,
@@ -103,20 +103,7 @@ function SearchButton() {
     <View style={[styles.searchShadow, pillShadow]}>
       <View style={styles.searchInner}>
         <FloatingSurfacePill borderRadius={SEARCH_SIZE / 2} />
-        <Svg width={28} height={28} viewBox="0 0 24 24" fill="none">
-          <Circle
-            cx={11} cy={11} r={7}
-            stroke={colors.burgundy}
-            strokeWidth={2.2}
-            strokeLinecap="round"
-          />
-          <Path
-            d="M16.5 16.5L21 21"
-            stroke={colors.burgundy}
-            strokeWidth={2.2}
-            strokeLinecap="round"
-          />
-        </Svg>
+        <SearchIcon size={28} />
       </View>
     </View>
   );
