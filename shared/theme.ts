@@ -16,6 +16,20 @@ export const fonts = {
   condensed: 'AvenirNextCondensed-Medium',
 } as const;
 
+/**
+ * Cup rating pill backgrounds, keyed by rating (1–5).
+ * Source of truth: Figma "cup rating badge" — each rating has its own tinted pill.
+ */
+export const cupRatingScale = {
+  1: 'rgba(107,107,107,0.2)', // greyDark tint
+  2: 'rgba(204,166,140,0.3)', // supremeBeige tint
+  3: 'rgba(49,131,81,0.2)', // fern green tint
+  4: 'rgba(252,153,155,0.4)', // blossomPink tint
+  5: 'rgba(185,136,253,0.3)', // grape tint
+} as const;
+
+export type CupRatingValue = keyof typeof cupRatingScale;
+
 /** Opaque floating chrome — sheets, tab bar, scrim (web-readable contrast). */
 export const surfaces = {
   cardRadius: 34,

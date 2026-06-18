@@ -342,10 +342,21 @@ function BagArt({ cup }) {
   );
 }
 
+// Cup rating pill backgrounds, keyed by rating (1–5).
+// Source of truth: Figma "cup rating badge" — mirrors shared/theme `cupRatingScale`.
+const CUP_RATING_SCALE = {
+  1: 'rgba(107,107,107,0.2)', // greyDark tint
+  2: 'rgba(204,166,140,0.3)', // supremeBeige tint
+  3: 'rgba(49,131,81,0.2)', // fern green tint
+  4: 'rgba(252,153,155,0.4)', // blossomPink tint
+  5: 'rgba(185,136,253,0.3)', // grape tint
+};
+
 function CupRating({ rating }) {
   if (!rating || rating <= 0) return null;
-  const bg = rating >= 4 ? 'rgba(253,203,136,0.6)' : 'rgba(252,153,155,0.6)';
-  const cups = Array.from({ length: rating }).map(() => '☕️').join('');
+  const value = Math.min(5, Math.max(1, Math.round(rating)));
+  const bg = CUP_RATING_SCALE[value];
+  const cups = Array.from({ length: value }).map(() => '☕️').join('');
   return (
     <div style={{
       background: bg, borderRadius: 100, padding: '8px',
