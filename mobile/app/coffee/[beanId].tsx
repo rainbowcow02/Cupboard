@@ -1,7 +1,9 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
   Image,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   Pressable,
   StyleSheet,
   Text,
@@ -68,6 +70,30 @@ export default function CoffeeDetailScreen() {
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const scrollY = useScrollViewOffset(scrollRef);
 
+  // TEMP: synchronous scroll channel for BrewCardAccordionTest harness
+  const scrollViewRef = useRef<Animated.ScrollView | null>(null);
+  const scrollYRef = useRef(0);
+
+  const setScrollViewRef = useCallback(
+    (node: Animated.ScrollView | null) => {
+      scrollViewRef.current = node;
+      (scrollRef as unknown as (n: Animated.ScrollView | null) => void)(node);
+    },
+    [scrollRef],
+  );
+
+  const captureScrollPosition = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    scrollYRef.current = e.nativeEvent.contentOffset.y;
+  }, []);
+
+  const scrollToY = useCallback((y: number) => {
+    const next = Math.max(0, y);
+    scrollYRef.current = next;
+    scrollViewRef.current?.scrollTo({ y: next, animated: false });
+  }, []);
+
+  const getCurrentScrollY = useCallback(() => scrollYRef.current, []);
+
   const coffee = coffees.find((c) => c.id === beanId) as Coffee | undefined;
 
   const onBrewClose = useCallback(() => {
@@ -111,7 +137,7 @@ export default function CoffeeDetailScreen() {
       </Pressable>
 
       <Animated.ScrollView
-        ref={scrollRef}
+        ref={setScrollViewRef}
         style={styles.scroll}
         contentContainerStyle={[
           styles.scrollContent,
@@ -119,6 +145,7 @@ export default function CoffeeDetailScreen() {
         ]}
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={16}
+        onScroll={captureScrollPosition}
       >
         {/* Bag hero */}
         <View style={styles.hero}>
@@ -201,6 +228,8 @@ export default function CoffeeDetailScreen() {
                 <BrewCardAccordionTest
                   key={`accordion-test-${i}`}
                   label={`#${i + 1}`}
+                  getCurrentScrollY={getCurrentScrollY}
+                  scrollToY={scrollToY}
                 />
               ))}
             </View>
