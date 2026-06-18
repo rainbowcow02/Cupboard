@@ -9,14 +9,13 @@ import {
   Text,
   View,
 } from 'react-native';
-import Animated, { useAnimatedRef } from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { Brew, Coffee } from '@shared/lib/coffees';
 import { colors, fonts } from '@shared/theme';
 import { BagLabel } from '../../src/components/BagLabel';
 import { BrewCard } from '../../src/components/BrewCard';
-import { BrewCardAccordionTest } from '../../src/components/BrewCardAccordionTest';
 import { Card } from '../../src/components/Card';
 import { OriginMap } from '../../src/components/OriginMap';
 import { useCoffees } from '../../src/hooks/useCoffees';
@@ -67,19 +66,9 @@ export default function CoffeeDetailScreen() {
   const { coffees, refresh } = useCoffees();
   const [addingBrew, setAddingBrew] = useState(false);
   const [editingBrew, setEditingBrew] = useState<Brew | null>(null);
-  const scrollRef = useAnimatedRef<Animated.ScrollView>();
-
-  // TEMP: synchronous scroll channel for BrewCardAccordionTest harness
+  // Synchronous scroll channel so BrewCard can keep the expand button anchored on collapse.
   const scrollViewRef = useRef<Animated.ScrollView | null>(null);
   const scrollYRef = useRef(0);
-
-  const setScrollViewRef = useCallback(
-    (node: Animated.ScrollView | null) => {
-      scrollViewRef.current = node;
-      (scrollRef as unknown as (n: Animated.ScrollView | null) => void)(node);
-    },
-    [scrollRef],
-  );
 
   const captureScrollPosition = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
     scrollYRef.current = e.nativeEvent.contentOffset.y;
@@ -136,7 +125,7 @@ export default function CoffeeDetailScreen() {
       </Pressable>
 
       <Animated.ScrollView
-        ref={setScrollViewRef}
+        ref={scrollViewRef}
         style={styles.scroll}
         contentContainerStyle={[
           styles.scrollContent,
@@ -221,15 +210,6 @@ export default function CoffeeDetailScreen() {
                   />
                 ))
               )}
-              {/* TEMP: BrewCard accordion debug */}
-              {Array.from({ length: 5 }, (_, i) => (
-                <BrewCardAccordionTest
-                  key={`accordion-test-${i}`}
-                  label={`#${i + 1}`}
-                  getCurrentScrollY={getCurrentScrollY}
-                  scrollToY={scrollToY}
-                />
-              ))}
             </View>
           </View>
         </View>
