@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { LayoutChangeEvent, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Easing,
   interpolate,
@@ -159,19 +159,11 @@ function useAccordionStyle(
   });
 }
 
-function useCollapseWrapperStyle(
-  isAnimatingCollapse: SharedValue<boolean>,
-  wrapperMinHeight: SharedValue<number>,
-) {
-  return useAnimatedStyle(() => {
-    if (!isAnimatingCollapse.value) {
-      return {};
-    }
-    return {
-      minHeight: wrapperMinHeight.value,
-      justifyContent: 'flex-end',
-    };
-  });
+function useCollapseWrapperStyle(wrapperMinHeight: SharedValue<number>) {
+  return useAnimatedStyle(() => ({
+    minHeight: wrapperMinHeight.value,
+    justifyContent: 'flex-end',
+  }));
 }
 
 function AccordionSection({
@@ -361,12 +353,11 @@ export function BrewCard({
   isLastInList = false,
 }: Props) {
   const [expanded, setExpanded] = useState(false);
+  const [collapseWrapperActive, setCollapseWrapperActive] = useState(false);
   const heightProgress = useSharedValue(0);
   const collapseOpacity = useSharedValue(1);
-  const isAnimatingCollapse = useSharedValue(false);
   const wrapperMinHeight = useSharedValue(0);
   const collapseExpandedHeight = useSharedValue(0);
-  const collapsedCardHeight = useSharedValue(0);
   const measuredOuterHeight = useSharedValue(0);
   const topContentHeight = useSharedValue(0);
   const bottomContentHeight = useSharedValue(0);
@@ -388,19 +379,13 @@ export function BrewCard({
   const usesSplitAccordion = hasExpandableContent && Boolean(brewTime);
 
   const finishCollapse = useCallback((accordionH: number) => {
-    const measured = collapsedCardHeight.value;
-    const computed = collapseExpandedHeight.value - accordionH;
-    const target = measured > 0 ? measured : computed;
-    wrapperMinHeight.value = target;
-    isAnimatingCollapse.value = false;
+    wrapperMinHeight.value = 0;
+    setCollapseWrapperActive(false);
     if (scrollRef && scrollY && !isLastInList && accordionH > 0) {
       scrollTo(scrollRef, 0, scrollY.value - accordionH, false);
     }
   }, [
-    collapsedCardHeight,
-    collapseExpandedHeight,
     wrapperMinHeight,
-    isAnimatingCollapse,
     scrollRef,
     scrollY,
     isLastInList,
@@ -421,7 +406,7 @@ export function BrewCard({
 
   useEffect(() => {
     if (expanded) {
-      isAnimatingCollapse.value = false;
+      setCollapseWrapperActive(false);
       wrapperMinHeight.value = 0;
       collapseOpacity.value = 1;
       heightProgress.value = withTiming(1, {
@@ -431,12 +416,16 @@ export function BrewCard({
       return;
     }
 
+    const expandedH = collapseExpandedHeight.value;
+    if (expandedH <= 0) {
+      return;
+    }
+
     const accordionH = usesSplitAccordion
       ? topContentHeight.value + bottomContentHeight.value
       : allContentHeight.value;
-    const expandedH = collapseExpandedHeight.value;
 
-    isAnimatingCollapse.value = true;
+    setCollapseWrapperActive(true);
     wrapperMinHeight.value = expandedH;
     collapseOpacity.value = withTiming(0, {
       duration: COLLAPSE_FADE_DURATION,
@@ -458,47 +447,32 @@ export function BrewCard({
     expanded,
     heightProgress,
     collapseOpacity,
-    isAnimatingCollapse,
     wrapperMinHeight,
     collapseExpandedHeight,
-    measuredOuterHeight,
     topContentHeight,
     bottomContentHeight,
     allContentHeight,
-    collapsedCardHeight,
     usesSplitAccordion,
-    finishCollapse,
     scheduleFinishCollapse,
   ]);
 
   const hasRatio = brew.beansG && brew.waterMl;
   const ratio = hasRatio ? `1:${(brew.waterMl! / brew.beansG!).toFixed(1)}` : '—';
 
-  const collapseWrapperStyle = useCollapseWrapperStyle(
-    isAnimatingCollapse,
-    wrapperMinHeight,
-  );
+  const collapseWrapperStyle = useCollapseWrapperStyle(wrapperMinHeight);
 
-  return (
-    <Animated.View
-      style={collapseWrapperStyle}
-      onLayout={(e) => {
-        if (expanded) {
-          measuredOuterHeight.value = e.nativeEvent.layout.height;
-        }
-      }}
-    >
-    <View
-      collapsable={false}
-      onLayout={(e) => {
-        collapsedCardHeight.value = e.nativeEvent.layout.height;
-      }}
-    >
+  const handleOuterLayout = useCallback((e: LayoutChangeEvent) => {
+    if (expanded) {
+      measuredOuterHeight.value = e.nativeEvent.layout.height;
+    }
+  }, [expanded, measuredOuterHeight]);
+
+  const cardBody = (
     <Card
-        onLongPress={onEdit}
-        accessibilityRole="summary"
-        accessibilityLabel={`Brew on ${formatDate(brew.date)}`}
-      >
+      onLongPress={onEdit}
+      accessibilityRole="summary"
+      accessibilityLabel={`Brew on ${formatDate(brew.date)}`}
+    >
       <View style={styles.header}>
         <Text style={styles.date}>{formatDate(brew.date)}</Text>
         <CupRating rating={brew.rating} />
@@ -589,8 +563,24 @@ export function BrewCard({
         </View>
       ) : null}
     </Card>
+  );
+
+  if (collapseWrapperActive) {
+    return (
+      <Animated.View
+        style={collapseWrapperStyle}
+        onLayout={handleOuterLayout}
+        collapsable={false}
+      >
+        {cardBody}
+      </Animated.View>
+    );
+  }
+
+  return (
+    <View onLayout={handleOuterLayout}>
+      {cardBody}
     </View>
-    </Animated.View>
   );
 }
 
