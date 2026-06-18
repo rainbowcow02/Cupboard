@@ -1,20 +1,22 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
   Image,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { Brew, Coffee } from '@shared/lib/coffees';
 import { colors, fonts } from '@shared/theme';
 import { BagLabel } from '../../src/components/BagLabel';
 import { BrewCard } from '../../src/components/BrewCard';
-import { GlassCard } from '../../src/components/GlassCard';
+import { Card } from '../../src/components/Card';
 import { OriginMap } from '../../src/components/OriginMap';
 import { useCoffees } from '../../src/hooks/useCoffees';
 import { BrewForm } from './BrewForm';
@@ -58,14 +60,29 @@ function SectionHeader({ title, action, onAction }: { title: string; action?: st
 }
 
 export default function CoffeeDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { beanId } = useLocalSearchParams<{ beanId: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { coffees, refresh } = useCoffees();
   const [addingBrew, setAddingBrew] = useState(false);
   const [editingBrew, setEditingBrew] = useState<Brew | null>(null);
+  // Synchronous scroll channel so BrewCard can keep the expand button anchored on collapse.
+  const scrollViewRef = useRef<Animated.ScrollView | null>(null);
+  const scrollYRef = useRef(0);
 
-  const coffee = coffees.find((c) => c.id === id) as Coffee | undefined;
+  const captureScrollPosition = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    scrollYRef.current = e.nativeEvent.contentOffset.y;
+  }, []);
+
+  const scrollToY = useCallback((y: number) => {
+    const next = Math.max(0, y);
+    scrollYRef.current = next;
+    scrollViewRef.current?.scrollTo({ y: next, animated: false });
+  }, []);
+
+  const getCurrentScrollY = useCallback(() => scrollYRef.current, []);
+
+  const coffee = coffees.find((c) => c.id === beanId) as Coffee | undefined;
 
   const onBrewClose = useCallback(() => {
     setAddingBrew(false);
@@ -107,13 +124,16 @@ export default function CoffeeDetailScreen() {
         </Svg>
       </Pressable>
 
-      <ScrollView
+      <Animated.ScrollView
+        ref={scrollViewRef}
         style={styles.scroll}
         contentContainerStyle={[
           styles.scrollContent,
           { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 32 },
         ]}
         showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16}
+        onScroll={captureScrollPosition}
       >
         {/* Bag hero */}
         <View style={styles.hero}>
@@ -136,11 +156,11 @@ export default function CoffeeDetailScreen() {
         {/* Sections */}
         <View style={styles.sections}>
           {/* Details glass card */}
-          <GlassCard>
+          <Card>
             <DetailRow label="Roast" value={coffee.roastLevel} />
             <DetailRow label="Process" value={coffee.process} />
             <DetailRow label="Variety" value={coffee.variety} last />
-          </GlassCard>
+          </Card>
 
           {/* Tasting notes chips */}
           {tastingNotes.length > 0 && (
@@ -159,7 +179,7 @@ export default function CoffeeDetailScreen() {
           {/* Origin */}
           <View style={styles.section}>
             <SectionHeader title="Origin" />
-            <GlassCard>
+            <Card>
               <DetailRow label="Country" value={`${flag} ${coffee.origin ?? ''}`} />
               <DetailRow label="Region" value={coffee.region} last={!coffee.altitude} />
               {coffee.altitude && <DetailRow label="Altitude" value={coffee.altitude} last />}
@@ -168,30 +188,32 @@ export default function CoffeeDetailScreen() {
                   <OriginMap country={coffee.origin} />
                 </View>
               )}
-            </GlassCard>
+            </Card>
           </View>
 
           {/* Brew recipes */}
           <View style={styles.section}>
             <SectionHeader title="Brew recipes" action="+ Add" onAction={() => setAddingBrew(true)} />
-            {brews.length === 0 ? (
-              <GlassCard>
-                <Text style={styles.emptyBrews}>{'No brew recipes yet. Tap "+ Add" to log one.'}</Text>
-              </GlassCard>
-            ) : (
-              <View style={styles.brewList}>
-                {brews.map((b, i) => (
+            <View style={styles.brewList}>
+              {brews.length === 0 ? (
+                <Card>
+                  <Text style={styles.emptyBrews}>{'No brew recipes yet. Tap "+ Add" to log one.'}</Text>
+                </Card>
+              ) : (
+                brews.map((b, i) => (
                   <BrewCard
                     key={b.id ?? i}
                     brew={b}
-                    onPress={b.id ? () => setEditingBrew(b) : undefined}
+                    getCurrentScrollY={getCurrentScrollY}
+                    scrollToY={scrollToY}
+                    onEdit={b.id ? () => setEditingBrew(b) : undefined}
                   />
-                ))}
-              </View>
-            )}
+                ))
+              )}
+            </View>
           </View>
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
 
       {(addingBrew || editingBrew) && coffee && (
         <BrewForm coffee={coffee} brew={editingBrew} onClose={onBrewClose} onSaved={onBrewSaved} />
@@ -242,7 +264,7 @@ const styles = StyleSheet.create({
   detailRowOuter: { paddingHorizontal: 24, paddingTop: 16 },
   detailRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 16, paddingBottom: 16 },
   detailLabel: { fontFamily: fonts.sans, fontWeight: '500', fontSize: 13, color: colors.greyDark, flexShrink: 0 },
-  detailValue: { fontFamily: fonts.sans, fontWeight: '400', fontSize: 15, color: colors.greyDark, textAlign: 'right', lineHeight: 22, flex: 1 },
+  detailValue: { fontFamily: fonts.sans, fontWeight: '400', fontSize: 15, color: colors.black, textAlign: 'right', lineHeight: 22, flex: 1 },
   divider: { height: 0.5, backgroundColor: '#E7E7E7' },
   chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 100, backgroundColor: 'rgba(252,153,155,0.22)' },

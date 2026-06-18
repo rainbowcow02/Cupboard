@@ -31,6 +31,7 @@ export const COLUMNS = {
   rating:     'Rating ',      // NOTE: trailing space in the real column name
   date:       'Date',         // title column — holds the brew date
   brewer:     'Dripper',
+  grinder:    'Grinder',
   filter:     'Filter',
   grind:      'Grind size',
   tempC:      'Water temp',   // select, e.g. "93C/199F"
@@ -38,6 +39,7 @@ export const COLUMNS = {
   waterMl:      'Amt water 💧',   // select, e.g. "190ml"
   altitude:     'Altitude',
   brewNotes:    'Brew Notes',
+  reflections:  'Reflections',
   recipeToTest: 'Recipe to test', // free-form paragraph: pour structure + brew time
   tastingNotes: 'Tasting notes',  // detailed per-brew tasting notes (distinct from short Notes chips)
 };
@@ -121,6 +123,7 @@ export function rowToCup(page) {
     rating:     readRating(p[c.rating]),
     date:       readDate(p[c.date]).trim(),
     brewer:     readText(p[c.brewer]),
+    grinder:    readText(p[c.grinder]),
     filter:     readText(p[c.filter]),
     grind:      readText(p[c.grind]),
     tempC:      readNumber(p[c.tempC]),
@@ -128,6 +131,7 @@ export function rowToCup(page) {
     waterMl:      readNumber(p[c.waterMl]),
     altitude:     readText(p[c.altitude]),
     brewNotes:    readText(p[c.brewNotes]),
+    reflections:  readText(p[c.reflections]) || readText(p[c.brewNotes]),
     recipeToTest: readText(p[c.recipeToTest]),
     tastingNotes: readText(p[c.tastingNotes]),
   };
@@ -177,6 +181,7 @@ export function cupToProperties(cup) {
   setSelect(c.process, cup.process);
   setSelect(c.roastLevel, cup.roastLevel);
   setSelect(c.brewer, cup.brewer);
+  setSelect(c.grinder, cup.grinder);
   setSelect(c.filter, cup.filter);
   setSelect(c.grind, cup.grind);
 
