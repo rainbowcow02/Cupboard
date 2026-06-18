@@ -1129,12 +1129,14 @@ const styles = StyleSheet.create({
   stripLabel: { fontFamily: fonts.sans, fontWeight: '600', fontSize: 11, color: colors.greyDark, letterSpacing: 0.4, marginTop: 2 },
 
   // Recipe rows
-  roastRow: { marginBottom: 22 },
-  roastLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: GUTTER, marginBottom: 12 },
+  roastRow: { marginBottom: 6 },
+  roastLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: GUTTER, marginBottom: 4 },
   roastSwatch: { width: 12, height: 12, borderRadius: 6 },
   roastLabel: { fontFamily: fonts.sans, fontWeight: '800', fontSize: 15, color: colors.black, letterSpacing: -0.2 },
   roastCount: { fontFamily: fonts.sans, fontWeight: '700', fontSize: 13, color: colors.greyDark },
-  rowContent: { paddingHorizontal: GUTTER, gap: 12 },
+  // Vertical padding gives the recipe-card shadow (offset 8, radius 18) room
+  // to render without being clipped by the horizontal ScrollView's bounds.
+  rowContent: { paddingHorizontal: GUTTER, gap: 12, paddingTop: 8, paddingBottom: 28 },
 
   recipeCard: {
     width: 208,
