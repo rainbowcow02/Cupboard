@@ -9,16 +9,22 @@ interface Props {
 
 export function BeanMarker({ count, selected }: Props) {
   return (
-    <View style={[styles.pill, selected ? styles.pillSelected : styles.pillDefault]}>
-      <BeanIcon width={17} height={17} />
-      <Text style={[styles.count, selected ? styles.countSelected : styles.countDefault]}>
-        {count}
-      </Text>
+    <View style={styles.marker}>
+      <View style={[styles.pill, selected ? styles.pillSelected : styles.pillDefault]}>
+        <BeanIcon width={17} height={17} />
+        <Text style={[styles.count, selected ? styles.countSelected : styles.countDefault]}>
+          {count}
+        </Text>
+      </View>
+      <View style={[styles.pointer, selected ? styles.pointerSelected : styles.pointerDefault]} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  marker: {
+    alignItems: 'center',
+  },
   pill: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -26,6 +32,22 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 8,
     borderRadius: 100,
+  },
+  pointer: {
+    width: 0,
+    height: 0,
+    marginTop: -1,
+    borderLeftWidth: 5,
+    borderRightWidth: 5,
+    borderTopWidth: 6,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+  },
+  pointerDefault: {
+    borderTopColor: '#ffffff',
+  },
+  pointerSelected: {
+    borderTopColor: '#fc999b',
   },
   pillDefault: {
     backgroundColor: '#ffffff',
