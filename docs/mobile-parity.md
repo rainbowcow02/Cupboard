@@ -38,7 +38,7 @@ Status key: ✅ done · ❌ missing · ⚠️ partial · — not applicable
 
 | Item | Web | Mobile | Batch | Success looks like |
 |---|---|---|---|---|
-| Floating glass pill design | ✅ | ✅ | 1 | Tab bar hovers above content as a frosted-glass rounded pill with a visible drop shadow; content scrolls underneath it |
+| Floating glass pill design | ✅ | ✅ | 1 | Tab bar hovers above content as an opaque rounded pill (`#f7f7f7`) with drop shadow; bottom scrim fades content behind it — intentional move from frosted glass for web-readable contrast |
 | Custom SVG icons | ✅ | ✅ | 1 | Each tab shows a clean line-drawn icon (shelf, pin, mug, bean) instead of emoji; active icon fills in moss green |
 | Active tab highlight | ✅ | ⚠️ | 1 | The active tab label turns Vintage Burgundy and sits inside a soft Blossom Pink tinted highlight within the pill — pill + burgundy label done; SVG icons don't change fill/color on active state |
 | Tab order (Home → Explore → Log Cup → Beans) | ✅ | ✅ | — | Tabs appear left-to-right in correct order matching Figma and web |
@@ -56,7 +56,8 @@ Status key: ✅ done · ❌ missing · ⚠️ partial · — not applicable
 | Shelf side margins | ✅ | ✅ | 2 | Shelf image has ~16px of pearl background visible on each side; doesn't bleed to screen edges |
 | Bag images not cropped | ✅ | ✅ | 2 | Full bag silhouette is visible in its shelf slot; no bag appears clipped or zoomed-in |
 | Sort: Recent / A-Z + direction | ✅ | ✅ | — | A sort pill near the header lets you toggle Recent vs A-Z and flip the direction (chevron flips, 0.15s); shelf reorders instantly |
-| Filter: Country + Process + Roast | ✅ | ✅ | — | Filter bottom sheet has three grouped multi-select lists (with country flags); each active dimension renders as a text pill (e.g. "ethiopia, kenya") truncated at 200px max width with an inline ✕ to clear; shelf updates live |
+| Filter: Country + Process + Roast | ✅ | ✅ | — | Filter bottom sheet has three grouped multi-select lists (with country flags); drag grabber up to expand, drag down at collapsed to dismiss, drag down at expanded to collapse; backdrop tap dismisses; each active dimension renders as a text pill truncated at 200px with inline ✕ |
+| Bottom chrome scrim (Home + Explore) | ✅ | ✅ | — | 118px pearl→chardonnay gradient at screen bottom behind tab bar, matching web `bottomnav-gradient` |
 
 ### Explore
 
@@ -65,7 +66,8 @@ Status key: ✅ done · ❌ missing · ⚠️ partial · — not applicable
 | SVG coffee bean map pins | ✅ | ✅ | 3 | Map pins show a small coffee bean icon instead of the ☕ emoji; looks crisp at all zoom levels |
 | No pin dimming on select | ✅ | ✅ | 3 | Tapping a pin highlights it pink but all other pins stay fully opaque — map stays readable |
 | flyTo brings pin above bottom sheet | ✅ | ✅ | 3 | Tapping any pin always animates the map so that pin is centered in the visible area above the sheet, not hidden behind it |
-| Bottom sheet above tab bar | ✅ | ✅ | 3 | The bottom sheet's grabber and content are fully visible above the floating tab bar; nothing is clipped |
+| Bottom sheet above tab bar | ✅ | ✅ | 3 | The bottom sheet's grabber and content are fully visible above the floating tab bar; shared opaque surface tokens match filter sheet |
+| Bottom chrome scrim | ✅ | ✅ | — | Pearl→chardonnay gradient at bottom of map screen, behind tab bar |
 | Date format ("May 9") | ✅ | ✅ | 3 | Dates in the explore list read "May 9" style instead of "2025-05-09" |
 | Bag thumbnails show label text | ✅ | ✅ | 3 | Each row in the sheet shows the colored bag with bean name and roaster text overlaid, matching the style on the home shelf |
 

@@ -16,6 +16,7 @@ import { FilterSheet } from '../../src/components/FilterSheet';
 import { FilterSortBar } from '../../src/components/FilterSortBar';
 import { PageHeader } from '../../src/components/PageHeader';
 import { ShelfRow } from '../../src/components/ShelfRow';
+import { BottomChromeScrim } from '../../src/components/surfaces/BottomChromeScrim';
 import { TAB_BAR_HEIGHT } from '../../src/components/TabBar';
 import { useCoffees } from '../../src/hooks/useCoffees';
 import { EMPTY_FILTERS, FilterKey, sortAndFilterCoffees, SortDir, SortMode } from '../../src/lib/coffeeFilters';
@@ -154,6 +155,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <BottomChromeScrim />
       <PageHeader
         title="Cupboard"
         avatarInitial="L"

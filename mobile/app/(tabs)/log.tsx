@@ -1,4 +1,3 @@
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { useState } from 'react';
 import {
   Pressable,
@@ -10,6 +9,7 @@ import {
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { colors, fonts } from '@shared/theme';
+import { DateField } from '../../src/components/DateField';
 import { FormField, fieldInputStyle } from '../../src/components/FormField';
 import { RatingInput } from '../../src/components/RatingInput';
 import { createCup } from '../../src/lib/api';
@@ -158,13 +158,10 @@ export default function LogScreen() {
             </FormField>
           </View>
           <FormField label="Date">
-            <DateTimePicker
+            <DateField
               value={form.date}
-              mode="date"
-              display="compact"
-              onChange={(_, d) => d && setForm((f) => ({ ...f, date: d }))}
+              onChange={(date) => setForm((f) => ({ ...f, date }))}
               style={styles.datePicker}
-              themeVariant="light"
             />
           </FormField>
           <FormField label="Rating">

@@ -26,6 +26,26 @@ Run `/check-parity` for a systematic deep-dive comparison at any time.
 
 ---
 
+## Web Preview (Browser Testing)
+
+Use the Expo web preview to verify UI work in the browser — faster than iOS preview builds or screenshots.
+
+**Start the preview:**
+```bash
+cd mobile && npm run web
+```
+Serves at `http://localhost:8081`.
+
+**After UI changes**, open the app in the browser and verify before declaring the task done. When browser MCP tools are available, navigate localhost and inspect the affected screens directly.
+
+**Stubbed on web** (intentional — no Mapbox on web):
+- Explore tab → origin-grouped list (`explore.web.tsx`)
+- Coffee detail origin mini-map → placeholder (`OriginMap.web.tsx`)
+
+All other tabs (Home, Beans, Log, coffee detail) run the full UI on web.
+
+---
+
 ## Package Installation
 
 Before adding any new npm package, check if it contains native code (requires native modules or `pod install`). If it does, stop and ask before installing — a new EAS build will be required and the existing dev build will break.
