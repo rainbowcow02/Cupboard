@@ -67,6 +67,7 @@ Status key: ✅ done · ❌ missing · ⚠️ partial · — not applicable
 | No pin dimming on select | ✅ | ✅ | 3 | Tapping a pin highlights it pink but all other pins stay fully opaque — map stays readable |
 | flyTo brings pin above bottom sheet | ✅ | ✅ | 3 | Tapping any pin always animates the map so that pin is centered in the visible area above the sheet, not hidden behind it |
 | Bottom sheet above tab bar | ✅ | ✅ | 3 | The bottom sheet's grabber and content are fully visible above the floating tab bar; shared opaque surface tokens match filter sheet |
+| Bottom sheet content-hugging (pin selected) | ✅ | ✅ | — | Single-coffee pin: one snap at exact content height. Multi-coffee pin: expands to hug full list height (capped at near-full screen); scrolls only when list exceeds screen. "All coffees" keeps 3-tier peek / ~45% / near-full snaps |
 | Bottom chrome scrim | ✅ | ✅ | — | Pearl→chardonnay gradient at bottom of map screen, behind tab bar |
 | Date format ("May 9") | ✅ | ✅ | 3 | Dates in the explore list read "May 9" style instead of "2025-05-09" |
 | Bag thumbnails show label text | ✅ | ✅ | 3 | Each row in the sheet shows the colored bag with bean name and roaster text overlaid, matching the style on the home shelf |

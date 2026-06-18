@@ -2,7 +2,7 @@ import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import MapboxGL from '@rnmapbox/maps';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Bag } from '../components/Bag';
@@ -40,6 +40,7 @@ const MAPBOX_STYLE = 'mapbox://styles/rainbowcow02/cmpbsoxbv002n01qhe2v56lsw';
 
 const HEADER_H = 84;  // grabber 16 + title section 58 + paddingBottom 10
 const ROW_H    = 104; // paddingVertical 16×2 + 72px bag
+const SHEET_BOTTOM_PAD = 16;
 const GLOBE_LIFT = 100; // extra clearance so the globe sits above the collapsed sheet
 
 export default function ExploreScreen() {
@@ -51,20 +52,73 @@ export default function ExploreScreen() {
   const cameraRef = useRef<MapboxGL.Camera>(null);
   const sheetRef  = useRef<BottomSheet>(null);
   const [selectedOrigin, setSelectedOrigin] = useState<string | null>(null);
+  const [sheetIndex, setSheetIndex] = useState(0);
 
   const tabBarInset = tabBarChromeInset(insets);
   const sheetTopInset = insets.top + 16;
 
-  const snapPoints = useMemo(
-    () => [
-      HEADER_H + Math.ceil(1.5 * ROW_H),
-      Math.round((screenH - tabBarInset) * 0.45),
-      screenH - tabBarInset - sheetTopInset,
-    ],
+  const peekH = useMemo(() => HEADER_H + Math.ceil(1.5 * ROW_H), []);
+  const absMaxH = useMemo(
+    () => Math.round((screenH - tabBarInset) * 0.45),
+    [screenH, tabBarInset],
+  );
+  const fullSnapH = useMemo(
+    () => screenH - tabBarInset - sheetTopInset,
     [screenH, tabBarInset, sheetTopInset],
   );
 
-  const zoomBtnBottom = tabBarInset + snapPoints[1] + 14;
+  const originGroups = useMemo(() =>
+    coffees.reduce<Record<string, Coffee[]>>((acc, coffee) => {
+      if (!coffee.origin) return acc;
+      acc[coffee.origin] = acc[coffee.origin] || [];
+      acc[coffee.origin].push(coffee);
+      return acc;
+    }, {}),
+  [coffees]);
+
+  const filteredCoffees = selectedOrigin
+    ? coffees.filter(c => c.origin === selectedOrigin)
+    : coffees;
+
+  const snapPoints = useMemo(() => {
+    const contentH = HEADER_H + filteredCoffees.length * ROW_H + SHEET_BOTTOM_PAD;
+
+    if (!selectedOrigin) {
+      return [peekH, absMaxH, fullSnapH];
+    }
+
+    // Pin selected: hug full list height, capped only by available screen space
+    const hugH = Math.min(contentH, fullSnapH);
+
+    if (filteredCoffees.length === 1) {
+      return [hugH];
+    }
+    if (hugH <= peekH) {
+      return [hugH];
+    }
+    return [peekH, hugH];
+  }, [selectedOrigin, filteredCoffees.length, peekH, absMaxH, fullSnapH]);
+
+  const activeSheetH = snapPoints[Math.min(sheetIndex, snapPoints.length - 1)];
+  const zoomBtnBottom = tabBarInset + activeSheetH + 14;
+
+  useEffect(() => {
+    if (!selectedOrigin) {
+      setSheetIndex(0);
+      sheetRef.current?.snapToIndex(0);
+      return;
+    }
+
+    const contentH = HEADER_H + filteredCoffees.length * ROW_H + SHEET_BOTTOM_PAD;
+    const hugH = Math.min(contentH, fullSnapH);
+    const targetIndex = filteredCoffees.length === 1 || hugH <= peekH ? 0 : 1;
+    setSheetIndex(targetIndex);
+    sheetRef.current?.snapToIndex(targetIndex);
+  }, [selectedOrigin, filteredCoffees.length, peekH, fullSnapH]);
+
+  const handleSheetChange = useCallback((index: number) => {
+    setSheetIndex(index);
+  }, []);
 
   const cameraDefaultSettings = useMemo(() => ({
     centerCoordinate: [0, 5] as [number, number],
@@ -89,38 +143,12 @@ export default function ExploreScreen() {
     }
   }, [cameraPadding]);
 
-  const originGroups = useMemo(() =>
-    coffees.reduce<Record<string, Coffee[]>>((acc, coffee) => {
-      if (!coffee.origin) return acc;
-      acc[coffee.origin] = acc[coffee.origin] || [];
-      acc[coffee.origin].push(coffee);
-      return acc;
-    }, {}),
-  [coffees]);
-
-  const filteredCoffees = selectedOrigin
-    ? coffees.filter(c => c.origin === selectedOrigin)
-    : coffees;
-
   const handleMarkerPress = useCallback((origin: string) => {
     const isDeselecting = selectedOrigin === origin;
-    const next = isDeselecting ? null : origin;
-    setSelectedOrigin(next);
 
-    if (!isDeselecting) {
-      const coords = ORIGIN_COORDS[origin];
-      if (coords) {
-        const sheetH = (screenH - tabBarInset) * 0.4;
-        cameraRef.current?.setCamera({
-          centerCoordinate: [coords[1], coords[0]],
-          zoomLevel: 8,
-          animationDuration: 900,
-          animationMode: 'flyTo',
-          padding: { paddingBottom: tabBarInset + sheetH, paddingTop: 60, paddingLeft: 0, paddingRight: 0 },
-        });
-      }
-      sheetRef.current?.snapToIndex(1);
-    } else {
+    if (isDeselecting) {
+      setSheetIndex(0);
+      setSelectedOrigin(null);
       sheetRef.current?.snapToIndex(0);
       const allCoords = Object.values(ORIGIN_COORDS).map(([lat, lng]) => [lng, lat] as [number, number]);
       if (allCoords.length > 0) {
@@ -133,11 +161,29 @@ export default function ExploreScreen() {
           700,
         );
       }
+      return;
     }
-  }, [selectedOrigin, screenH, tabBarInset, snapPoints]);
+
+    setSelectedOrigin(origin);
+
+    const coords = ORIGIN_COORDS[origin];
+    if (coords) {
+      const originCount = originGroups[origin]?.length ?? 0;
+      const contentH = HEADER_H + originCount * ROW_H + SHEET_BOTTOM_PAD;
+      const hugH = Math.min(contentH, fullSnapH);
+      cameraRef.current?.setCamera({
+        centerCoordinate: [coords[1], coords[0]],
+        zoomLevel: 8,
+        animationDuration: 900,
+        animationMode: 'flyTo',
+        padding: { paddingBottom: tabBarInset + hugH, paddingTop: 60, paddingLeft: 0, paddingRight: 0 },
+      });
+    }
+  }, [selectedOrigin, tabBarInset, snapPoints, originGroups, fullSnapH]);
 
   const handleMapPress = useCallback(() => {
     if (selectedOrigin) {
+      setSheetIndex(0);
       setSelectedOrigin(null);
       sheetRef.current?.snapToIndex(0);
       const allCoords = Object.values(ORIGIN_COORDS).map(([lat, lng]) => [lng, lat] as [number, number]);
@@ -226,8 +272,11 @@ export default function ExploreScreen() {
 
       <BottomSheet
         ref={sheetRef}
-        index={0}
+        index={sheetIndex}
         snapPoints={snapPoints}
+        enableDynamicSizing={false}
+        onChange={handleSheetChange}
+        key={selectedOrigin ?? 'all'}
         detached
         topInset={sheetTopInset}
         bottomInset={tabBarInset}
@@ -307,7 +356,8 @@ const styles = StyleSheet.create({
   },
 
   listContent: {
-    paddingBottom: 16,
+    flexGrow: 0,
+    paddingBottom: SHEET_BOTTOM_PAD,
   },
   listItem: {
     flexDirection: 'row',
