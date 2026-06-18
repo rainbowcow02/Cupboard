@@ -22,7 +22,7 @@ const STICKY_CONTENT_GAP_COLLAPSED = 4;
 
 interface PageHeaderProps {
   title: string;
-  avatarInitial: string;
+  avatarInitial?: string;
   children: ReactNode;
   stickyContent?: ReactNode;
   scrollViewProps?: Omit<ScrollViewProps, 'onScroll' | 'scrollEventThrottle'>;
@@ -90,9 +90,11 @@ export function PageHeader({ title, avatarInitial, children, stickyContent, scro
             importantForAccessibility={isScrolled ? 'no-hide-descendants' : 'auto'}
           >
             <Text style={styles.title}>{title}</Text>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{avatarInitial}</Text>
-            </View>
+            {avatarInitial ? (
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>{avatarInitial}</Text>
+              </View>
+            ) : null}
           </Animated.View>
           <Animated.View
             style={[styles.collapsedRow, collapsedStyle]}
