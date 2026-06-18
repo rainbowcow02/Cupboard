@@ -131,7 +131,7 @@ export function FilterSheet({
           />
           <BottomSheetScrollView
             scrollEnabled={needsScroll}
-            style={needsScroll ? filterSheetStyles.scrollListMax : undefined}
+            style={needsScroll ? filterSheetStyles.scrollListMax : filterSheetStyles.scrollListFit}
             contentContainerStyle={filterSheetStyles.listContent}
           >
             {values.map((val, i) => {
@@ -168,14 +168,9 @@ const filterSheetStyles = StyleSheet.create({
   scrollListMax: {
     maxHeight: LIST_MAX,
   },
-  listContent: {
-    paddingBottom: SHEET_BOTTOM_PAD,
-  },
-});
-
-const filterSheetStyles = StyleSheet.create({
-  scrollListMax: {
-    maxHeight: LIST_MAX,
+  scrollListFit: {
+    flexGrow: 0,
+    flexShrink: 0,
   },
   listContent: {
     flexGrow: 0,
