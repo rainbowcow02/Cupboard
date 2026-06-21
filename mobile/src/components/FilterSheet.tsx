@@ -48,8 +48,8 @@ export function FilterSheet({
   onSelect,
   onClose,
 }: FilterSheetProps) {
-  const insets = useSafeAreaInsets();
   const { height: screenH } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const modalRef = useRef<BottomSheetModal>(null);
   const [renderedKey, setRenderedKey] = useState<FilterKey | null>(filterKey);
 
@@ -137,7 +137,7 @@ export function FilterSheet({
           showClear={activeValues.length > 0}
           animatedClear
         />
-        <BottomSheetScrollView contentContainerStyle={[filterSheetStyles.listContent, { paddingBottom: SHEET_BOTTOM_PAD + insets.bottom }]}>
+        <BottomSheetScrollView contentContainerStyle={[filterSheetStyles.listContent, { paddingBottom: SHEET_BOTTOM_PAD }]}>
           {values.map((val, i) => {
             const isActive = activeValues.includes(val);
             const flag = renderedKey === 'country' ? ORIGIN_FLAGS[val] || '' : '';

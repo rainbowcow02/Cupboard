@@ -19,6 +19,7 @@ import { BrewCard } from '../../src/components/BrewCard';
 import { Card } from '../../src/components/Card';
 import { OriginMap } from '../../src/components/OriginMap';
 import { useCoffees } from '../../src/hooks/useCoffees';
+import { BrewSummary } from '../../src/components/BrewSummary';
 import { BrewForm } from './BrewForm';
 
 const ORIGIN_FLAGS: Record<string, string> = {
@@ -184,6 +185,7 @@ export default function CoffeeDetailScreen() {
           {/* Brew recipes */}
           <View style={styles.section}>
             <SectionHeader title="Brew recipes" action="+ Add" onAction={() => setAddingBrew(true)} />
+            {brews.length > 0 && <BrewSummary brews={brews} />}
             <View style={styles.brewList}>
               {brews.length === 0 ? (
                 <Card>
