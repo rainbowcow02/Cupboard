@@ -9,7 +9,6 @@ import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-na
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Coffee, ORIGIN_FLAGS } from '@shared/lib/coffees';
 import { FilterKey, FILTER_TITLE, filterOptions } from '../lib/coffeeFilters';
-import { tabBarChromeInset } from '../lib/chromeInsets';
 import { FilterCheckbox } from './FilterCheckbox';
 import { DetachedSheetBackground } from './surfaces/DetachedSheetBackground';
 import { DetachedSheetContentClip } from './surfaces/DetachedSheetContentClip';
@@ -73,22 +72,17 @@ export function FilterSheet({
     [coffees, renderedKey],
   );
 
-  const tabBarInset = tabBarChromeInset(insets);
+  const sheetBottomInset = 16;
   const sheetTopInset = insets.top + 16;
 
-  // Mirror the Explore sheet: open at a default peek (~half the available
-  // screen), swipe down to dismiss, swipe up to expand. The expanded snap hugs
-  // the content height, capped at the available screen space — beyond that the
-  // list scrolls internally. When the whole list already fits within the peek
-  // there's a single snap point hugging the content.
   const snapPoints = useMemo(() => {
-    const fullSnapH = screenH - tabBarInset - sheetTopInset;
+    const fullSnapH = screenH - sheetBottomInset - sheetTopInset;
     const peekH = Math.round(fullSnapH * 0.5);
     const contentH =
       GRABBER_ROW_H + FILTER_HEADER_H + values.length * ROW_H + SHEET_BOTTOM_PAD;
     const hugH = Math.min(contentH, fullSnapH);
     return hugH <= peekH ? [hugH] : [peekH, hugH];
-  }, [values.length, screenH, tabBarInset, sheetTopInset]);
+  }, [values.length, screenH, sheetBottomInset, sheetTopInset]);
 
   const renderBackdrop = useCallback(
     (props: BottomSheetBackdropProps) => (
@@ -122,7 +116,7 @@ export function FilterSheet({
       snapPoints={snapPoints}
       enablePanDownToClose
       detached
-      bottomInset={tabBarInset}
+      bottomInset={sheetBottomInset}
       topInset={sheetTopInset}
       backgroundComponent={DetachedSheetBackground}
       handleComponent={renderHandle}
@@ -143,7 +137,7 @@ export function FilterSheet({
           showClear={activeValues.length > 0}
           animatedClear
         />
-        <BottomSheetScrollView contentContainerStyle={filterSheetStyles.listContent}>
+        <BottomSheetScrollView contentContainerStyle={[filterSheetStyles.listContent, { paddingBottom: SHEET_BOTTOM_PAD + insets.bottom }]}>
           {values.map((val, i) => {
             const isActive = activeValues.includes(val);
             const flag = renderedKey === 'country' ? ORIGIN_FLAGS[val] || '' : '';
@@ -180,7 +174,6 @@ export function FilterSheet({
 const filterSheetStyles = StyleSheet.create({
   listContent: {
     flexGrow: 0,
-    paddingBottom: SHEET_BOTTOM_PAD,
   },
   optionRowLast: {
     borderBottomWidth: 0,
