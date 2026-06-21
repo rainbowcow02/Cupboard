@@ -17,7 +17,7 @@ import { SheetHeader } from './surfaces/SheetHeader';
 import { floatingSurfaceStyles } from './surfaces/floatingSurfaceStyles';
 
 const GRABBER_ROW_H = 10 + 5 + 4; // grabberRow paddingTop + grabber + paddingBottom
-const FILTER_HEADER_H = 10 + 44 + 10; // header paddingVertical + clear button
+const FILTER_HEADER_H = 10 + 50 + 10; // header paddingVertical + (title 30 + subtitle 20)
 const ROW_H = 14 + 14 + 20 + StyleSheet.hairlineWidth * 2; // option row padding + label
 const SHEET_BOTTOM_PAD = 16;
 
@@ -133,6 +133,11 @@ export function FilterSheet({
       <DetachedSheetContentClip>
         <SheetHeader
           title={FILTER_TITLE[renderedKey]}
+          subtitle={
+            activeValues.length > 0
+              ? `${activeValues.length} of ${values.length} selected`
+              : `${values.length} results`
+          }
           onClear={() => onSelect([])}
           clearAccessibilityLabel={`Clear ${FILTER_TITLE[renderedKey]} filter`}
           showClear={activeValues.length > 0}
