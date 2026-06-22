@@ -118,6 +118,7 @@ export const floatingSurfaceStyles = StyleSheet.create({
     flex: 1,
     fontFamily: fonts.sans,
     fontSize: 17,
+    lineHeight: 20,
     fontWeight: '500',
     color: colors.black,
   },

@@ -16,7 +16,7 @@ import { SheetHeader } from './surfaces/SheetHeader';
 import { floatingSurfaceStyles } from './surfaces/floatingSurfaceStyles';
 
 const GRABBER_ROW_H = 10 + 5 + 4; // grabberRow paddingTop + grabber + paddingBottom
-const FILTER_HEADER_H = 10 + 50 + 10; // header paddingVertical + (title 30 + subtitle 20)
+const FILTER_HEADER_H = 10 + 58 + 10; // header paddingVertical + titleWrapper minHeight (subtitle always present)
 const ROW_H = 14 + 14 + 20 + StyleSheet.hairlineWidth * 2; // option row padding + label
 const SHEET_BOTTOM_PAD = 16;
 
@@ -77,7 +77,7 @@ export function FilterSheet({
 
   const snapPoints = useMemo(() => {
     const fullSnapH = screenH - sheetBottomInset - sheetTopInset;
-    const peekH = Math.round(fullSnapH * 0.5);
+    const peekH = Math.round(fullSnapH * 0.4);
     const contentH =
       GRABBER_ROW_H + FILTER_HEADER_H + values.length * ROW_H + SHEET_BOTTOM_PAD;
     const hugH = Math.min(contentH, fullSnapH);

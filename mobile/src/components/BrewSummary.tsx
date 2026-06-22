@@ -80,7 +80,7 @@ export function BrewSummary({ brews }: Props) {
         <View style={styles.divider} />
         <StatCell value={totalGrams > 0 ? `${totalGrams}g` : '—'} label="Brewed" />
         <View style={styles.divider} />
-        <StatCell value={medianRating != null ? medianRating.toFixed(1) : '—'} label="Median ☕️" />
+        <StatCell value={medianRating != null ? `${medianRating.toFixed(1)} ☕️` : '—'} label="Median" />
         {showSpark && (
           <>
             <View style={styles.divider} />
@@ -107,14 +107,15 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     overflow: 'hidden',
     paddingVertical: 20,
+    paddingHorizontal: 20,
   },
   stats: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-evenly',
   },
-  statCell: { alignItems: 'center', gap: 4 },
-  sparkCell: { width: 64, alignItems: 'stretch', gap: 4 },
+  statCell: { flex: 1, alignItems: 'center', gap: 4 },
+  sparkCell: { flex: 1, alignItems: 'stretch', gap: 4, paddingHorizontal: 12 },
   divider: { width: 0.5, height: 28, backgroundColor: colors.greyLight },
   statValue: {
     fontFamily: fonts.sans,
