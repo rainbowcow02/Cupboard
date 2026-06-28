@@ -16,7 +16,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Coffee, ORIGIN_FLAGS } from '@shared/lib/coffees';
 import { colors, fonts } from '@shared/theme';
-import { FilterKey, FILTER_TITLE, filterOptions } from '../lib/coffeeFilters';
+import { availableFilterOptions, FilterKey, Filters, FILTER_TITLE } from '../lib/coffeeFilters';
 import { FilterCheckbox } from './FilterCheckbox';
 import { SearchIcon } from './SearchIcon';
 import { DetachedSheetBackground } from './surfaces/DetachedSheetBackground';
@@ -33,6 +33,7 @@ const SHEET_BOTTOM_PAD = 16;
 interface FilterSheetProps {
   filterKey: FilterKey | null;
   coffees: Coffee[];
+  filters: Filters;
   activeValues: string[];
   onSelect: (values: string[]) => void;
   onClose: () => void;
@@ -54,6 +55,7 @@ function FilterSheetHandle({ onPress }: { onPress: () => void }) {
 export function FilterSheet({
   filterKey,
   coffees,
+  filters,
   activeValues,
   onSelect,
   onClose,
@@ -81,8 +83,8 @@ export function FilterSheet({
   }, [renderedKey, filterKey]);
 
   const values = useMemo(
-    () => (renderedKey ? filterOptions(coffees, renderedKey) : []),
-    [coffees, renderedKey],
+    () => (renderedKey ? availableFilterOptions(coffees, renderedKey, filters) : []),
+    [coffees, renderedKey, filters],
   );
 
   const trimmedQuery = query.trim();
