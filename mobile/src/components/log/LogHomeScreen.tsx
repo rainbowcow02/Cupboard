@@ -11,10 +11,9 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Coffee, formatDate, ORIGIN_FLAGS } from '@shared/lib/coffees';
+import { Coffee, formatDate } from '@shared/lib/coffees';
 import { colors, fonts, surfaces } from '@shared/theme';
-import { Bag } from '../Bag';
-import { Card } from '../Card';
+import { BeanCard } from '../BeanCard';
 import { SearchIcon } from '../SearchIcon';
 import { BottomChromeScrim } from '../surfaces/BottomChromeScrim';
 import { TAB_BAR_HEIGHT } from '../TabBar';
@@ -203,33 +202,15 @@ export function LogHomeScreen({ coffees, onSelectCoffee, onAddNew }: Props) {
 }
 
 function BeanRow({ coffee, onPress }: { coffee: Coffee; onPress: () => void }) {
-  const flag = coffee.origin ? ORIGIN_FLAGS[coffee.origin] ?? '' : '';
   return (
-    <Pressable
+    <BeanCard
+      coffee={coffee}
       onPress={onPress}
-      accessibilityRole="button"
       accessibilityLabel={`Brew ${coffee.bean} from ${coffee.roaster}`}
-    >
-      <Card style={styles.beanCard}>
-        <Bag coffee={coffee} width={60} height={60} beanNameOnly />
-        <View style={styles.beanText}>
-          <Text style={styles.beanName} numberOfLines={2}>
-            {coffee.bean}
-          </Text>
-          <Text style={styles.roasterName} numberOfLines={1}>
-            {coffee.roaster}
-          </Text>
-          {coffee.origin || coffee.roastLevel ? (
-            <Text style={styles.origin} numberOfLines={1}>
-              {coffee.origin ? `${flag ? `${flag} ` : ''}${coffee.origin}` : ''}
-              {coffee.origin && coffee.roastLevel ? '  •  ' : ''}
-              {coffee.roastLevel ?? ''}
-            </Text>
-          ) : null}
-        </View>
-        {coffee.date ? <Text style={styles.date}>{formatDate(coffee.date)}</Text> : null}
-      </Card>
-    </Pressable>
+      trailing={
+        coffee.date ? <Text style={styles.date}>{formatDate(coffee.date)}</Text> : undefined
+      }
+    />
   );
 }
 
@@ -287,36 +268,6 @@ const styles = StyleSheet.create({
   },
   listFill: { flex: 1 },
   list: { paddingHorizontal: 24, gap: 12 },
-  beanCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-  },
-  beanText: { flex: 1, minWidth: 0, gap: 3 },
-  beanName: {
-    fontFamily: fonts.condensed,
-    fontWeight: '600',
-    fontSize: 20,
-    color: colors.black,
-    letterSpacing: -0.4,
-    lineHeight: 24,
-  },
-  roasterName: {
-    fontFamily: fonts.sans,
-    fontWeight: '500',
-    fontSize: 14,
-    color: colors.greyDark,
-    lineHeight: 18,
-  },
-  origin: {
-    fontFamily: fonts.sans,
-    fontWeight: '500',
-    fontSize: 13,
-    color: colors.greyDark,
-    lineHeight: 18,
-  },
   date: {
     fontFamily: fonts.sans,
     fontWeight: '500',
@@ -344,6 +295,7 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 10,
     paddingHorizontal: 18,
     height: 50,
@@ -354,11 +306,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   searchInput: {
-    flex: 1,
+    flexShrink: 1,
     fontFamily: fonts.sans,
     fontSize: 16,
     fontWeight: '500',
     color: colors.black,
+    textAlign: 'center',
     padding: 0,
   },
   clearButton: {
