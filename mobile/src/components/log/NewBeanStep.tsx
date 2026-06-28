@@ -11,7 +11,9 @@ import { bagImgFor, coffeeId, Coffee, ORIGIN_FLAGS } from '@shared/lib/coffees';
 import { colors, fonts } from '@shared/theme';
 import { useCoffees } from '../../hooks/useCoffees';
 import { ComboBoxField } from '../ComboBoxField';
+import { ErrorBox } from '../ErrorBox';
 import { FormField, fieldInputStyle } from '../FormField';
+import { PrimaryButton } from '../PrimaryButton';
 import { TAB_BAR_HEIGHT } from '../TabBar';
 
 /** Distinct, non-empty values for a coffee field, sorted A–Z. */
@@ -49,11 +51,24 @@ const blank: NewBeanDraft = {
 interface Props {
   bottomInset: number;
   onContinue: (coffee: Coffee) => void;
+  /** Shown on the manual-add path; opens the paste-a-link flow. Hidden in review mode. */
+  onAddViaLink?: () => void;
+  /** Pre-fills the form — used to review details extracted from a link. */
+  initialDraft?: Partial<NewBeanDraft>;
+  prompt?: string;
+  submitLabel?: string;
 }
 
-export function NewBeanStep({ bottomInset, onContinue }: Props) {
+export function NewBeanStep({
+  bottomInset,
+  onContinue,
+  onAddViaLink,
+  initialDraft,
+  prompt = 'Tell Cupboard about the bag you’re opening.',
+  submitLabel = 'Continue',
+}: Props) {
   const { coffees } = useCoffees();
-  const [form, setForm] = useState({ ...blank });
+  const [form, setForm] = useState<NewBeanDraft>({ ...blank, ...initialDraft });
   const [error, setError] = useState<string | null>(null);
 
   const options = useMemo(
@@ -104,13 +119,24 @@ export function NewBeanStep({ bottomInset, onContinue }: Props) {
       contentContainerStyle={[styles.content, { paddingBottom: scrollBottomPad }]}
       keyboardShouldPersistTaps="handled"
     >
-      <Text style={styles.prompt}>Tell Cupboard about the bag you’re opening.</Text>
+      <Text style={styles.prompt}>{prompt}</Text>
 
-      {error ? (
-        <View style={styles.errorBox}>
-          <Text style={styles.errorText}>{error}</Text>
-        </View>
+      {onAddViaLink ? (
+        <Pressable
+          onPress={onAddViaLink}
+          style={({ pressed }) => [styles.linkRow, pressed && styles.linkRowPressed]}
+          accessibilityRole="button"
+          accessibilityLabel="Add a coffee from a link"
+        >
+          <Text style={styles.linkGlyph}>🔗</Text>
+          <View style={styles.linkText}>
+            <Text style={styles.linkTitle}>Add from a link</Text>
+            <Text style={styles.linkSubtitle}>Paste a roaster URL to fill these in automatically</Text>
+          </View>
+        </Pressable>
       ) : null}
+
+      {error ? <ErrorBox message={error} style={styles.error} /> : null}
 
       <View style={styles.fields}>
         <FormField label="Bean">
@@ -118,7 +144,7 @@ export function NewBeanStep({ bottomInset, onContinue }: Props) {
             style={fieldInputStyle}
             value={form.bean}
             onChangeText={set('bean')}
-            placeholder="Gitega 861"
+            placeholder="Add bean name"
             placeholderTextColor={colors.greyDark}
             returnKeyType="next"
           />
@@ -128,7 +154,7 @@ export function NewBeanStep({ bottomInset, onContinue }: Props) {
             label="Roaster"
             value={form.roaster}
             options={options.roaster}
-            placeholder="H&S Coffee Roasters"
+            placeholder="Pick a roaster"
             onChange={set('roaster')}
           />
         </FormField>
@@ -137,7 +163,7 @@ export function NewBeanStep({ bottomInset, onContinue }: Props) {
             label="Country"
             value={form.origin}
             options={options.origin}
-            placeholder="Rwanda"
+            placeholder="Where's it from?"
             onChange={set('origin')}
             flagFor={(option) => ORIGIN_FLAGS[option] || ''}
           />
@@ -148,7 +174,7 @@ export function NewBeanStep({ bottomInset, onContinue }: Props) {
               label="Process"
               value={form.process}
               options={options.process}
-              placeholder="Washed"
+              placeholder="Pick a process"
               onChange={set('process')}
             />
           </FormField>
@@ -157,7 +183,7 @@ export function NewBeanStep({ bottomInset, onContinue }: Props) {
               label="Roast"
               value={form.roastLevel}
               options={options.roastLevel}
-              placeholder="Light"
+              placeholder="Pick a roast"
               onChange={set('roastLevel')}
             />
           </FormField>
@@ -167,7 +193,7 @@ export function NewBeanStep({ bottomInset, onContinue }: Props) {
             label="Region"
             value={form.region}
             options={options.region}
-            placeholder="Nyamagabe"
+            placeholder="Add a region"
             onChange={set('region')}
           />
         </FormField>
@@ -176,7 +202,7 @@ export function NewBeanStep({ bottomInset, onContinue }: Props) {
             label="Variety"
             value={form.variety}
             options={options.variety}
-            placeholder="Red Bourbon"
+            placeholder="Add a variety"
             onChange={set('variety')}
           />
         </FormField>
@@ -185,21 +211,19 @@ export function NewBeanStep({ bottomInset, onContinue }: Props) {
             style={fieldInputStyle}
             value={form.notes}
             onChangeText={set('notes')}
-            placeholder="Red Apple, Peach, Hibiscus"
+            placeholder="Add tasting notes"
             placeholderTextColor={colors.greyDark}
             returnKeyType="done"
           />
         </FormField>
       </View>
 
-      <Pressable
+      <PrimaryButton
+        label={submitLabel}
         onPress={continueToRecipe}
         style={styles.continueBtn}
-        accessibilityRole="button"
         accessibilityLabel="Continue to recipe setup"
-      >
-        <Text style={styles.continueBtnText}>Continue</Text>
-      </Pressable>
+      />
     </ScrollView>
   );
 }
@@ -216,29 +240,33 @@ const styles = StyleSheet.create({
   },
   fields: { gap: 14 },
   row: { flexDirection: 'row', gap: 10 },
-  errorBox: {
-    backgroundColor: 'rgba(252,153,155,0.22)',
-    borderRadius: 12,
-    padding: 12,
+  linkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 0.5,
+    borderColor: 'rgba(0,0,0,0.12)',
+    backgroundColor: 'rgba(255,255,255,0.7)',
     marginBottom: 16,
   },
-  errorText: {
+  linkRowPressed: { opacity: 0.85 },
+  linkGlyph: { fontSize: 20 },
+  linkText: { flex: 1, minWidth: 0 },
+  linkTitle: {
+    fontFamily: fonts.sans,
+    fontWeight: '700',
+    fontSize: 15,
+    color: colors.black,
+  },
+  linkSubtitle: {
     fontFamily: fonts.sans,
     fontWeight: '500',
     fontSize: 13,
-    color: colors.burgundy,
+    color: colors.greyDark,
+    marginTop: 2,
   },
-  continueBtn: {
-    marginTop: 24,
-    backgroundColor: colors.burgundy,
-    borderRadius: 100,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  continueBtnText: {
-    fontFamily: fonts.sans,
-    fontWeight: '800',
-    fontSize: 15,
-    color: colors.pearl,
-  },
+  error: { marginBottom: 16 },
+  continueBtn: { marginTop: 24 },
 });

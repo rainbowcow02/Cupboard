@@ -16,7 +16,6 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, fonts } from '@shared/theme';
-import { tabBarChromeInset } from '../lib/chromeInsets';
 import { SearchIcon } from './SearchIcon';
 import { SortChevron } from './SortChevron';
 import { DetachedSheetBackground } from './surfaces/DetachedSheetBackground';
@@ -48,13 +47,15 @@ export function ComboBoxField({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
 
-  const tabBarInset = tabBarChromeInset(insets);
+  // Float at the screen bottom overlaying the tab bar, matching the Home
+  // filter sheet, so the option list reads as the primary surface.
+  const sheetBottomInset = 16;
   const sheetTopInset = insets.top + 16;
 
   const snapPoints = useMemo(() => {
-    const fullSnapH = screenH - tabBarInset - sheetTopInset;
-    return [Math.round(fullSnapH * 0.85)];
-  }, [screenH, tabBarInset, sheetTopInset]);
+    const fullSnapH = screenH - sheetBottomInset - sheetTopInset;
+    return [Math.round(fullSnapH * 0.6), Math.round(fullSnapH * 0.92)];
+  }, [screenH, sheetTopInset]);
 
   const trimmedQuery = query.trim();
 
@@ -69,19 +70,17 @@ export function ComboBoxField({
     !options.some((option) => option.toLowerCase() === trimmedQuery.toLowerCase());
 
   const present = useCallback(() => {
-    // Seed with the current value so it can be edited inline; the input
-    // selects its text on focus, so typing immediately replaces it.
-    setQuery(value);
+    // Start with an empty query so the full option list shows first —
+    // searching/adding is the secondary action.
+    setQuery('');
     setOpen(true);
-  }, [value]);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
+    // Present without auto-focusing the input: the sheet opens showing the
+    // options with the keyboard down. It only rises when the user taps search.
     modalRef.current?.present();
-    // Focus once the sheet has animated in so the keyboard rises with it and
-    // people can start typing their option right away.
-    const timer = setTimeout(() => inputRef.current?.focus(), 220);
-    return () => clearTimeout(timer);
   }, [open]);
 
   const handleDismiss = useCallback(() => setOpen(false), []);
@@ -147,7 +146,7 @@ export function ComboBoxField({
           detached
           keyboardBehavior="interactive"
           keyboardBlurBehavior="restore"
-          bottomInset={tabBarInset}
+          bottomInset={sheetBottomInset}
           topInset={sheetTopInset}
           backgroundComponent={DetachedSheetBackground}
           handleComponent={renderHandle}

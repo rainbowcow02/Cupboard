@@ -78,7 +78,7 @@ Status key: ✅ done · ❌ missing · ⚠️ partial · — not applicable
 |---|---|---|---|---|
 | Bean name in Avenir Condensed | ✅ | ✅ | — | Bean names use Avenir Condensed everywhere (detail hero, explore list, shelf labels) — intentional DS choice |
 | Roaster/bean name spacing | ✅ | ✅ | 4 | Roaster name and bean name have comfortable vertical breathing room; roaster reads as a clear sub-label |
-| Back button top padding | ✅ | ❌ | 4 | Back chevron sits clearly below the status bar with visible padding above it; doesn't feel crammed into the top edge |
+| Back button top padding | ✅ | ✅ | 4 | Back chevron sits clearly below the status bar with visible padding above it; doesn't feel crammed into the top edge |
 | Card readability (detail / origin / brew) | ✅ | ✅ | 4 | All coffee detail cards use shared `Card` with solid white fill — text clearly legible on pearl background |
 | Card visual style | ✅ | ✅ | 4 | Mobile uses solid white cards matching brew recipe cards; web glass sheen deferred |
 | ☕ cup rating (not stars) | ✅ | ✅ | 4 | Brew ratings show a colored pill with ☕️ emoji cups via the shared `CupRating` component (`src/components/CupRating.tsx`), backed by the `cupRatingScale` token in `shared/theme.ts`. Each rating 1–5 has its own tinted pill (1 grey · 2 beige · 3 fern · 4 pink · 5 grape) per Figma "cup rating badge"; web mirrors the same scale |
@@ -92,21 +92,23 @@ Status key: ✅ done · ❌ missing · ⚠️ partial · — not applicable
 
 ### Log Cup
 
-Mobile intentionally diverges from web here. Web is a single flat "coffee + brew" form. Mobile now uses a **bean-first, recipe-aware flow**: (1) pick the bean (search your cupboard or add a new coffee), (2) choose how to brew — same recipe again, tweak an existing recipe, or new recipe, (3) log the cup. The form fields underneath reuse the shared `BrewForm`/`createCup` data model so saved data is identical to web.
+Mobile intentionally diverges from web here. Web is a single flat "coffee + brew" form. Mobile uses a **consolidated, cupboard-first flow** (overhauled 2026-06): the Log tab opens directly on the cupboard list ("What are we brewing?" + subtle "Add"), tapping a bean drops straight into an editable recipe screen where you pick a recent recipe as a base and tweak any field — changed fields show a "was X" hint against the base. Saved data reuses the shared `BrewFieldSet`/`createCup` model so it stays identical to web. Field selectors (`ComboBoxField`) open a bottom sheet anchored over the tab bar showing existing options first; the keyboard only rises when the search field is tapped.
 
 | Item | Web | Mobile | Batch | Success looks like |
 |---|---|---|---|---|
-| Bean-first log flow | ❌ | ✅ | — | Log tab opens on a clean hero — "What are we brewing today?" in large serif — with two options beneath: "Choose a coffee" (→ searchable cupboard list) and "Add a new coffee" (→ new-coffee form); tapping a bean advances the flow instead of showing a flat form |
-| Recipe choice step | ❌ | ✅ | — | After picking a bean with existing recipes, mobile asks: "Same recipe again", "Tweak a recipe", or "New recipe" — each routing to the appropriate next step |
-| Repeat-recipe quick log | ❌ | ✅ | — | "Same recipe again" → pick a past brew → a read-only recipe summary (brewer, ratio, grind, temp, parsed pour steps) with just Date + Rating to fill in, then Save |
-| Tweak-recipe flow | ❌ | ✅ | — | "Tweak a recipe" → pick a past brew → `BrewForm` pre-filled with that recipe's values (including pour structure) so the user can adjust before saving a new cup |
-| New-recipe flow | ❌ | ✅ | — | "New recipe" (or any bean with no recipes yet) → blank `BrewForm` for a fresh pour structure, ratio, and temperature |
-| New coffee step | ❌ | ✅ | — | "+ New coffee" → bean detail form (bean, roaster, country, process, roast, region, variety, tasting notes) → continues into the new-recipe `BrewForm` |
-| Back navigation through steps | ❌ | ✅ | — | A Back affordance in the log header steps backward through bean → choice → recipe pick → form without losing the selected bean |
+| Cupboard-first log home | ❌ | ✅ | — | Log tab opens on `LogHomeScreen`: a list of bean cards (bag · name · roaster · flag+origin · date) with a floating "Search your cupboard" pill docked 8px above the tab bar that only raises the keyboard on tap |
+| Collapsing brew CTA header | ❌ | ✅ | — | "What are we brewing today?" is the content CTA (Avenir Heavy 21px / H3, centered) placed lower on the page for breathing room; a fixed top bar keeps the "Add" pill, and once the CTA scrolls past it the collapsed DM Serif 17px title fades into the bar — matches Figma `987:2889` |
+| Recipe iteration screen | ❌ | ✅ | — | Tapping a bean → `RecipeIterationScreen`: a horizontal strip of recent recipe cards (base selector) above an editable `BrewFieldSet`; picking a base prefills the form, Date defaults to today, Rating empty, then "Log this cup" |
+| Previous-value diff hints | ❌ | ✅ | — | Editing a field that differs from the chosen base recipe shows a burgundy "was 18 g" hint beneath it (via `FieldDiffHint`), so it's obvious what changed for this test; unchanged fields show no hint |
+| First-cup blank form | ❌ | ✅ | — | A bean with no recipes yet skips the recipe strip and shows a blank editable `BrewFieldSet` directly |
+| New coffee (manual) | ❌ | ✅ | — | "Add" → `NewBeanStep` with contextual empty-state placeholders ("Add bean name", "Pick a roaster", "Where's it from?") → continues into the iteration form |
+| Add coffee via link | ❌ | ✅ | — | "Add from a link" in the new-coffee form → paste a roaster URL → `/api/extract-bean` pulls bean/origin/process/notes via Claude → review/edit in the standard new-bean form → save (needs `ANTHROPIC_API_KEY` set in Vercel) |
+| Field selector sheets (options-first) | ❌ | ✅ | — | `ComboBoxField` opens a detached bottom sheet floating over the tab bar (like the Home filter sheet) listing existing options with the keyboard down; typing to search or add a new value is the secondary action |
+| Back navigation through steps | ❌ | ✅ | — | A Back affordance in the log header returns from iterate / new-bean / add-via-link to the cupboard home without losing context |
+| Recipe to test field | ✅ | ✅ | — | Multiline "Pour structure" field in `BrewFieldSet`; saved data renders as parsed pour cards on the detail screen |
 | Brew notes field | ✅ | ❌ | Deferred | A multiline text field in the Brew section for freeform notes about the brew session |
 | Tasting notes field | ✅ | ❌ | Deferred | A multiline text field for per-brew tasting impressions, distinct from the bean-level comma-separated notes |
-| Recipe to test field | ✅ | ✅ | — | Multiline "Pour structure" field in `BrewForm` (new/tweak steps); saved data renders as parsed pour cards on the detail screen and as a read-only summary in the repeat-recipe quick log |
-| Altitude field | ✅ | ❌ | Deferred | A text input in the Bean section for origin altitude (e.g. "1800–2200 masl"); appears in the origin detail card |
+| Altitude field (input) | ✅ | ❌ | Deferred | A text input in the new-coffee form for origin altitude; the value already renders in the origin detail card when present |
 
 ### Beans Tab
 

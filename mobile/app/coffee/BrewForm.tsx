@@ -1,18 +1,13 @@
 import { useState } from 'react';
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Brew, Coffee } from '@shared/lib/coffees';
 import { colors, fonts } from '@shared/theme';
-import { DateField } from '../../src/components/DateField';
-import { FormField, fieldInputStyle } from '../../src/components/FormField';
-import { RatingInput } from '../../src/components/RatingInput';
+import {
+  BrewFieldSet,
+  BrewFormValues,
+  brewFieldsPayload,
+} from '../../src/components/log/BrewFieldSet';
 import { createCup, updateCup, deleteCup } from '../../src/lib/api';
 
 interface Props {
@@ -31,10 +26,6 @@ function toDateInput(value?: string | null): Date {
   return m ? new Date(`${m[0]}T12:00:00`) : new Date();
 }
 
-function toISODate(d: Date): string {
-  return d.toISOString().slice(0, 10);
-}
-
 export function BrewForm({
   coffee,
   brew,
@@ -48,7 +39,7 @@ export function BrewForm({
   const source = brew ?? templateBrew;
   const insets = useSafeAreaInsets();
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<BrewFormValues>({
     brewer: source?.brewer ?? '',
     filter: source?.filter ?? '',
     grind: source?.grind ?? '',
@@ -63,25 +54,12 @@ export function BrewForm({
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  const set = (k: keyof typeof form) => (v: string) =>
-    setForm((f) => ({ ...f, [k]: v }));
-
   const save = async () => {
     if (saving) return;
     setSaving(true);
     setError(null);
     try {
-      const brewFields = {
-        brewer: form.brewer || undefined,
-        filter: form.filter || undefined,
-        grind: form.grind || undefined,
-        beansG: form.beansG ? Number(form.beansG) : undefined,
-        waterMl: form.waterMl ? Number(form.waterMl) : undefined,
-        tempC: form.tempC ? Number(form.tempC) : undefined,
-        recipeToTest: form.recipeToTest.trim() || undefined,
-        date: toISODate(form.date),
-        rating: form.rating || undefined,
-      };
+      const brewFields = brewFieldsPayload(form);
 
       if (editing && brew?.id) {
         await updateCup(String(brew.id), brewFields);
@@ -153,54 +131,10 @@ export function BrewForm({
 
         {error && <View style={styles.errorBox}><Text style={styles.errorText}>{error}</Text></View>}
 
-        <View style={styles.fields}>
-          <FormField label="Brewer">
-            <TextInput style={fieldInputStyle} value={form.brewer} onChangeText={set('brewer')} placeholder="Hario V60" placeholderTextColor={colors.greyDark} returnKeyType="next" />
-          </FormField>
-          <FormField label="Filter">
-            <TextInput style={fieldInputStyle} value={form.filter} onChangeText={set('filter')} placeholder="Cafec Light" placeholderTextColor={colors.greyDark} returnKeyType="next" />
-          </FormField>
-          <FormField label="Grind size">
-            <TextInput style={fieldInputStyle} value={form.grind} onChangeText={set('grind')} placeholder="14" placeholderTextColor={colors.greyDark} returnKeyType="next" />
-          </FormField>
-
-          <View style={styles.row}>
-            <FormField label="Beans (g)">
-              <TextInput style={fieldInputStyle} value={form.beansG} onChangeText={set('beansG')} placeholder="18" placeholderTextColor={colors.greyDark} keyboardType="decimal-pad" returnKeyType="next" />
-            </FormField>
-            <FormField label="Water (ml)">
-              <TextInput style={fieldInputStyle} value={form.waterMl} onChangeText={set('waterMl')} placeholder="300" placeholderTextColor={colors.greyDark} keyboardType="decimal-pad" returnKeyType="next" />
-            </FormField>
-            <FormField label="Temp °C">
-              <TextInput style={fieldInputStyle} value={form.tempC} onChangeText={set('tempC')} placeholder="94" placeholderTextColor={colors.greyDark} keyboardType="decimal-pad" returnKeyType="next" />
-            </FormField>
-          </View>
-
-          <FormField label="Pour structure">
-            <TextInput
-              style={[fieldInputStyle, styles.recipeInput]}
-              value={form.recipeToTest}
-              onChangeText={set('recipeToTest')}
-              placeholder={'Bloom → 40ml swirl, P1 → 120ml center pour, brew time 2:45'}
-              placeholderTextColor={colors.greyDark}
-              multiline
-              textAlignVertical="top"
-              returnKeyType="done"
-            />
-          </FormField>
-
-          <FormField label="Date">
-            <DateField
-              value={form.date}
-              onChange={(date) => setForm((f) => ({ ...f, date }))}
-              style={styles.datePicker}
-            />
-          </FormField>
-
-          <FormField label="Rating">
-            <RatingInput value={form.rating} onChange={(v) => setForm((f) => ({ ...f, rating: v }))} />
-          </FormField>
-        </View>
+        <BrewFieldSet
+          values={form}
+          onChange={(patch) => setForm((f) => ({ ...f, ...patch }))}
+        />
 
         {editing && (
           <Pressable onPress={remove} disabled={saving} style={styles.deleteBtn}>
@@ -253,10 +187,6 @@ const styles = StyleSheet.create({
   subtitleBold: { color: '#000', fontWeight: '700' },
   errorBox: { backgroundColor: 'rgba(252,153,155,0.22)', borderRadius: 12, padding: 12, marginBottom: 16 },
   errorText: { fontFamily: fonts.sans, fontWeight: '500', fontSize: 13, color: colors.burgundy },
-  fields: { gap: 14 },
-  row: { flexDirection: 'row', gap: 10 },
-  recipeInput: { minHeight: 96, paddingTop: 12 },
-  datePicker: { alignSelf: 'flex-start', marginTop: 2 },
   deleteBtn: {
     marginTop: 28,
     padding: 12,
