@@ -105,7 +105,7 @@ export function FilterSheet({
 
   const snapPoints = useMemo(() => {
     const fullSnapH = screenH - sheetBottomInset - sheetTopInset;
-    const peekH = Math.round(fullSnapH * 0.4);
+    const peekH = Math.round(fullSnapH * 0.7);
     const contentH =
       GRABBER_ROW_H +
       FILTER_HEADER_H +
