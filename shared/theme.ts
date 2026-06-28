@@ -51,5 +51,5 @@ export const surfaces = {
     elevation: 8,
   },
   scrimHeight: 160,
-  scrimColors: [`${colors.pearl}00`, `${colors.chardonnay}d9`] as const,
+  scrimColors: [`${colors.pearl}00`, `${colors.chardonnay}99`] as const,
 } as const;

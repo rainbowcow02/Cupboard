@@ -17,8 +17,7 @@ export function BottomChromeScrim() {
         <Defs>
           <LinearGradient id="bottomChromeScrim" x1="0" y1="0" x2="0" y2="1">
             <Stop offset="0" stopColor={colors.pearl} stopOpacity={0} />
-            <Stop offset="0.55" stopColor={colors.chardonnay} stopOpacity={0.4} />
-            <Stop offset="1" stopColor={colors.chardonnay} stopOpacity={0.85} />
+            <Stop offset="1" stopColor={colors.chardonnay} stopOpacity={0.6} />
           </LinearGradient>
         </Defs>
         <Rect width="100%" height="100%" fill="url(#bottomChromeScrim)" />
