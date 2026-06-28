@@ -35,7 +35,8 @@ export const surfaces = {
   cardRadius: 34,
   pillRadius: 100,
   cardFill: '#f5f5f5',
-  pillFill: '#f7f7f7',
+  pillFill: '#ffffff',
+  pillHairline: 'rgba(0,0,0,0.08)',
   divider: '#e7e7e7',
   clearButtonFill: 'rgba(120,120,128,0.16)',
   clearButtonText: colors.greyDark,
@@ -49,6 +50,6 @@ export const surfaces = {
     shadowRadius: 40,
     elevation: 8,
   },
-  scrimHeight: 118,
-  scrimColors: [`${colors.pearl}00`, `${colors.chardonnay}99`] as const,
+  scrimHeight: 160,
+  scrimColors: [`${colors.pearl}00`, `${colors.chardonnay}d9`] as const,
 } as const;

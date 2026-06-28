@@ -69,7 +69,8 @@ export default function LogScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <BottomChromeScrim />
+      {/* logHome renders its own scrim so the floating search bar can sit above it. */}
+      {step.name !== 'logHome' && <BottomChromeScrim />}
       {showLogHeader ? (
         <LogHeader title={title} subtitle={subtitle} onBack={goBack} />
       ) : null}

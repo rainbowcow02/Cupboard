@@ -7,7 +7,6 @@ import { Pressable, StyleSheet, Text, TouchableOpacity, View, useWindowDimension
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Bag } from '../components/Bag';
 import { BeanMarker } from '../components/BeanMarker';
-import { BottomChromeScrim } from '../components/surfaces/BottomChromeScrim';
 import { DetachedSheetBackground } from '../components/surfaces/DetachedSheetBackground';
 import { DetachedSheetContentClip } from '../components/surfaces/DetachedSheetContentClip';
 import { SheetHeader } from '../components/surfaces/SheetHeader';
@@ -322,8 +321,6 @@ export default function ExploreScreen() {
           );
         })}
       </MapboxGL.MapView>
-
-      <BottomChromeScrim />
 
       <View style={[styles.zoomControls, { bottom: zoomBtnBottom }]} pointerEvents="box-none">
         <Pressable

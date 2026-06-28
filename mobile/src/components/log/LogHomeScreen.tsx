@@ -15,6 +15,7 @@ import { colors, fonts } from '@shared/theme';
 import { Bag } from '../Bag';
 import { Card } from '../Card';
 import { SearchIcon } from '../SearchIcon';
+import { BottomChromeScrim } from '../surfaces/BottomChromeScrim';
 import { TAB_BAR_HEIGHT } from '../TabBar';
 
 interface Props {
@@ -30,7 +31,7 @@ interface Props {
  */
 // Vertical breathing room above the brewing CTA, and the gap before the list
 // begins. Kept as constants so the collapse threshold can be derived from them.
-const CTA_PADDING_TOP = 28;
+const CTA_PADDING_TOP = 100;
 const CTA_PADDING_BOTTOM = 16;
 
 export function LogHomeScreen({ coffees, onSelectCoffee, onAddNew }: Props) {
@@ -118,6 +119,9 @@ export function LogHomeScreen({ coffees, onSelectCoffee, onAddNew }: Props) {
           <BeanRow coffee={item} onPress={() => onSelectCoffee(item)} />
         )}
       />
+
+      {/* Layered above the list (fades cards) but below the search dock. */}
+      <BottomChromeScrim />
 
       <Animated.View
         style={[
@@ -309,6 +313,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 16,
     right: 16,
+    zIndex: 60, // above BottomChromeScrim (zIndex 50) so the bar stays white
   },
   searchBar: {
     flexDirection: 'row',
