@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   Animated,
-  Keyboard,
-  Platform,
+  CellRendererProps,
+  Easing,
+  LayoutChangeEvent,
   Pressable,
   StyleSheet,
   Text,
@@ -11,7 +12,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Coffee, formatDate, ORIGIN_FLAGS } from '@shared/lib/coffees';
-import { colors, fonts } from '@shared/theme';
+import { colors, fonts, surfaces } from '@shared/theme';
 import { Bag } from '../Bag';
 import { Card } from '../Card';
 import { SearchIcon } from '../SearchIcon';
@@ -26,18 +27,57 @@ interface Props {
 
 /**
  * Default Log tab screen: the cupboard list is the home. Tapping a bean starts
- * an iteration; "Add" (subtle, top-right) starts a new bean. A floating search
- * pill sits over the tab bar and only raises the keyboard once tapped.
+ * an iteration; "Add" (subtle, top-right) starts a new bean. A search pill sits
+ * directly under the title, scrolling with the list header.
  */
 // Vertical breathing room above the brewing CTA, and the gap before the list
-// begins. Kept as constants so the collapse threshold can be derived from them.
+// begins. Kept as constants so the fade threshold can be derived from them.
 const CTA_PADDING_TOP = 100;
 const CTA_PADDING_BOTTOM = 16;
+
+// Number of sampled stops used to approximate an ease-in-out curve on the
+// scroll-linked CTA fade (RN's interpolate is linear between stops).
+const CTA_FADE_STEPS = 8;
+const easeInOut = Easing.inOut(Easing.ease);
+
+// How far (px) above the list's top edge a card begins fading before it clips
+// off — roughly one card height, so the fade reads as the card exiting.
+const CARD_FADE_DISTANCE = 100;
+
+interface FadingCellProps extends CellRendererProps<Coffee> {
+  scrollY: Animated.Value;
+}
+
+/**
+ * FlatList cell wrapper that fades each row 100% → 80% → 40% as it nears and
+ * exits the top edge of the list. The cell's onLayout y is its content offset;
+ * we MUST chain the incoming onLayout so VirtualizedList keeps measuring cell
+ * heights (otherwise windowing and scrollToIndex break).
+ */
+function FadingCell({ scrollY, onLayout, style, children }: FadingCellProps) {
+  const [y, setY] = useState<number | null>(null);
+  const handleLayout = (e: LayoutChangeEvent) => {
+    onLayout?.(e);
+    setY(e.nativeEvent.layout.y);
+  };
+  const opacity =
+    y == null
+      ? 1
+      : scrollY.interpolate({
+          inputRange: [y - CARD_FADE_DISTANCE, y - CARD_FADE_DISTANCE / 2, y],
+          outputRange: [1, 0.8, 0.4],
+          extrapolate: 'clamp',
+        });
+  return (
+    <Animated.View style={[style, { opacity }]} onLayout={handleLayout}>
+      {children}
+    </Animated.View>
+  );
+}
 
 export function LogHomeScreen({ coffees, onSelectCoffee, onAddNew }: Props) {
   const insets = useSafeAreaInsets();
   const [query, setQuery] = useState('');
-  const keyboardOffset = useKeyboardOffset();
 
   const scrollY = useRef(new Animated.Value(0)).current;
   const [ctaHeight, setCtaHeight] = useState(0);
@@ -53,32 +93,41 @@ export function LogHomeScreen({ coffees, onSelectCoffee, onAddNew }: Props) {
     );
   }, [coffees, query]);
 
-  // Hand the title off to the collapsed header as the big CTA scrolls out of
-  // view: fully collapsed by the time its baseline reaches the header.
+  // Fade the title + search pill out as the CTA scrolls up, ease-in-out: fully
+  // gone by the time the title baseline reaches the top bar. Sampled across a
+  // few stops because RN's interpolate is linear between stops.
   const titleBottom = Math.max(ctaHeight - CTA_PADDING_BOTTOM, 1);
-  const collapsedTitleOpacity = scrollY.interpolate({
-    inputRange: [Math.max(titleBottom - 32, 0), titleBottom],
-    outputRange: [0, 1],
+  const ctaFadeOpacity = scrollY.interpolate({
+    inputRange: Array.from(
+      { length: CTA_FADE_STEPS + 1 },
+      (_, i) => (titleBottom * i) / CTA_FADE_STEPS,
+    ),
+    outputRange: Array.from(
+      { length: CTA_FADE_STEPS + 1 },
+      (_, i) => 1 - easeInOut(i / CTA_FADE_STEPS),
+    ),
     extrapolate: 'clamp',
   });
 
-  // The screen sits inside a SafeAreaView that already pads content up by
-  // insets.bottom, so subtract it back out: the tab bar lives outside that
-  // padding. Its pill top is at max(insets,16) + (TAB_BAR_HEIGHT - 16) from the
-  // true screen bottom; +8 floats the search bar 8px above it.
-  const searchClearance =
-    Math.max(insets.bottom, 16) - insets.bottom + TAB_BAR_HEIGHT + 0;
-  const listBottomPad = searchClearance + 60;
+  // Stable cell renderer so cells aren't remounted each render; injects the
+  // (ref-backed, stable) scrollY into every row's fade.
+  const CellRendererComponent = useMemo(() => {
+    const Cell = (p: CellRendererProps<Coffee>) => (
+      <FadingCell {...p} scrollY={scrollY} />
+    );
+    Cell.displayName = 'LogCell';
+    return Cell;
+  }, [scrollY]);
+
+  // The screen sits inside a SafeAreaView padded up by insets.bottom; the tab
+  // bar lives outside that padding, so add TAB_BAR_HEIGHT back (netting out the
+  // inset) plus breathing room so the last card clears the bottom chrome.
+  const listBottomPad =
+    Math.max(insets.bottom, 16) - insets.bottom + TAB_BAR_HEIGHT + 24;
 
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
-        <Animated.Text
-          style={[styles.collapsedTitle, { opacity: collapsedTitleOpacity }]}
-          numberOfLines={1}
-        >
-          What are we brewing today?
-        </Animated.Text>
         <Pressable
           onPress={onAddNew}
           style={({ pressed }) => [styles.addPill, pressed && styles.addPillPressed]}
@@ -93,6 +142,7 @@ export function LogHomeScreen({ coffees, onSelectCoffee, onAddNew }: Props) {
         data={filtered}
         keyExtractor={(c: Coffee) => c.id}
         keyboardShouldPersistTaps="handled"
+        style={styles.listFill}
         contentContainerStyle={[styles.list, { paddingBottom: listBottomPad }]}
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={16}
@@ -100,13 +150,39 @@ export function LogHomeScreen({ coffees, onSelectCoffee, onAddNew }: Props) {
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
           { useNativeDriver: true },
         )}
+        CellRendererComponent={CellRendererComponent}
         ListHeaderComponent={
-          <View
-            style={styles.cta}
+          <Animated.View
+            style={[styles.cta, { opacity: ctaFadeOpacity }]}
             onLayout={(e) => setCtaHeight(e.nativeEvent.layout.height)}
           >
             <Text style={styles.ctaTitle}>What are we brewing today?</Text>
-          </View>
+            <View style={styles.searchShadow}>
+              <View style={styles.searchBar}>
+                <SearchIcon size={20} color={colors.greyDark} strokeWidth={2} />
+                <TextInput
+                  style={styles.searchInput}
+                  value={query}
+                  onChangeText={setQuery}
+                  placeholder="Search your cupboard"
+                  placeholderTextColor={colors.greyDark}
+                  accessibilityLabel="Search your cupboard"
+                  returnKeyType="search"
+                />
+                {query.length > 0 ? (
+                  <Pressable
+                    onPress={() => setQuery('')}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel="Clear search"
+                    style={styles.clearButton}
+                  >
+                    <Text style={styles.clearGlyph}>×</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+            </View>
+          </Animated.View>
         }
         ListEmptyComponent={
           <Text style={styles.empty}>
@@ -120,39 +196,8 @@ export function LogHomeScreen({ coffees, onSelectCoffee, onAddNew }: Props) {
         )}
       />
 
-      {/* Layered above the list (fades cards) but below the search dock. */}
+      {/* Soft gradient that fades the list into the tab bar at the bottom. */}
       <BottomChromeScrim />
-
-      <Animated.View
-        style={[
-          styles.searchDock,
-          { bottom: searchClearance, transform: [{ translateY: keyboardOffset }] },
-        ]}
-      >
-        <View style={styles.searchBar}>
-          <SearchIcon size={20} color={colors.greyDark} strokeWidth={2} />
-          <TextInput
-            style={styles.searchInput}
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Search your cupboard"
-            placeholderTextColor={colors.greyDark}
-            accessibilityLabel="Search your cupboard"
-            returnKeyType="search"
-          />
-          {query.length > 0 ? (
-            <Pressable
-              onPress={() => setQuery('')}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel="Clear search"
-              style={styles.clearButton}
-            >
-              <Text style={styles.clearGlyph}>×</Text>
-            </Pressable>
-          ) : null}
-        </View>
-      </Animated.View>
     </View>
   );
 }
@@ -174,10 +219,11 @@ function BeanRow({ coffee, onPress }: { coffee: Coffee; onPress: () => void }) {
           <Text style={styles.roasterName} numberOfLines={1}>
             {coffee.roaster}
           </Text>
-          {coffee.origin ? (
+          {coffee.origin || coffee.roastLevel ? (
             <Text style={styles.origin} numberOfLines={1}>
-              {flag ? `${flag} ` : ''}
-              {coffee.origin}
+              {coffee.origin ? `${flag ? `${flag} ` : ''}${coffee.origin}` : ''}
+              {coffee.origin && coffee.roastLevel ? '  •  ' : ''}
+              {coffee.roastLevel ?? ''}
             </Text>
           ) : null}
         </View>
@@ -187,54 +233,31 @@ function BeanRow({ coffee, onPress }: { coffee: Coffee; onPress: () => void }) {
   );
 }
 
-/** Lifts the docked search bar above the soft keyboard when it opens. */
-function useKeyboardOffset(): Animated.Value {
-  const offset = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    const showEvt = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
-    const hideEvt = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
-    const onShow = Keyboard.addListener(showEvt, (e) => {
-      Animated.timing(offset, {
-        toValue: -e.endCoordinates.height,
-        duration: 220,
-        useNativeDriver: true,
-      }).start();
-    });
-    const onHide = Keyboard.addListener(hideEvt, () => {
-      Animated.timing(offset, { toValue: 0, duration: 220, useNativeDriver: true }).start();
-    });
-    return () => {
-      onShow.remove();
-      onHide.remove();
-    };
-  }, [offset]);
-  return offset;
-}
-
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   header: {
+    // Overlay the list (no fill) so cards stay visible flowing up behind the
+    // Add button as they fade past the top edge.
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 2,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: colors.pearl,
+    justifyContent: 'flex-end',
     paddingHorizontal: 24,
     paddingVertical: 8,
     gap: 12,
   },
-  collapsedTitle: {
-    flex: 1,
-    fontFamily: fonts.serif,
-    fontSize: 17,
-    color: colors.black,
-    lineHeight: 23,
-    letterSpacing: -0.17,
-  },
   cta: {
     paddingTop: CTA_PADDING_TOP,
     paddingBottom: CTA_PADDING_BOTTOM,
+    alignItems: 'center',
+    gap: 24,
   },
   ctaTitle: {
+    // H3 — Avenir Heavy 21/800, line-height 1.4 (see design system).
     fontFamily: fonts.sans,
     fontWeight: '800',
     fontSize: 21,
@@ -242,6 +265,7 @@ const styles = StyleSheet.create({
     lineHeight: 29,
     letterSpacing: -0.5,
     textAlign: 'center',
+    alignSelf: 'stretch',
   },
   addPill: {
     paddingHorizontal: 18,
@@ -249,10 +273,10 @@ const styles = StyleSheet.create({
     borderRadius: 100,
     backgroundColor: '#ffffff',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 1,
   },
   addPillPressed: { opacity: 0.85 },
   addPillText: {
@@ -261,6 +285,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.black,
   },
+  listFill: { flex: 1 },
   list: { paddingHorizontal: 24, gap: 12 },
   beanCard: {
     flexDirection: 'row',
@@ -309,11 +334,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     lineHeight: 20,
   },
-  searchDock: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    zIndex: 60, // above BottomChromeScrim (zIndex 50) so the bar stays white
+  searchShadow: {
+    alignSelf: 'center',
+    width: '80%',
+    borderRadius: 25,
+    backgroundColor: surfaces.pillFill,
+    ...surfaces.shadow,
   },
   searchBar: {
     flexDirection: 'row',
@@ -322,14 +348,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     height: 50,
     borderRadius: 25,
-    borderWidth: 0.5,
-    borderColor: 'rgba(0,0,0,0.08)',
-    backgroundColor: '#ffffff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    elevation: 4,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: surfaces.pillHairline,
+    backgroundColor: surfaces.pillFill,
+    overflow: 'hidden',
   },
   searchInput: {
     flex: 1,
