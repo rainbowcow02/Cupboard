@@ -7,6 +7,7 @@ import {
 } from '@gorhom/bottom-sheet';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  Keyboard,
   Pressable,
   StyleSheet,
   Text,
@@ -21,6 +22,7 @@ import { SearchIcon } from './SearchIcon';
 import { SortChevron } from './SortChevron';
 import { DetachedSheetBackground } from './surfaces/DetachedSheetBackground';
 import { DetachedSheetContentClip } from './surfaces/DetachedSheetContentClip';
+import { SheetHeader } from './surfaces/SheetHeader';
 import { floatingSurfaceStyles } from './surfaces/floatingSurfaceStyles';
 
 interface CommonProps {
@@ -84,6 +86,9 @@ export function ComboBoxField(props: ComboBoxFieldProps) {
     !baseOptions.some((option) => option.toLowerCase() === trimmedQuery.toLowerCase());
 
   const present = useCallback(() => {
+    // Drop any keyboard from a previously focused field (e.g. the Bean name
+    // input) so the detached sheet doesn't open hidden behind it.
+    Keyboard.dismiss();
     // Start with an empty query so the full option list shows first —
     // searching/adding is the secondary action.
     setQuery('');
@@ -123,6 +128,11 @@ export function ComboBoxField(props: ComboBoxFieldProps) {
     choose(trimmedQuery);
     if (props.multiple) setQuery('');
   }, [choose, trimmedQuery, props.multiple]);
+
+  // Multi-select only: drop every selection, matching the filter sheet's Clear.
+  const clearAll = useCallback(() => {
+    if (props.multiple) props.onChange([]);
+  }, [props]);
 
   const renderBackdrop = useCallback(
     (props: BottomSheetBackdropProps) => (
@@ -193,9 +203,18 @@ export function ComboBoxField(props: ComboBoxFieldProps) {
           style={floatingSurfaceStyles.sheetDetached}
         >
           <DetachedSheetContentClip>
-            <View style={styles.headerRow}>
-              <Text style={floatingSurfaceStyles.title}>{label}</Text>
-            </View>
+            <SheetHeader
+              title={label}
+              subtitle={
+                multiple && selected.length > 0
+                  ? `${selected.length} of ${baseOptions.length} selected`
+                  : `${baseOptions.length} results`
+              }
+              onClear={multiple ? clearAll : undefined}
+              clearAccessibilityLabel={`Clear ${label} selection`}
+              showClear={multiple && selected.length > 0}
+              animatedClear
+            />
 
             <View style={styles.searchRow}>
               <SearchIcon size={18} color={colors.greyDark} strokeWidth={2} />
@@ -315,11 +334,6 @@ const styles = StyleSheet.create({
   },
   triggerPlaceholder: {
     color: colors.greyDark,
-  },
-  headerRow: {
-    paddingHorizontal: 24,
-    paddingTop: 6,
-    paddingBottom: 10,
   },
   searchRow: {
     flexDirection: 'row',
