@@ -34,26 +34,15 @@ function Chevron({ color }: { color: string }) {
   );
 }
 
-/** Split a comma-separated tasting-note string into capitalized chips. */
-function flavorNotes(notes: string | undefined): string[] {
-  if (!notes?.trim()) return [];
-  return notes
-    .split(',')
-    .map((note) => note.trim())
-    .filter(Boolean)
-    .map((note) => note.charAt(0).toUpperCase() + note.slice(1));
-}
-
 /**
- * Recipe picker for a selected bean: a header showing the chosen bean and its
- * flavor notes, then the bean's past brews as full BrewCards. Each card carries
- * a green "Duplicate this recipe" tab that seeds a new editable recipe. "New"
- * (top-right) starts from a blank form.
+ * Recipe picker for a selected bean: a header showing the chosen bean, then the
+ * bean's past brews as full BrewCards. Each card carries a green "Duplicate this
+ * recipe" tab that seeds a new editable recipe. "New" (top-right) starts from a
+ * blank form.
  */
 export function SetRecipeScreen({ coffee, onBack, onPickRecipe, onNew, onOpenBean }: Props) {
   const insets = useSafeAreaInsets();
   const brews = coffee.brews;
-  const notes = flavorNotes(coffee.notes);
   const listBottomPad = Math.max(insets.bottom, 16) + TAB_BAR_HEIGHT + 48;
 
   return (
@@ -91,16 +80,6 @@ export function SetRecipeScreen({ coffee, onBack, onPickRecipe, onNew, onOpenBea
                 trailing={<Chevron color={colors.greyDark} />}
               />
             </View>
-
-            {notes.length > 0 ? (
-              <View style={styles.notesRow}>
-                {notes.map((note) => (
-                  <View key={note} style={styles.notePill}>
-                    <Text style={styles.notePillText}>{note}</Text>
-                  </View>
-                ))}
-              </View>
-            ) : null}
 
             <View style={styles.headerDivider} />
           </View>
@@ -177,23 +156,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.greyDark,
     lineHeight: 21,
-  },
-  notesRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  notePill: {
-    backgroundColor: 'rgba(252,153,155,0.22)',
-    borderRadius: surfaces.pillRadius,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-  },
-  notePillText: {
-    fontFamily: fonts.sans,
-    fontWeight: '500',
-    fontSize: 13,
-    color: colors.burgundy,
   },
   headerDivider: { height: 1, backgroundColor: colors.greyLight },
   recipeItem: {},
