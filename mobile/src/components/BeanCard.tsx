@@ -34,7 +34,9 @@ export function BeanCard({ coffee, onPress, accessibilityLabel, trailing }: Prop
         {coffee.origin || coffee.roastLevel ? (
           <Text style={styles.origin} numberOfLines={1}>
             {coffee.origin ? `${flag ? `${flag} ` : ''}${coffee.origin}` : ''}
-            {coffee.origin && coffee.roastLevel ? '  •  ' : ''}
+            {coffee.origin && coffee.roastLevel ? (
+              <Text style={styles.originDot}>{'  •  '}</Text>
+            ) : null}
             {coffee.roastLevel ?? ''}
           </Text>
         ) : null}
@@ -79,20 +81,25 @@ const styles = StyleSheet.create({
     letterSpacing: -0.4,
     lineHeight: 24,
   },
-  // Roaster, country, and roast level share one style — Avenir Roman 15/400,
-  // grey-dark, line-height 1.5 (see Figma list-item design).
+  // Roaster, country, and roast level share one style — Avenir 14/500,
+  // grey-dark, line-height 17.
   roasterName: {
     fontFamily: fonts.sans,
-    fontWeight: '400',
-    fontSize: 15,
+    fontWeight: '500',
+    fontSize: 14,
     color: colors.greyDark,
-    lineHeight: 22,
+    lineHeight: 17,
   },
   origin: {
     fontFamily: fonts.sans,
-    fontWeight: '400',
-    fontSize: 15,
+    fontWeight: '500',
+    fontSize: 14,
     color: colors.greyDark,
-    lineHeight: 22,
+    lineHeight: 17,
+  },
+  // The separator bullet keeps its original smaller size so it doesn't
+  // visually dominate the country/roast text.
+  originDot: {
+    fontSize: 10,
   },
 });
