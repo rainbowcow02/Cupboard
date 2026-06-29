@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: colors.moss,
+    backgroundColor: colors.burgundy,
     borderTopLeftRadius: surfaces.cardRadius,
     borderTopRightRadius: surfaces.cardRadius,
     paddingTop: 12,
