@@ -1,11 +1,10 @@
 import { useRef } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BlurView } from 'expo-blur';
 import Svg, { Path } from 'react-native-svg';
 import { Brew, Coffee } from '@shared/lib/coffees';
 import { colors, fonts, surfaces } from '@shared/theme';
-import { BackButton } from '../BackButton';
+import { GlassBackButton } from '../GlassBackButton';
 import { BeanCard } from '../BeanCard';
 import { BrewCard } from '../BrewCard';
 import { TAB_BAR_HEIGHT } from '../TabBar';
@@ -48,25 +47,11 @@ export function SetRecipeScreen({ coffee, onBack, onPickRecipe, onNew, onOpenBea
   const listBottomPad = Math.max(insets.bottom, 16) + TAB_BAR_HEIGHT + 48;
 
   const scrollY = useRef(new Animated.Value(0)).current;
-  // Fade the frosted circle in behind the back icon once the user scrolls past the title.
-  const backGlassOpacity = scrollY.interpolate({
-    inputRange: [0, 32],
-    outputRange: [0, 1],
-    extrapolate: 'clamp',
-  });
 
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
-        <View style={styles.backButtonWrap}>
-          <Animated.View
-            style={[styles.backGlass, { opacity: backGlassOpacity }]}
-            pointerEvents="none"
-          >
-            <BlurView intensity={28} tint="light" style={StyleSheet.absoluteFill} />
-          </Animated.View>
-          <BackButton onPress={onBack} />
-        </View>
+        <GlassBackButton onPress={onBack} scrollY={scrollY} style={styles.backButton} />
         <Pressable
           onPress={onNew}
           style={({ pressed }) => [styles.newPill, pressed && styles.newPillPressed]}
@@ -150,21 +135,7 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 8,
   },
-  backButtonWrap: {
-    width: 44,
-    height: 44,
-    marginLeft: -14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  backGlass: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: 22,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: surfaces.pillHairline,
-    backgroundColor: 'rgba(255,255,255,0.35)',
-  },
+  backButton: { marginLeft: -14 },
   newPill: {
     paddingHorizontal: 18,
     paddingVertical: 9,
@@ -186,7 +157,7 @@ const styles = StyleSheet.create({
   list: { paddingHorizontal: 24, paddingTop: 64, gap: 24 },
   listHeader: { gap: 24 },
   intro: { gap: 16 },
-  titleBlock: { gap: 4 },
+  titleBlock: { gap: 4, marginTop: 8 },
   title: {
     fontFamily: fonts.serif,
     fontSize: 28,

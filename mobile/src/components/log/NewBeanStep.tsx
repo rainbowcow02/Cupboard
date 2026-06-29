@@ -1,12 +1,5 @@
 import { useMemo, useState } from 'react';
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { bagImgFor, coffeeId, Coffee, ORIGIN_FLAGS } from '@shared/lib/coffees';
 import { colors, fonts } from '@shared/theme';
 import { useCoffees } from '../../hooks/useCoffees';
@@ -14,7 +7,7 @@ import { ComboBoxField } from '../ComboBoxField';
 import { ErrorBox } from '../ErrorBox';
 import { FormField, fieldInputStyle } from '../FormField';
 import { PrimaryButton } from '../PrimaryButton';
-import { TAB_BAR_HEIGHT } from '../TabBar';
+import { LogFormScaffold } from './LogFormScaffold';
 
 /** Distinct, non-empty values for a coffee field, sorted A–Z. */
 function distinctValues(coffees: Coffee[], field: keyof Coffee): string[] {
@@ -50,21 +43,25 @@ const blank: NewBeanDraft = {
 
 interface Props {
   bottomInset: number;
+  onBack: () => void;
   onContinue: (coffee: Coffee) => void;
   /** Shown on the manual-add path; opens the paste-a-link flow. Hidden in review mode. */
   onAddViaLink?: () => void;
   /** Pre-fills the form — used to review details extracted from a link. */
   initialDraft?: Partial<NewBeanDraft>;
-  prompt?: string;
+  title?: string;
+  description?: string;
   submitLabel?: string;
 }
 
 export function NewBeanStep({
   bottomInset,
+  onBack,
   onContinue,
   onAddViaLink,
   initialDraft,
-  prompt = 'Tell Cupboard about the bag you’re opening.',
+  title = 'Add new coffee',
+  description = 'Enter your coffee details, or add a link to the coffee bean.',
   submitLabel = 'Continue',
 }: Props) {
   const { coffees } = useCoffees();
@@ -85,6 +82,12 @@ export function NewBeanStep({
 
   const set = (k: keyof NewBeanDraft) => (v: string) =>
     setForm((f) => ({ ...f, [k]: v }));
+
+  // Variety is stored as a comma-joined string but edited as a multi-select list.
+  const varietyList = form.variety
+    ? form.variety.split(',').map((v) => v.trim()).filter(Boolean)
+    : [];
+  const setVariety = (list: string[]) => set('variety')(list.join(', '));
 
   const continueToRecipe = () => {
     if (!form.bean.trim()) {
@@ -112,15 +115,13 @@ export function NewBeanStep({
     onContinue(coffee);
   };
 
-  const scrollBottomPad = Math.max(bottomInset, 16) + TAB_BAR_HEIGHT + 48;
-
   return (
-    <ScrollView
-      contentContainerStyle={[styles.content, { paddingBottom: scrollBottomPad }]}
-      keyboardShouldPersistTaps="handled"
+    <LogFormScaffold
+      onBack={onBack}
+      title={title}
+      description={description}
+      bottomInset={bottomInset}
     >
-      <Text style={styles.prompt}>{prompt}</Text>
-
       {onAddViaLink ? (
         <Pressable
           onPress={onAddViaLink}
@@ -130,8 +131,8 @@ export function NewBeanStep({
         >
           <Text style={styles.linkGlyph}>🔗</Text>
           <View style={styles.linkText}>
-            <Text style={styles.linkTitle}>Add from a link</Text>
-            <Text style={styles.linkSubtitle}>Paste a roaster URL to fill these in automatically</Text>
+            <Text style={styles.linkTitle}>Add bean via link</Text>
+            <Text style={styles.linkSubtitle}>Get bean details from roaster automatically</Text>
           </View>
         </Pressable>
       ) : null}
@@ -139,28 +140,31 @@ export function NewBeanStep({
       {error ? <ErrorBox message={error} style={styles.error} /> : null}
 
       <View style={styles.fields}>
-        <FormField label="Bean">
+        <FormField label="Bean" horizontal>
           <TextInput
             style={fieldInputStyle}
             value={form.bean}
             onChangeText={set('bean')}
             placeholder="Add bean name"
             placeholderTextColor={colors.greyDark}
+            textAlign={form.bean ? 'right' : 'left'}
             returnKeyType="next"
           />
         </FormField>
-        <FormField label="Roaster">
+        <FormField label="Roaster" horizontal>
           <ComboBoxField
             label="Roaster"
+            align="right"
             value={form.roaster}
             options={options.roaster}
             placeholder="Pick a roaster"
             onChange={set('roaster')}
           />
         </FormField>
-        <FormField label="Country">
+        <FormField label="Country" horizontal>
           <ComboBoxField
             label="Country"
+            align="right"
             value={form.origin}
             options={options.origin}
             placeholder="Where's it from?"
@@ -168,51 +172,55 @@ export function NewBeanStep({
             flagFor={(option) => ORIGIN_FLAGS[option] || ''}
           />
         </FormField>
-        <View style={styles.row}>
-          <FormField label="Process">
-            <ComboBoxField
-              label="Process"
-              value={form.process}
-              options={options.process}
-              placeholder="Pick a process"
-              onChange={set('process')}
-            />
-          </FormField>
-          <FormField label="Roast">
-            <ComboBoxField
-              label="Roast"
-              value={form.roastLevel}
-              options={options.roastLevel}
-              placeholder="Pick a roast"
-              onChange={set('roastLevel')}
-            />
-          </FormField>
-        </View>
-        <FormField label="Region">
+        <FormField label="Process" horizontal>
+          <ComboBoxField
+            label="Process"
+            align="right"
+            value={form.process}
+            options={options.process}
+            placeholder="Pick a process"
+            onChange={set('process')}
+          />
+        </FormField>
+        <FormField label="Roast" horizontal>
+          <ComboBoxField
+            label="Roast"
+            align="right"
+            value={form.roastLevel}
+            options={options.roastLevel}
+            placeholder="Pick a roast"
+            onChange={set('roastLevel')}
+          />
+        </FormField>
+        <FormField label="Region" horizontal>
           <ComboBoxField
             label="Region"
+            align="right"
             value={form.region}
             options={options.region}
             placeholder="Add a region"
             onChange={set('region')}
           />
         </FormField>
-        <FormField label="Variety">
+        <FormField label="Variety" horizontal>
           <ComboBoxField
             label="Variety"
-            value={form.variety}
+            align="right"
+            multiple
+            value={varietyList}
             options={options.variety}
             placeholder="Add a variety"
-            onChange={set('variety')}
+            onChange={setVariety}
           />
         </FormField>
-        <FormField label="Tasting notes">
+        <FormField label="Tasting notes" horizontal>
           <TextInput
             style={fieldInputStyle}
             value={form.notes}
             onChangeText={set('notes')}
-            placeholder="Add tasting notes"
+            placeholder="Rose Tea, Oolong, Cantalope"
             placeholderTextColor={colors.greyDark}
+            textAlign={form.notes ? 'right' : 'left'}
             returnKeyType="done"
           />
         </FormField>
@@ -224,22 +232,12 @@ export function NewBeanStep({
         style={styles.continueBtn}
         accessibilityLabel="Continue to recipe setup"
       />
-    </ScrollView>
+    </LogFormScaffold>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { paddingHorizontal: 24, paddingTop: 4 },
-  prompt: {
-    fontFamily: fonts.sans,
-    fontWeight: '500',
-    fontSize: 15,
-    color: colors.greyDark,
-    lineHeight: 21,
-    marginBottom: 16,
-  },
   fields: { gap: 14 },
-  row: { flexDirection: 'row', gap: 10 },
   linkRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -249,7 +247,7 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     borderColor: 'rgba(0,0,0,0.12)',
     backgroundColor: 'rgba(255,255,255,0.7)',
-    marginBottom: 16,
+    marginBottom: 32,
   },
   linkRowPressed: { opacity: 0.85 },
   linkGlyph: { fontSize: 20 },

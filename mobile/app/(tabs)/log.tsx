@@ -5,7 +5,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Brew, Coffee } from '@shared/lib/coffees';
 import { colors } from '@shared/theme';
 import { AddViaLinkStep } from '../../src/components/log/AddViaLinkStep';
-import { LogHeader } from '../../src/components/log/LogHeader';
 import { LogHomeScreen } from '../../src/components/log/LogHomeScreen';
 import { NewBeanStep } from '../../src/components/log/NewBeanStep';
 import { RecipeIterationScreen } from '../../src/components/log/RecipeIterationScreen';
@@ -19,20 +18,6 @@ type Step =
   | { name: 'addViaLink' }
   | { name: 'setRecipe'; coffee: Coffee }
   | { name: 'editRecipe'; coffee: Coffee; base: Brew | null };
-
-function titleFor(step: Step): { title?: string; subtitle?: string } {
-  switch (step.name) {
-    case 'logHome':
-    case 'setRecipe':
-      return {};
-    case 'newBean':
-      return { title: 'New coffee', subtitle: 'Add it to your cupboard' };
-    case 'addViaLink':
-      return { title: 'Add from a link' };
-    case 'editRecipe':
-      return { title: step.coffee.bean, subtitle: step.coffee.roaster };
-  }
-}
 
 export default function LogScreen() {
   const { coffees, refresh } = useCoffees();
@@ -64,18 +49,10 @@ export default function LogScreen() {
     });
   }, []);
 
-  const { title, subtitle } = titleFor(step);
-
-  // setRecipe renders its own header (left-aligned title + "New" action).
-  const showLogHeader = step.name !== 'logHome' && step.name !== 'setRecipe';
-
   return (
     <SafeAreaView style={styles.container}>
       {/* logHome renders its own scrim so the floating search bar can sit above it. */}
       {step.name !== 'logHome' && <BottomChromeScrim />}
-      {showLogHeader ? (
-        <LogHeader title={title} subtitle={subtitle} onBack={goBack} />
-      ) : null}
 
       {step.name === 'logHome' && (
         <LogHomeScreen
@@ -88,6 +65,7 @@ export default function LogScreen() {
       {step.name === 'newBean' && (
         <NewBeanStep
           bottomInset={insets.bottom}
+          onBack={goBack}
           onContinue={(coffee) => setStep({ name: 'setRecipe', coffee })}
           onAddViaLink={() => setStep({ name: 'addViaLink' })}
         />
@@ -96,6 +74,7 @@ export default function LogScreen() {
       {step.name === 'addViaLink' && (
         <AddViaLinkStep
           bottomInset={insets.bottom}
+          onBack={goBack}
           onConfirm={(coffee) => setStep({ name: 'setRecipe', coffee })}
         />
       )}
@@ -114,6 +93,7 @@ export default function LogScreen() {
         <RecipeIterationScreen
           coffee={step.coffee}
           base={step.base}
+          onBack={goBack}
           onSaved={onSavedAndReset}
         />
       )}

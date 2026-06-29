@@ -1,16 +1,17 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, TextInput, View } from 'react-native';
 import { Coffee } from '@shared/lib/coffees';
-import { colors, fonts } from '@shared/theme';
+import { colors } from '@shared/theme';
 import { extractBean, ExtractedBean } from '../../lib/api';
 import { ErrorBox } from '../ErrorBox';
 import { FormField, fieldInputStyle } from '../FormField';
 import { PrimaryButton } from '../PrimaryButton';
-import { TAB_BAR_HEIGHT } from '../TabBar';
+import { LogFormScaffold } from './LogFormScaffold';
 import { NewBeanDraft, NewBeanStep } from './NewBeanStep';
 
 interface Props {
   bottomInset: number;
+  onBack: () => void;
   onConfirm: (coffee: Coffee) => void;
 }
 
@@ -31,7 +32,7 @@ function draftFrom(extracted: ExtractedBean): Partial<NewBeanDraft> {
  * Paste a roaster URL → extract the bean's details server-side → review and
  * edit in the standard new-bean form before saving.
  */
-export function AddViaLinkStep({ bottomInset, onConfirm }: Props) {
+export function AddViaLinkStep({ bottomInset, onBack, onConfirm }: Props) {
   const [url, setUrl] = useState('');
   const [extracting, setExtracting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -59,26 +60,23 @@ export function AddViaLinkStep({ bottomInset, onConfirm }: Props) {
     return (
       <NewBeanStep
         bottomInset={bottomInset}
+        onBack={() => setDraft(null)}
         initialDraft={draft}
-        prompt="Review the details we pulled in — edit anything before saving."
+        title="Review details"
+        description="Edit anything we pulled in before saving."
         submitLabel="Save coffee"
         onContinue={onConfirm}
       />
     );
   }
 
-  const scrollBottomPad = Math.max(bottomInset, 16) + TAB_BAR_HEIGHT + 48;
-
   return (
-    <ScrollView
-      contentContainerStyle={[styles.content, { paddingBottom: scrollBottomPad }]}
-      keyboardShouldPersistTaps="handled"
+    <LogFormScaffold
+      onBack={onBack}
+      title="Add via link"
+      description="Paste a link to a coffee and we’ll pull in the bean, origin, process, and tasting notes for you to review."
+      bottomInset={bottomInset}
     >
-      <Text style={styles.prompt}>
-        Paste a link to a coffee on a roaster’s site and we’ll pull in the bean,
-        origin, process, and tasting notes for you to review.
-      </Text>
-
       {error ? <ErrorBox message={error} style={styles.error} /> : null}
 
       <View style={styles.fields}>
@@ -106,20 +104,11 @@ export function AddViaLinkStep({ bottomInset, onConfirm }: Props) {
         style={styles.submit}
         accessibilityLabel="Pull bean details from the link"
       />
-    </ScrollView>
+    </LogFormScaffold>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { paddingHorizontal: 24, paddingTop: 4 },
-  prompt: {
-    fontFamily: fonts.sans,
-    fontWeight: '500',
-    fontSize: 15,
-    color: colors.greyDark,
-    lineHeight: 21,
-    marginBottom: 16,
-  },
   fields: { gap: 14 },
   error: { marginBottom: 16 },
   submit: { marginTop: 24 },

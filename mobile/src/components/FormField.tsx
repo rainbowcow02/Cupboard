@@ -5,9 +5,20 @@ interface Props {
   label: string;
   children: React.ReactNode;
   style?: ViewStyle;
+  /** Lay the label out left, the input right, as a single settings-style row. */
+  horizontal?: boolean;
 }
 
-export function FormField({ label, children, style }: Props) {
+export function FormField({ label, children, style, horizontal }: Props) {
+  if (horizontal) {
+    return (
+      <View style={[styles.rowContainer, style]}>
+        <Text style={styles.rowLabel}>{label}</Text>
+        <View style={styles.rowInput}>{children}</View>
+      </View>
+    );
+  }
+
   return (
     <View style={[styles.container, style]}>
       <Text style={styles.label}>{label}</Text>
@@ -31,6 +42,20 @@ export const fieldInputStyle = {
 
 const styles = StyleSheet.create({
   container: { flex: 1, minWidth: 0 },
+  rowContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    minHeight: 46,
+  },
+  rowLabel: {
+    width: 92,
+    fontFamily: fonts.sans,
+    fontWeight: '600',
+    fontSize: 15,
+    color: colors.black,
+  },
+  rowInput: { flex: 1, minWidth: 0 },
   label: {
     fontFamily: fonts.sans,
     fontWeight: '500',

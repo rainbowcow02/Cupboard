@@ -1,6 +1,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import {
+  Animated as RNAnimated,
   Image,
   NativeScrollEvent,
   NativeSyntheticEvent,
@@ -13,7 +14,7 @@ import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Brew, Coffee } from '@shared/lib/coffees';
 import { colors, fonts } from '@shared/theme';
-import { BackButton } from '../../src/components/BackButton';
+import { GlassBackButton } from '../../src/components/GlassBackButton';
 import { BagLabel } from '../../src/components/BagLabel';
 import { BrewCard } from '../../src/components/BrewCard';
 import { Card } from '../../src/components/Card';
@@ -70,10 +71,16 @@ export default function CoffeeDetailScreen() {
   // Synchronous scroll channel so BrewCard can keep the expand button anchored on collapse.
   const scrollViewRef = useRef<Animated.ScrollView | null>(null);
   const scrollYRef = useRef(0);
+  // Drives the frosted circle behind the back button as the hero scrolls away.
+  const scrollY = useRef(new RNAnimated.Value(0)).current;
 
-  const captureScrollPosition = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    scrollYRef.current = e.nativeEvent.contentOffset.y;
-  }, []);
+  const captureScrollPosition = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      scrollYRef.current = e.nativeEvent.contentOffset.y;
+      scrollY.setValue(e.nativeEvent.contentOffset.y);
+    },
+    [scrollY],
+  );
 
   const scrollToY = useCallback((y: number) => {
     const next = Math.max(0, y);
@@ -112,8 +119,14 @@ export default function CoffeeDetailScreen() {
 
   return (
     <View style={styles.screen}>
-      {/* Back button — floats over scroll content with no background fill */}
-      <BackButton onPress={() => router.back()} style={[styles.backBtn, { top: 16 }]} />
+      {/* Back button — frosted circle fades in as the hero scrolls away */}
+      <GlassBackButton
+        onPress={() => router.back()}
+        scrollY={scrollY}
+        fadeStart={220}
+        fadeEnd={300}
+        style={[styles.backBtn, { top: 16 }]}
+      />
 
       <Animated.ScrollView
         ref={scrollViewRef}
