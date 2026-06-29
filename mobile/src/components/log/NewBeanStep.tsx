@@ -147,14 +147,12 @@ export function NewBeanStep({
             onChangeText={set('bean')}
             placeholder="Add bean name"
             placeholderTextColor={colors.greyDark}
-            textAlign={form.bean ? 'right' : 'left'}
             returnKeyType="next"
           />
         </FormField>
         <FormField label="Roaster" horizontal>
           <ComboBoxField
             label="Roaster"
-            align="right"
             value={form.roaster}
             options={options.roaster}
             placeholder="Pick a roaster"
@@ -164,7 +162,6 @@ export function NewBeanStep({
         <FormField label="Country" horizontal>
           <ComboBoxField
             label="Country"
-            align="right"
             value={form.origin}
             options={options.origin}
             placeholder="Where's it from?"
@@ -175,7 +172,6 @@ export function NewBeanStep({
         <FormField label="Process" horizontal>
           <ComboBoxField
             label="Process"
-            align="right"
             value={form.process}
             options={options.process}
             placeholder="Pick a process"
@@ -185,7 +181,6 @@ export function NewBeanStep({
         <FormField label="Roast" horizontal>
           <ComboBoxField
             label="Roast"
-            align="right"
             value={form.roastLevel}
             options={options.roastLevel}
             placeholder="Pick a roast"
@@ -195,7 +190,6 @@ export function NewBeanStep({
         <FormField label="Region" horizontal>
           <ComboBoxField
             label="Region"
-            align="right"
             value={form.region}
             options={options.region}
             placeholder="Add a region"
@@ -205,7 +199,6 @@ export function NewBeanStep({
         <FormField label="Variety" horizontal>
           <ComboBoxField
             label="Variety"
-            align="right"
             multiple
             value={varietyList}
             options={options.variety}
@@ -220,7 +213,6 @@ export function NewBeanStep({
             onChangeText={set('notes')}
             placeholder="Rose Tea, Oolong, Cantalope"
             placeholderTextColor={colors.greyDark}
-            textAlign={form.notes ? 'right' : 'left'}
             returnKeyType="done"
           />
         </FormField>
