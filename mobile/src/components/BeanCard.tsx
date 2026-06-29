@@ -12,6 +12,11 @@ interface Props {
   accessibilityLabel: string;
   /** Right-aligned content (e.g. a date label or a chevron). */
   trailing?: ReactNode;
+  /**
+   * 'sm' (default) is the compact recipe-picker layout; 'lg' matches the
+   * Explore sheet's larger 72px bag with tighter left padding.
+   */
+  size?: 'sm' | 'lg';
 }
 
 /**
@@ -19,11 +24,19 @@ interface Props {
  * origin/roast metadata, with optional trailing content. Shared by the Log
  * home shelf and the recipe picker.
  */
-export function BeanCard({ coffee, onPress, accessibilityLabel, trailing }: Props) {
+export function BeanCard({
+  coffee,
+  onPress,
+  accessibilityLabel,
+  trailing,
+  size = 'sm',
+}: Props) {
   const flag = coffee.origin ? ORIGIN_FLAGS[coffee.origin] ?? '' : '';
+  const isLarge = size === 'lg';
+  const bagSize = isLarge ? 72 : 60;
   const body = (
-    <Card style={styles.beanCard}>
-      <Bag coffee={coffee} width={60} height={60} beanNameOnly />
+    <Card style={StyleSheet.flatten([styles.beanCard, isLarge ? styles.beanCardLg : styles.beanCardSm])}>
+      <Bag coffee={coffee} width={bagSize} height={bagSize} beanNameOnly />
       <View style={styles.beanText}>
         <Text style={styles.beanName} numberOfLines={2}>
           {coffee.bean}
@@ -68,17 +81,27 @@ const styles = StyleSheet.create({
   beanCard: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  // Compact recipe-picker layout.
+  beanCardSm: {
     gap: 14,
     paddingVertical: 14,
     paddingHorizontal: 16,
   },
-  beanText: { flex: 1, minWidth: 0, gap: 3 },
+  // Explore-style layout: larger bag, tighter left padding, bag flush to text.
+  beanCardLg: {
+    gap: 0,
+    paddingVertical: 16,
+    paddingLeft: 4,
+    paddingRight: 24,
+  },
+  beanText: { flex: 1, minWidth: 0, gap: 0 },
   beanName: {
     fontFamily: fonts.condensed,
     fontWeight: '600',
-    fontSize: 20,
+    fontSize: 19,
     color: colors.black,
-    letterSpacing: -0.4,
+    letterSpacing: -0.5,
     lineHeight: 24,
   },
   // Roaster, country, and roast level share one style — Avenir 14/500,
@@ -88,14 +111,14 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     fontSize: 14,
     color: colors.greyDark,
-    lineHeight: 17,
+    lineHeight: 20,
   },
   origin: {
     fontFamily: fonts.sans,
     fontWeight: '500',
     fontSize: 14,
     color: colors.greyDark,
-    lineHeight: 17,
+    lineHeight: 20,
   },
   // The separator bullet keeps its original smaller size so it doesn't
   // visually dominate the country/roast text.

@@ -451,7 +451,7 @@ const styles = StyleSheet.create({
   beanName: {
     fontFamily: fonts.condensed,
     fontWeight: '600',
-    fontSize: 17,
+    fontSize: 19,
     color: colors.black,
     letterSpacing: -0.5,
     lineHeight: 24,
@@ -459,21 +459,21 @@ const styles = StyleSheet.create({
   roasterName: {
     fontFamily: fonts.sans,
     fontWeight: '500',
-    fontSize: 13,
+    fontSize: 14,
     color: colors.greyDark,
     lineHeight: 20,
   },
   originText: {
     fontFamily: fonts.sans,
     fontWeight: '500',
-    fontSize: 13,
+    fontSize: 14,
     color: colors.greyDark,
     lineHeight: 20,
   },
   dateText: {
     fontFamily: fonts.sans,
     fontWeight: '500',
-    fontSize: 13,
+    fontSize: 14,
     color: colors.greyDark,
     lineHeight: 20,
     flexShrink: 0,

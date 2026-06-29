@@ -205,6 +205,7 @@ function BeanRow({ coffee, onPress }: { coffee: Coffee; onPress: () => void }) {
   return (
     <BeanCard
       coffee={coffee}
+      size="lg"
       onPress={onPress}
       accessibilityLabel={`Brew ${coffee.bean} from ${coffee.roaster}`}
       trailing={

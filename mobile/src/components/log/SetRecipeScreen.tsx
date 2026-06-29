@@ -1,5 +1,7 @@
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useRef } from 'react';
+import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BlurView } from 'expo-blur';
 import Svg, { Path } from 'react-native-svg';
 import { Brew, Coffee } from '@shared/lib/coffees';
 import { colors, fonts, surfaces } from '@shared/theme';
@@ -45,10 +47,26 @@ export function SetRecipeScreen({ coffee, onBack, onPickRecipe, onNew, onOpenBea
   const brews = coffee.brews;
   const listBottomPad = Math.max(insets.bottom, 16) + TAB_BAR_HEIGHT + 48;
 
+  const scrollY = useRef(new Animated.Value(0)).current;
+  // Fade the frosted circle in behind the back icon once the user scrolls past the title.
+  const backGlassOpacity = scrollY.interpolate({
+    inputRange: [0, 32],
+    outputRange: [0, 1],
+    extrapolate: 'clamp',
+  });
+
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
-        <BackButton onPress={onBack} />
+        <View style={styles.backButtonWrap}>
+          <Animated.View
+            style={[styles.backGlass, { opacity: backGlassOpacity }]}
+            pointerEvents="none"
+          >
+            <BlurView intensity={28} tint="light" style={StyleSheet.absoluteFill} />
+          </Animated.View>
+          <BackButton onPress={onBack} />
+        </View>
         <Pressable
           onPress={onNew}
           style={({ pressed }) => [styles.newPill, pressed && styles.newPillPressed]}
@@ -59,18 +77,23 @@ export function SetRecipeScreen({ coffee, onBack, onPickRecipe, onNew, onOpenBea
         </Pressable>
       </View>
 
-      <FlatList
+      <Animated.FlatList
         data={brews}
-        keyExtractor={(brew) => String(brew.id)}
+        keyExtractor={(brew: Brew) => String(brew.id)}
         contentContainerStyle={[styles.list, { paddingBottom: listBottomPad }]}
         showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: true },
+        )}
         ListHeaderComponent={
           <View style={styles.listHeader}>
             <View style={styles.intro}>
               <View style={styles.titleBlock}>
                 <Text style={styles.title}>Set your recipe</Text>
                 <Text style={styles.description}>
-                  Pick an existing recipe or make a new one.
+                  Iterate on an existing recipe or make a new one.
                 </Text>
               </View>
               <BeanCard
@@ -89,7 +112,7 @@ export function SetRecipeScreen({ coffee, onBack, onPickRecipe, onNew, onOpenBea
             No recipes yet for this bean — tap New to dial one in.
           </Text>
         }
-        renderItem={({ item }) => (
+        renderItem={({ item }: { item: Brew }) => (
           <View style={styles.recipeItem}>
             <Pressable
               onPress={() => onPickRecipe(item)}
@@ -113,6 +136,12 @@ export function SetRecipeScreen({ coffee, onBack, onPickRecipe, onNew, onOpenBea
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   header: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    backgroundColor: 'transparent',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -120,6 +149,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 16,
     paddingBottom: 8,
+  },
+  backButtonWrap: {
+    width: 44,
+    height: 44,
+    marginLeft: -14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backGlass: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 22,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: surfaces.pillHairline,
+    backgroundColor: 'rgba(255,255,255,0.35)',
   },
   newPill: {
     paddingHorizontal: 18,
@@ -139,7 +183,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.black,
   },
-  list: { paddingHorizontal: 24, paddingTop: 4, gap: 24 },
+  list: { paddingHorizontal: 24, paddingTop: 64, gap: 24 },
   listHeader: { gap: 24 },
   intro: { gap: 16 },
   titleBlock: { gap: 4 },
@@ -157,7 +201,7 @@ const styles = StyleSheet.create({
     color: colors.greyDark,
     lineHeight: 21,
   },
-  headerDivider: { height: 1, backgroundColor: colors.greyLight },
+  headerDivider: { height: 1, backgroundColor: colors.supremeBeige, opacity: 0.7 },
   recipeItem: {},
   duplicateTab: {
     flexDirection: 'row',
