@@ -15,6 +15,8 @@ interface Props {
   onPickRecipe: (base: Brew) => void;
   /** Start from a blank recipe. */
   onNew: () => void;
+  /** Open the full bean detail page for the chosen bean. */
+  onOpenBean: () => void;
 }
 
 /** Right-pointing chevron used on the bean header and duplicate tabs. */
@@ -48,7 +50,7 @@ function flavorNotes(notes: string | undefined): string[] {
  * a green "Duplicate this recipe" tab that seeds a new editable recipe. "New"
  * (top-right) starts from a blank form.
  */
-export function SetRecipeScreen({ coffee, onBack, onPickRecipe, onNew }: Props) {
+export function SetRecipeScreen({ coffee, onBack, onPickRecipe, onNew, onOpenBean }: Props) {
   const insets = useSafeAreaInsets();
   const brews = coffee.brews;
   const notes = flavorNotes(coffee.notes);
@@ -84,7 +86,8 @@ export function SetRecipeScreen({ coffee, onBack, onPickRecipe, onNew }: Props) 
               </View>
               <BeanCard
                 coffee={coffee}
-                accessibilityLabel={`${coffee.bean} from ${coffee.roaster}`}
+                onPress={onOpenBean}
+                accessibilityLabel={`View details for ${coffee.bean} from ${coffee.roaster}`}
                 trailing={<Chevron color={colors.greyDark} />}
               />
             </View>
@@ -113,9 +116,9 @@ export function SetRecipeScreen({ coffee, onBack, onPickRecipe, onNew }: Props) 
               onPress={() => onPickRecipe(item)}
               style={({ pressed }) => [styles.duplicateTab, pressed && styles.duplicateTabPressed]}
               accessibilityRole="button"
-              accessibilityLabel="Duplicate this recipe"
+              accessibilityLabel="Use this recipe"
             >
-              <Text style={styles.duplicateTabText}>Duplicate this recipe</Text>
+              <Text style={styles.duplicateTabText}>Use this recipe</Text>
               <Chevron color="#ffffff" />
             </Pressable>
             <View style={styles.cardWrap}>

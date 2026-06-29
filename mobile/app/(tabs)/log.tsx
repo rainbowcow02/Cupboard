@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { SafeAreaView, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -35,6 +36,7 @@ function titleFor(step: Step): { title?: string; subtitle?: string } {
 
 export default function LogScreen() {
   const { coffees, refresh } = useCoffees();
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const [step, setStep] = useState<Step>({ name: 'logHome' });
 
@@ -104,6 +106,7 @@ export default function LogScreen() {
           onBack={goBack}
           onPickRecipe={(base) => setStep({ name: 'editRecipe', coffee: step.coffee, base })}
           onNew={() => setStep({ name: 'editRecipe', coffee: step.coffee, base: null })}
+          onOpenBean={() => router.push(`/coffee/${encodeURIComponent(step.coffee.id)}`)}
         />
       )}
 
