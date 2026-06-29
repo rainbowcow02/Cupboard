@@ -1,8 +1,10 @@
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Path } from 'react-native-svg';
 import { Brew, Coffee } from '@shared/lib/coffees';
 import { colors, fonts, surfaces } from '@shared/theme';
 import { BackButton } from '../BackButton';
+import { BeanCard } from '../BeanCard';
 import { BrewCard } from '../BrewCard';
 import { TAB_BAR_HEIGHT } from '../TabBar';
 
@@ -15,34 +17,55 @@ interface Props {
   onNew: () => void;
 }
 
+/** Right-pointing chevron used on the bean header and duplicate tabs. */
+function Chevron({ color }: { color: string }) {
+  return (
+    <Svg width={6} height={10} viewBox="0 0 6 10" fill="none">
+      <Path
+        d="M1 1L5 5L1 9"
+        stroke={color}
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
+/** Split a comma-separated tasting-note string into capitalized chips. */
+function flavorNotes(notes: string | undefined): string[] {
+  if (!notes?.trim()) return [];
+  return notes
+    .split(',')
+    .map((note) => note.trim())
+    .filter(Boolean)
+    .map((note) => note.charAt(0).toUpperCase() + note.slice(1));
+}
+
 /**
- * Recipe picker for a selected bean: the bean's past brews shown as full
- * BrewCards in a vertical list, each with a "Duplicate" affordance that seeds a
- * new editable recipe. "New" (top-right) starts from a blank form.
+ * Recipe picker for a selected bean: a header showing the chosen bean and its
+ * flavor notes, then the bean's past brews as full BrewCards. Each card carries
+ * a green "Duplicate this recipe" tab that seeds a new editable recipe. "New"
+ * (top-right) starts from a blank form.
  */
 export function SetRecipeScreen({ coffee, onBack, onPickRecipe, onNew }: Props) {
   const insets = useSafeAreaInsets();
   const brews = coffee.brews;
+  const notes = flavorNotes(coffee.notes);
   const listBottomPad = Math.max(insets.bottom, 16) + TAB_BAR_HEIGHT + 48;
 
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <BackButton onPress={onBack} />
-          <Pressable
-            onPress={onNew}
-            style={({ pressed }) => [styles.newPill, pressed && styles.newPillPressed]}
-            accessibilityRole="button"
-            accessibilityLabel="Start a new recipe"
-          >
-            <Text style={styles.newPillText}>New</Text>
-          </Pressable>
-        </View>
-        <Text style={styles.title}>Set brew recipe</Text>
-        <Text style={styles.description}>
-          Pick a recipe to start from or make a new one.
-        </Text>
+        <BackButton onPress={onBack} />
+        <Pressable
+          onPress={onNew}
+          style={({ pressed }) => [styles.newPill, pressed && styles.newPillPressed]}
+          accessibilityRole="button"
+          accessibilityLabel="Start a new recipe"
+        >
+          <Text style={styles.newPillText}>New</Text>
+        </Pressable>
       </View>
 
       <FlatList
@@ -50,6 +73,35 @@ export function SetRecipeScreen({ coffee, onBack, onPickRecipe, onNew }: Props) 
         keyExtractor={(brew) => String(brew.id)}
         contentContainerStyle={[styles.list, { paddingBottom: listBottomPad }]}
         showsVerticalScrollIndicator={false}
+        ListHeaderComponent={
+          <View style={styles.listHeader}>
+            <View style={styles.intro}>
+              <View style={styles.titleBlock}>
+                <Text style={styles.title}>Set your recipe</Text>
+                <Text style={styles.description}>
+                  Pick an existing recipe or make a new one.
+                </Text>
+              </View>
+              <BeanCard
+                coffee={coffee}
+                accessibilityLabel={`${coffee.bean} from ${coffee.roaster}`}
+                trailing={<Chevron color={colors.greyDark} />}
+              />
+            </View>
+
+            {notes.length > 0 ? (
+              <View style={styles.notesRow}>
+                {notes.map((note) => (
+                  <View key={note} style={styles.notePill}>
+                    <Text style={styles.notePillText}>{note}</Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
+
+            <View style={styles.headerDivider} />
+          </View>
+        }
         ListEmptyComponent={
           <Text style={styles.empty}>
             No recipes yet for this bean — tap New to dial one in.
@@ -57,18 +109,18 @@ export function SetRecipeScreen({ coffee, onBack, onPickRecipe, onNew }: Props) 
         }
         renderItem={({ item }) => (
           <View style={styles.recipeItem}>
-            <BrewCard brew={item} />
             <Pressable
               onPress={() => onPickRecipe(item)}
-              style={({ pressed }) => [
-                styles.duplicateButton,
-                pressed && styles.duplicateButtonPressed,
-              ]}
+              style={({ pressed }) => [styles.duplicateTab, pressed && styles.duplicateTabPressed]}
               accessibilityRole="button"
               accessibilityLabel="Duplicate this recipe"
             >
-              <Text style={styles.duplicateText}>Duplicate this recipe</Text>
+              <Text style={styles.duplicateTabText}>Duplicate this recipe</Text>
+              <Chevron color="#ffffff" />
             </Pressable>
+            <View style={styles.cardWrap}>
+              <BrewCard brew={item} />
+            </View>
           </View>
         )}
       />
@@ -79,16 +131,13 @@ export function SetRecipeScreen({ coffee, onBack, onPickRecipe, onNew }: Props) 
 const styles = StyleSheet.create({
   screen: { flex: 1 },
   header: {
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 12,
-    gap: 8,
-  },
-  headerTop: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     minHeight: 36,
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 8,
   },
   newPill: {
     paddingHorizontal: 18,
@@ -108,6 +157,10 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.black,
   },
+  list: { paddingHorizontal: 24, paddingTop: 4, gap: 24 },
+  listHeader: { gap: 24 },
+  intro: { gap: 16 },
+  titleBlock: { gap: 4 },
   title: {
     fontFamily: fonts.serif,
     fontSize: 28,
@@ -122,23 +175,44 @@ const styles = StyleSheet.create({
     color: colors.greyDark,
     lineHeight: 21,
   },
-  list: { paddingHorizontal: 24, paddingTop: 4, gap: 16 },
-  recipeItem: { gap: 10 },
-  duplicateButton: {
-    alignSelf: 'stretch',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderRadius: surfaces.pillRadius,
-    borderWidth: 1.5,
-    borderColor: colors.burgundy,
+  notesRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
   },
-  duplicateButtonPressed: { backgroundColor: 'rgba(93,5,5,0.06)' },
-  duplicateText: {
+  notePill: {
+    backgroundColor: 'rgba(252,153,155,0.22)',
+    borderRadius: surfaces.pillRadius,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  notePillText: {
     fontFamily: fonts.sans,
-    fontWeight: '800',
-    fontSize: 15,
+    fontWeight: '500',
+    fontSize: 13,
     color: colors.burgundy,
   },
+  headerDivider: { height: 1, backgroundColor: colors.greyLight },
+  recipeItem: {},
+  duplicateTab: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: colors.moss,
+    borderTopLeftRadius: surfaces.cardRadius,
+    borderTopRightRadius: surfaces.cardRadius,
+    paddingTop: 12,
+    paddingBottom: 48,
+  },
+  duplicateTabPressed: { opacity: 0.9 },
+  duplicateTabText: {
+    fontFamily: fonts.sans,
+    fontWeight: '500',
+    fontSize: 15,
+    color: '#ffffff',
+  },
+  cardWrap: { marginTop: -36, zIndex: 1 },
   empty: {
     fontFamily: fonts.sans,
     fontWeight: '500',
