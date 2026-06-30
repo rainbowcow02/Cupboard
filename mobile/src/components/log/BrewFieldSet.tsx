@@ -8,6 +8,7 @@ import { DateField } from '../DateField';
 import { FieldDiffHint } from '../FieldDiffHint';
 import { FormField, fieldInputStyle } from '../FormField';
 import { RatingInput } from '../RatingInput';
+import { CascadeItem } from './CascadeItem';
 
 /** Orders numeric strings numerically (so "20" precedes "100"), text A–Z. */
 function compareOptions(a: string, b: string): number {
@@ -174,126 +175,148 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
 
   return (
     <View style={styles.fields}>
-      <FormField label="Brewer" horizontal>
-        <ComboBoxField
-          label="Brewer"
-          value={values.brewer}
-          options={options.brewer}
-          placeholder="Which brewer?"
-          onChange={set('brewer')}
-        />
-        <FieldDiffHint previous={hintFor('brewer')} />
-      </FormField>
-
-      <FormField label="Filter" horizontal>
-        <ComboBoxField
-          label="Filter"
-          value={values.filter}
-          options={options.filter}
-          placeholder="Which filter?"
-          onChange={set('filter')}
-        />
-        <FieldDiffHint previous={hintFor('filter')} />
-      </FormField>
-
-      <FormField label="Grinder" horizontal>
-        <ComboBoxField
-          label="Grinder"
-          value={values.grinder}
-          options={options.grinder}
-          placeholder="Which grinder?"
-          onChange={set('grinder')}
-        />
-        <FieldDiffHint previous={hintFor('grinder')} />
-      </FormField>
-
-      <FormField label="Grind size" horizontal>
-        <ComboBoxField
-          label="Grind size"
-          value={values.grind}
-          options={options.grind}
-          placeholder="How fine?"
-          keyboardType="decimal-pad"
-          onChange={set('grind')}
-        />
-        <FieldDiffHint previous={hintFor('grind')} />
-      </FormField>
-
-      <FormField label="Beans (g)" horizontal>
-        <ComboBoxField
-          label="Beans (g)"
-          value={values.beansG}
-          options={options.beansG}
-          placeholder="How much coffee?"
-          keyboardType="decimal-pad"
-          onChange={set('beansG')}
-        />
-        <FieldDiffHint previous={hintFor('beansG')} />
-      </FormField>
-
-      <FormField label="Water (ml)" horizontal>
-        <ComboBoxField
-          label="Water (ml)"
-          value={values.waterMl}
-          options={options.waterMl}
-          placeholder="How much water?"
-          keyboardType="decimal-pad"
-          onChange={set('waterMl')}
-        />
-        <FieldDiffHint previous={hintFor('waterMl')} />
-      </FormField>
-
-      <FormField label="Ratio" horizontal>
-        <Text style={styles.ratioValue}>{ratio}</Text>
-        <FieldDiffHint previous={ratioHint} />
-      </FormField>
-
-      <FormField label="Temperature" horizontal>
-        <ComboBoxField
-          label="Temperature"
-          value={values.tempC}
-          options={options.tempC}
-          placeholder="How hot?"
-          keyboardType="decimal-pad"
-          formatOption={formatTemp}
-          onChange={set('tempC')}
-        />
-        <FieldDiffHint previous={hintFor('tempC')} />
-      </FormField>
-
-      <FormField label="Pour structure" labelStyle={styles.pourLabel}>
-        {/* iOS truncates a multiline TextInput's native placeholder to one line,
-            so render a wrapping Text overlay while the field is empty instead. */}
-        <View style={styles.recipeInputWrap}>
-          <TextInput
-            style={[fieldInputStyle, styles.recipeInput]}
-            value={values.recipeToTest}
-            onChangeText={set('recipeToTest')}
-            multiline
-            textAlignVertical="top"
-            returnKeyType="done"
+      <CascadeItem index={0}>
+        <FormField label="Brewer" horizontal>
+          <ComboBoxField
+            label="Brewer"
+            value={values.brewer}
+            options={options.brewer}
+            placeholder="Which brewer?"
+            onChange={set('brewer')}
           />
-          {values.recipeToTest === '' && (
-            <Text style={styles.recipePlaceholder} pointerEvents="none">
-              Bloom 1 min → 50g, p1 → 100g, p2 → 150g, p3 → 200g, etc.
-            </Text>
-          )}
-        </View>
-      </FormField>
+          <FieldDiffHint previous={hintFor('brewer')} />
+        </FormField>
+      </CascadeItem>
 
-      <FormField label="Date" horizontal>
-        <DateField
-          value={values.date}
-          onChange={(date) => onChange({ date })}
-          style={styles.datePicker}
-        />
-      </FormField>
+      <CascadeItem index={1}>
+        <FormField label="Filter" horizontal>
+          <ComboBoxField
+            label="Filter"
+            value={values.filter}
+            options={options.filter}
+            placeholder="Which filter?"
+            onChange={set('filter')}
+          />
+          <FieldDiffHint previous={hintFor('filter')} />
+        </FormField>
+      </CascadeItem>
 
-      <FormField label="Rating" horizontal>
-        <View style={styles.ratingWrap}>
-          <RatingInput value={values.rating} onChange={(rating) => onChange({ rating })} />
-        </View>
-      </FormField>
+      <CascadeItem index={2}>
+        <FormField label="Grinder" horizontal>
+          <ComboBoxField
+            label="Grinder"
+            value={values.grinder}
+            options={options.grinder}
+            placeholder="Which grinder?"
+            onChange={set('grinder')}
+          />
+          <FieldDiffHint previous={hintFor('grinder')} />
+        </FormField>
+      </CascadeItem>
+
+      <CascadeItem index={3}>
+        <FormField label="Grind size" horizontal>
+          <ComboBoxField
+            label="Grind size"
+            value={values.grind}
+            options={options.grind}
+            placeholder="How fine?"
+            keyboardType="decimal-pad"
+            onChange={set('grind')}
+          />
+          <FieldDiffHint previous={hintFor('grind')} />
+        </FormField>
+      </CascadeItem>
+
+      <CascadeItem index={4}>
+        <FormField label="Beans (g)" horizontal>
+          <ComboBoxField
+            label="Beans (g)"
+            value={values.beansG}
+            options={options.beansG}
+            placeholder="How much coffee?"
+            keyboardType="decimal-pad"
+            onChange={set('beansG')}
+          />
+          <FieldDiffHint previous={hintFor('beansG')} />
+        </FormField>
+      </CascadeItem>
+
+      <CascadeItem index={5}>
+        <FormField label="Water (ml)" horizontal>
+          <ComboBoxField
+            label="Water (ml)"
+            value={values.waterMl}
+            options={options.waterMl}
+            placeholder="How much water?"
+            keyboardType="decimal-pad"
+            onChange={set('waterMl')}
+          />
+          <FieldDiffHint previous={hintFor('waterMl')} />
+        </FormField>
+      </CascadeItem>
+
+      <CascadeItem index={6}>
+        <FormField label="Ratio" horizontal>
+          <Text style={styles.ratioValue}>{ratio}</Text>
+          <FieldDiffHint previous={ratioHint} />
+        </FormField>
+      </CascadeItem>
+
+      <CascadeItem index={7}>
+        <FormField label="Temperature" horizontal>
+          <ComboBoxField
+            label="Temperature"
+            value={values.tempC}
+            options={options.tempC}
+            placeholder="How hot?"
+            keyboardType="decimal-pad"
+            formatOption={formatTemp}
+            onChange={set('tempC')}
+          />
+          <FieldDiffHint previous={hintFor('tempC')} />
+        </FormField>
+      </CascadeItem>
+
+      <CascadeItem index={8}>
+        <FormField label="Pour structure" labelStyle={styles.pourLabel}>
+          {/* iOS truncates a multiline TextInput's native placeholder to one line,
+              so render a wrapping Text overlay while the field is empty instead. */}
+          <View style={styles.recipeInputWrap}>
+            <TextInput
+              style={[fieldInputStyle, styles.recipeInput]}
+              value={values.recipeToTest}
+              onChangeText={set('recipeToTest')}
+              multiline
+              textAlignVertical="top"
+              returnKeyType="done"
+            />
+            {values.recipeToTest === '' && (
+              <Text style={styles.recipePlaceholder} pointerEvents="none">
+                Bloom 1 min → 50g, p1 → 100g, p2 → 150g, p3 → 200g, etc.
+              </Text>
+            )}
+          </View>
+        </FormField>
+      </CascadeItem>
+
+      <CascadeItem index={9}>
+        <FormField label="Date" horizontal>
+          <DateField
+            value={values.date}
+            onChange={(date) => onChange({ date })}
+            style={styles.datePicker}
+          />
+        </FormField>
+      </CascadeItem>
+
+      <CascadeItem index={10}>
+        <FormField label="Rating" horizontal>
+          <View style={styles.ratingWrap}>
+            <RatingInput value={values.rating} onChange={(rating) => onChange({ rating })} />
+          </View>
+        </FormField>
+      </CascadeItem>
     </View>
   );
 }
