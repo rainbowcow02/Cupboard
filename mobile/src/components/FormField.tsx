@@ -13,7 +13,9 @@ export function FormField({ label, children, style, horizontal }: Props) {
   if (horizontal) {
     return (
       <View style={[styles.rowContainer, style]}>
-        <Text style={styles.rowLabel}>{label}</Text>
+        <View style={styles.rowLabelWrap}>
+          <Text style={styles.rowLabel}>{label}</Text>
+        </View>
         <View style={styles.rowInput}>{children}</View>
       </View>
     );
@@ -44,18 +46,20 @@ const styles = StyleSheet.create({
   container: { flex: 1, minWidth: 0 },
   rowContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 12,
     minHeight: 46,
   },
+  // Matches the field's min height and centers the label within it, so a
+  // diff hint rendered below the field doesn't drag the label down with it.
+  rowLabelWrap: { width: 92, minHeight: 46, justifyContent: 'center' },
   rowLabel: {
-    width: 92,
     fontFamily: fonts.sans,
     fontWeight: '600',
     fontSize: 15,
     color: colors.black,
   },
-  rowInput: { flex: 1, minWidth: 0 },
+  rowInput: { flex: 1, minWidth: 0, alignSelf: 'stretch', justifyContent: 'center' },
   label: {
     fontFamily: fonts.sans,
     fontWeight: '500',
