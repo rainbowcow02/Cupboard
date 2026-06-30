@@ -224,7 +224,7 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
         <FieldDiffHint previous={hintFor('waterMl')} />
       </FormField>
 
-      <FormField label="Temp °C/°F" horizontal>
+      <FormField label="Temperature" horizontal>
         <ComboBoxField
           label="Temp"
           value={values.tempC}

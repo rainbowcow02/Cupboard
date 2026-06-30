@@ -32,6 +32,8 @@ interface CommonProps {
   placeholder?: string;
   /** Optional leading glyph per option (e.g. country flags). */
   flagFor?: (option: string) => string;
+  /** Optional display transform for an option (the raw option stays the committed value). */
+  formatOption?: (option: string) => string;
   /** Aligns the trigger's value text. Defaults to left. */
   align?: 'left' | 'right';
   /** Keyboard for the search/add input — e.g. 'decimal-pad' for numeric fields. */
@@ -45,7 +47,8 @@ type ComboBoxFieldProps = CommonProps &
   );
 
 export function ComboBoxField(props: ComboBoxFieldProps) {
-  const { label, options, placeholder, flagFor, align = 'left', keyboardType } = props;
+  const { label, options, placeholder, flagFor, formatOption, align = 'left', keyboardType } = props;
+  const display = useCallback((opt: string) => formatOption?.(opt) ?? opt, [formatOption]);
   const numeric = keyboardType != null;
   const multiple = props.multiple === true;
   const selected = useMemo(
@@ -82,8 +85,10 @@ export function ComboBoxField(props: ComboBoxFieldProps) {
   const filtered = useMemo(() => {
     const q = trimmedQuery.toLowerCase();
     if (!q) return baseOptions;
-    return baseOptions.filter((option) => option.toLowerCase().includes(q));
-  }, [baseOptions, trimmedQuery]);
+    return baseOptions.filter((option) =>
+      `${option} ${display(option)}`.toLowerCase().includes(q),
+    );
+  }, [baseOptions, trimmedQuery, display]);
 
   const showAddCustom =
     trimmedQuery.length > 0 &&
@@ -172,7 +177,9 @@ export function ComboBoxField(props: ComboBoxFieldProps) {
         style={styles.trigger}
         accessibilityRole="button"
         accessibilityLabel={
-          selected.length ? `${label}, ${selected.join(', ')}` : `${label}, none selected`
+          selected.length
+            ? `${label}, ${selected.map(display).join(', ')}`
+            : `${label}, none selected`
         }
       >
         <Text
@@ -184,7 +191,9 @@ export function ComboBoxField(props: ComboBoxFieldProps) {
           ]}
           numberOfLines={1}
         >
-          {selected.length ? selected.join(', ') : placeholder || `Select ${label.toLowerCase()}`}
+          {selected.length
+            ? selected.map(display).join(', ')
+            : placeholder || `Select ${label.toLowerCase()}`}
         </Text>
         <SortChevron flipped={false} color={colors.greyDark} />
       </Pressable>
@@ -281,7 +290,7 @@ export function ComboBoxField(props: ComboBoxFieldProps) {
                     onPress={() => choose(option)}
                     accessibilityRole={multiple ? 'checkbox' : 'button'}
                     accessibilityState={multiple ? { checked: isActive } : { selected: isActive }}
-                    accessibilityLabel={option}
+                    accessibilityLabel={display(option)}
                     style={[
                       floatingSurfaceStyles.optionRow,
                       i === 0 && !showAddCustom && floatingSurfaceStyles.optionRowFirst,
@@ -289,7 +298,7 @@ export function ComboBoxField(props: ComboBoxFieldProps) {
                   >
                     {flag ? <Text style={floatingSurfaceStyles.optionFlag}>{flag}</Text> : null}
                     <Text style={floatingSurfaceStyles.optionLabel} numberOfLines={1}>
-                      {option}
+                      {display(option)}
                     </Text>
                     {multiple ? (
                       <FilterCheckbox checked={isActive} />
