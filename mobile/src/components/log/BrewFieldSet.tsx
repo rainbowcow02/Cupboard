@@ -34,11 +34,12 @@ function distinctBrewValues(coffees: Coffee[], field: keyof Brew): string[] {
   return [...seen].sort(compareOptions);
 }
 
-/** Formats a Celsius value (numeric string) as "94°C / 201°F"; passes through non-numeric input. */
-function formatTemp(celsius: string): string {
-  const c = Number(celsius);
-  if (celsius.trim() === '' || !Number.isFinite(c)) return celsius;
-  return `${celsius}°C / ${Math.round((c * 9) / 5 + 32)}°F`;
+/** Coffee-to-water ratio ("1:N", whole number) from beans/water strings, or null if unset. */
+function ratioOf(beansG: string, waterMl: string): string | null {
+  const beans = Number(beansG);
+  const water = Number(waterMl);
+  if (!beansG.trim() || !waterMl.trim() || !(beans > 0) || !Number.isFinite(water)) return null;
+  return `1:${Math.round(water / beans)}`;
 }
 
 /** In-memory form state for a brew recipe (numbers held as strings). */
@@ -141,7 +142,7 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
         },
         tempC: {
           raw: base.tempC != null ? String(base.tempC) : '',
-          show: base.tempC != null ? formatTemp(String(base.tempC)) : '',
+          show: base.tempC != null ? `${base.tempC}°C` : '',
         },
       }
     : null;
@@ -153,12 +154,16 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
   };
 
   // Coffee-to-water ratio (1:N) derived from the beans and water inputs.
-  const beans = Number(values.beansG);
-  const water = Number(values.waterMl);
-  const ratio =
-    values.beansG.trim() && values.waterMl.trim() && beans > 0 && Number.isFinite(water)
-      ? `1:${(water / beans).toFixed(2)}`
-      : '—';
+  const ratio = ratioOf(values.beansG, values.waterMl) ?? '—';
+  // Surface the base recipe's ratio as a "was" hint when it has shifted.
+  const baseRatio =
+    base != null
+      ? ratioOf(
+          base.beansG != null ? String(base.beansG) : '',
+          base.waterMl != null ? String(base.waterMl) : '',
+        )
+      : null;
+  const ratioHint = baseRatio && baseRatio !== ratio ? baseRatio : undefined;
 
   return (
     <View style={styles.fields}>
@@ -233,16 +238,16 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
 
       <FormField label="Ratio" horizontal>
         <Text style={styles.ratioValue}>{ratio}</Text>
+        <FieldDiffHint previous={ratioHint} />
       </FormField>
 
-      <FormField label="Temperature" horizontal>
+      <FormField label="Temp °C/°F" horizontal>
         <ComboBoxField
-          label="Temperature"
+          label="Temp"
           value={values.tempC}
           options={options.tempC}
           placeholder="🔥"
           keyboardType="decimal-pad"
-          formatOption={formatTemp}
           onChange={set('tempC')}
         />
         <FieldDiffHint previous={hintFor('tempC')} />
