@@ -2,7 +2,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import {
   Animated as RNAnimated,
-  Image,
   NativeScrollEvent,
   NativeSyntheticEvent,
   Pressable,
@@ -10,6 +9,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { Image } from 'expo-image';
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Brew, Coffee } from '@shared/lib/coffees';
@@ -30,10 +30,10 @@ const ORIGIN_FLAGS: Record<string, string> = {
 };
 
 const BAG_IMAGES: Record<string, ReturnType<typeof require>> = {
-  white: require('../../../shared/assets/bag-white.png'),
-  blue: require('../../../shared/assets/bag-blue.png'),
-  green: require('../../../shared/assets/bag-green.png'),
-  orange: require('../../../shared/assets/bag-orange.png'),
+  white: require('../../../shared/assets/bag-white-lrg.png'),
+  blue: require('../../../shared/assets/bag-blue-lrg.png'),
+  green: require('../../../shared/assets/bag-green-lrg.png'),
+  orange: require('../../../shared/assets/bag-orange-lrg.png'),
 };
 
 function DetailRow({ label, value, last }: { label: string; value?: string | null; last?: boolean }) {
@@ -145,7 +145,9 @@ export default function CoffeeDetailScreen() {
             <Image
               source={BAG_IMAGES[coffee.bagImg] ?? BAG_IMAGES.white}
               style={styles.bagImage}
-              resizeMode="contain"
+              contentFit="contain"
+              cachePolicy="memory-disk"
+              recyclingKey={`${coffee.bagImg}-hero`}
             />
             <BagLabel coffee={coffee} bagWidth={300} />
           </View>
