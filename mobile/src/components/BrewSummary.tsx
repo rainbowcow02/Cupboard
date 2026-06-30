@@ -23,8 +23,11 @@ function SparkCell({ brews }: { brews: Brew[] }) {
 
   if (rated.length < 2) return null;
 
-  const bucketSize = rated.length / BUCKETS;
-  const values = Array.from({ length: BUCKETS }, (_, i) => {
+  // Cap buckets at the number of ratings so no bucket is empty (an empty
+  // slice averages to NaN, which makes the SVG polyline render nothing).
+  const numBuckets = Math.min(BUCKETS, rated.length);
+  const bucketSize = rated.length / numBuckets;
+  const values = Array.from({ length: numBuckets }, (_, i) => {
     const start = Math.floor(i * bucketSize);
     const end = Math.min(rated.length, Math.floor((i + 1) * bucketSize));
     const slice = rated.slice(start, end);
