@@ -7,8 +7,11 @@ import { TAB_BAR_HEIGHT } from '../TabBar';
 
 interface Props {
   onBack: () => void;
-  title: string;
+  /** Plain title / description block. Ignored when `header` is provided. */
+  title?: string;
   description?: string;
+  /** Custom header node rendered in place of the title / description block. */
+  header?: React.ReactNode;
   /** Safe-area bottom inset, used to pad scroll content above the tab bar. */
   bottomInset: number;
   children: React.ReactNode;
@@ -20,7 +23,7 @@ interface Props {
  * it, plus a left-aligned title / description block. Mirrors the Set recipe and
  * coffee detail pages so the back affordance is consistent across the app.
  */
-export function LogFormScaffold({ onBack, title, description, bottomInset, children }: Props) {
+export function LogFormScaffold({ onBack, title, description, header, bottomInset, children }: Props) {
   const scrollY = useRef(new Animated.Value(0)).current;
   const bottomPad = Math.max(bottomInset, 16) + TAB_BAR_HEIGHT + 48;
 
@@ -58,10 +61,12 @@ export function LogFormScaffold({ onBack, title, description, bottomInset, child
           { useNativeDriver: false },
         )}
       >
-        <View style={styles.titleBlock}>
-          <Text style={styles.title}>{title}</Text>
-          {description ? <Text style={styles.description}>{description}</Text> : null}
-        </View>
+        {header ?? (
+          <View style={styles.titleBlock}>
+            <Text style={styles.title}>{title}</Text>
+            {description ? <Text style={styles.description}>{description}</Text> : null}
+          </View>
+        )}
         {children}
       </KeyboardAwareScrollView>
     </View>

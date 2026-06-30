@@ -1,14 +1,14 @@
 import { useRef } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Path } from 'react-native-svg';
 import { Brew, Coffee } from '@shared/lib/coffees';
 import { colors, fonts, surfaces } from '@shared/theme';
+import { Chevron } from '../Chevron';
 import { GlassBackButton } from '../GlassBackButton';
-import { BeanCard } from '../BeanCard';
 import { BrewCard } from '../BrewCard';
 import { TAB_BAR_HEIGHT } from '../TabBar';
 import { EmbeddedRecipeForm } from './EmbeddedRecipeForm';
+import { RecipeBeanHeader } from './RecipeBeanHeader';
 
 interface Props {
   coffee: Coffee;
@@ -21,21 +21,6 @@ interface Props {
   onOpenBean: () => void;
   /** Save the inline recipe shown when the bean has no brews yet. */
   onSaved: () => Promise<void>;
-}
-
-/** Right-pointing chevron used on the bean header and duplicate tabs. */
-function Chevron({ color }: { color: string }) {
-  return (
-    <Svg width={6} height={10} viewBox="0 0 6 10" fill="none">
-      <Path
-        d="M1 1L5 5L1 9"
-        stroke={color}
-        strokeWidth={1.5}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </Svg>
-  );
 }
 
 /**
@@ -88,26 +73,15 @@ export function SetRecipeScreen({
           { useNativeDriver: true },
         )}
         ListHeaderComponent={
-          <View style={styles.listHeader}>
-            <View style={styles.intro}>
-              <View style={styles.titleBlock}>
-                <Text style={styles.title}>Set a recipe</Text>
-                <Text style={styles.description}>
-                  {hasBrews
-                    ? 'Use an existing recipe or make a new one.'
-                    : 'No recipes yet—dial in your first one.'}
-                </Text>
-              </View>
-              <BeanCard
-                coffee={coffee}
-                onPress={onOpenBean}
-                accessibilityLabel={`View details for ${coffee.bean} from ${coffee.roaster}`}
-                trailing={<Chevron color={colors.greyDark} />}
-              />
-            </View>
-
-            <View style={styles.headerDivider} />
-          </View>
+          <RecipeBeanHeader
+            coffee={coffee}
+            description={
+              hasBrews
+                ? 'Use an existing recipe or make a new one.'
+                : 'No recipes yet—dial in your first one.'
+            }
+            onOpenBean={onOpenBean}
+          />
         }
         ListEmptyComponent={
           <EmbeddedRecipeForm coffee={coffee} onSaved={onSaved} />
@@ -170,24 +144,6 @@ const styles = StyleSheet.create({
     color: colors.black,
   },
   list: { paddingHorizontal: 24, paddingTop: 64, gap: 24 },
-  listHeader: { gap: 24 },
-  intro: { gap: 16 },
-  titleBlock: { gap: 4, marginTop: 8 },
-  title: {
-    fontFamily: fonts.serif,
-    fontSize: 28,
-    color: colors.black,
-    lineHeight: 32,
-    letterSpacing: -0.5,
-  },
-  description: {
-    fontFamily: fonts.sans,
-    fontWeight: '500',
-    fontSize: 15,
-    color: colors.greyDark,
-    lineHeight: 21,
-  },
-  headerDivider: { height: 1, backgroundColor: colors.supremeBeige, opacity: 0.7 },
   recipeItem: {},
   duplicateTab: {
     flexDirection: 'row',
