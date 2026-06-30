@@ -85,7 +85,13 @@ export default function LogScreen() {
           onBack={goBack}
           onPickRecipe={(base) => setStep({ name: 'editRecipe', coffee: step.coffee, base })}
           onNew={() => setStep({ name: 'editRecipe', coffee: step.coffee, base: null })}
-          onOpenBean={() => router.push(`/coffee/${encodeURIComponent(step.coffee.id)}`)}
+          onOpenBean={() =>
+            router.push({
+              pathname: '/coffee/[beanId]',
+              // Carry the full draft so a not-yet-saved bean still renders its detail page.
+              params: { beanId: step.coffee.id, draft: JSON.stringify(step.coffee) },
+            })
+          }
           onSaved={onSavedAndReset}
         />
       )}

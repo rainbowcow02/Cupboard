@@ -5,8 +5,6 @@ import { colors, fonts } from '@shared/theme';
 import { GlassBackButton } from '../GlassBackButton';
 import { TAB_BAR_HEIGHT } from '../TabBar';
 
-const AnimatedKAScrollView = Animated.createAnimatedComponent(KeyboardAwareScrollView);
-
 interface Props {
   onBack: () => void;
   title: string;
@@ -40,13 +38,20 @@ export function LogFormScaffold({ onBack, title, description, bottomInset, child
         />
       </View>
 
-      <AnimatedKAScrollView
+      {/* KeyboardAwareScrollView lifts a focused field above the keyboard. It forks
+          our onScroll internally, so no Animated wrapper is needed; the back-button
+          fade just runs on the JS driver. A small extraHeight keeps the trigger
+          threshold tight: only a field the keyboard actually covers gets scrolled —
+          and by the minimum needed — so fields already in view (e.g. brewer / grind /
+          the beans·water·temp row) stay put, while the tall multiline "Pour structure"
+          field is measured in full and brought fully into view. */}
+      <KeyboardAwareScrollView
         contentContainerStyle={[styles.content, { paddingBottom: bottomPad }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={16}
         enableOnAndroid
-        extraScrollHeight={24}
+        extraHeight={32}
         enableResetScrollToCoords={false}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
@@ -58,7 +63,7 @@ export function LogFormScaffold({ onBack, title, description, bottomInset, child
           {description ? <Text style={styles.description}>{description}</Text> : null}
         </View>
         {children}
-      </AnimatedKAScrollView>
+      </KeyboardAwareScrollView>
     </View>
   );
 }

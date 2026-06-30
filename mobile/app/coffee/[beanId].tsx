@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   Animated as RNAnimated,
   NativeScrollEvent,
@@ -62,7 +62,7 @@ function SectionHeader({ title, action, onAction }: { title: string; action?: st
 }
 
 export default function CoffeeDetailScreen() {
-  const { beanId } = useLocalSearchParams<{ beanId: string }>();
+  const { beanId, draft } = useLocalSearchParams<{ beanId: string; draft?: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { coffees, refresh } = useCoffees();
@@ -90,7 +90,18 @@ export default function CoffeeDetailScreen() {
 
   const getCurrentScrollY = useCallback(() => scrollYRef.current, []);
 
-  const coffee = coffees.find((c) => c.id === beanId) as Coffee | undefined;
+  // A persisted bean is the source of truth; fall back to a draft passed through
+  // navigation for a bean just entered in the Log flow that has no saved cups yet.
+  const stored = coffees.find((c) => c.id === beanId) as Coffee | undefined;
+  const draftCoffee = useMemo<Coffee | undefined>(() => {
+    if (!draft) return undefined;
+    try {
+      return JSON.parse(draft) as Coffee;
+    } catch {
+      return undefined;
+    }
+  }, [draft]);
+  const coffee = stored ?? draftCoffee;
 
   const onBrewClose = useCallback(() => {
     setAddingBrew(false);

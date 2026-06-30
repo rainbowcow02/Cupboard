@@ -1,14 +1,43 @@
-import { StyleSheet, TextInput, View } from 'react-native';
-import { Brew } from '@shared/lib/coffees';
-import { colors } from '@shared/theme';
+import { useMemo } from 'react';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { Brew, Coffee } from '@shared/lib/coffees';
+import { colors, fonts } from '@shared/theme';
+import { useCoffees } from '../../hooks/useCoffees';
+import { ComboBoxField } from '../ComboBoxField';
 import { DateField } from '../DateField';
 import { FieldDiffHint } from '../FieldDiffHint';
 import { FormField, fieldInputStyle } from '../FormField';
 import { RatingInput } from '../RatingInput';
 
+/** Orders numeric strings numerically (so "20" precedes "100"), text A–Z. */
+function compareOptions(a: string, b: string): number {
+  const na = Number(a);
+  const nb = Number(b);
+  const aNum = a.trim() !== '' && Number.isFinite(na);
+  const bNum = b.trim() !== '' && Number.isFinite(nb);
+  if (aNum && bNum) return na - nb;
+  if (aNum) return -1;
+  if (bNum) return 1;
+  return a.localeCompare(b);
+}
+
+/** Distinct, non-empty values for a brew field across every logged brew. */
+function distinctBrewValues(coffees: Coffee[], field: keyof Brew): string[] {
+  const seen = new Set<string>();
+  for (const coffee of coffees) {
+    for (const brew of coffee.brews) {
+      const raw = brew[field];
+      if (typeof raw === 'string' && raw.trim()) seen.add(raw.trim());
+      else if (typeof raw === 'number' && Number.isFinite(raw)) seen.add(String(raw));
+    }
+  }
+  return [...seen].sort(compareOptions);
+}
+
 /** In-memory form state for a brew recipe (numbers held as strings). */
 export interface BrewFormValues {
   brewer: string;
+  grinder: string;
   filter: string;
   grind: string;
   beansG: string;
@@ -23,6 +52,7 @@ export interface BrewFormValues {
 export function recipeValuesFrom(source: Brew | null | undefined): BrewFormValues {
   return {
     brewer: source?.brewer ?? '',
+    grinder: source?.grinder ?? '',
     filter: source?.filter ?? '',
     grind: source?.grind ?? '',
     beansG: source?.beansG != null ? String(source.beansG) : '',
@@ -38,6 +68,7 @@ export function recipeValuesFrom(source: Brew | null | undefined): BrewFormValue
 export function brewFieldsPayload(values: BrewFormValues) {
   return {
     brewer: values.brewer || undefined,
+    grinder: values.grinder || undefined,
     filter: values.filter || undefined,
     grind: values.grind || undefined,
     beansG: values.beansG ? Number(values.beansG) : undefined,
@@ -57,15 +88,40 @@ interface Props {
 }
 
 /** Text fields whose handler accepts a string (excludes date/rating). */
-type TextKey = 'brewer' | 'filter' | 'grind' | 'beansG' | 'waterMl' | 'tempC' | 'recipeToTest';
+type TextKey =
+  | 'brewer'
+  | 'grinder'
+  | 'filter'
+  | 'grind'
+  | 'beansG'
+  | 'waterMl'
+  | 'tempC'
+  | 'recipeToTest';
 
 export function BrewFieldSet({ values, onChange, base }: Props) {
+  const { coffees } = useCoffees();
   const set = (k: TextKey) => (v: string) => onChange({ [k]: v } as Partial<BrewFormValues>);
+
+  // Picker options sourced from the user's own brew history (so the values they
+  // always reach for are one tap away) plus a sensible range for numeric fields.
+  const options = useMemo(
+    () => ({
+      brewer: distinctBrewValues(coffees, 'brewer'),
+      grinder: distinctBrewValues(coffees, 'grinder'),
+      filter: distinctBrewValues(coffees, 'filter'),
+      grind: distinctBrewValues(coffees, 'grind'),
+      beansG: distinctBrewValues(coffees, 'beansG'),
+      waterMl: distinctBrewValues(coffees, 'waterMl'),
+      tempC: distinctBrewValues(coffees, 'tempC'),
+    }),
+    [coffees],
+  );
 
   // Raw compare value + display string (with unit) for each concise field.
   const baseDisplay = base
     ? {
         brewer: { raw: base.brewer ?? '', show: base.brewer ?? '' },
+        grinder: { raw: base.grinder ?? '', show: base.grinder ?? '' },
         filter: { raw: base.filter ?? '', show: base.filter ?? '' },
         grind: { raw: base.grind ?? '', show: base.grind ?? '' },
         beansG: {
@@ -92,91 +148,104 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
   return (
     <View style={styles.fields}>
       <FormField label="Brewer">
-        <TextInput
-          style={fieldInputStyle}
+        <ComboBoxField
+          label="Brewer"
           value={values.brewer}
-          onChangeText={set('brewer')}
-          placeholder="Hario V60"
-          placeholderTextColor={colors.greyDark}
-          returnKeyType="next"
+          options={options.brewer}
+          placeholder="Pick a brewer"
+          onChange={set('brewer')}
         />
         <FieldDiffHint previous={hintFor('brewer')} />
       </FormField>
 
       <FormField label="Filter">
-        <TextInput
-          style={fieldInputStyle}
+        <ComboBoxField
+          label="Filter"
           value={values.filter}
-          onChangeText={set('filter')}
-          placeholder="Cafec Light"
-          placeholderTextColor={colors.greyDark}
-          returnKeyType="next"
+          options={options.filter}
+          placeholder="Pick a filter"
+          onChange={set('filter')}
         />
         <FieldDiffHint previous={hintFor('filter')} />
       </FormField>
 
+      <FormField label="Grinder">
+        <ComboBoxField
+          label="Grinder"
+          value={values.grinder}
+          options={options.grinder}
+          placeholder="Pick a grinder"
+          onChange={set('grinder')}
+        />
+        <FieldDiffHint previous={hintFor('grinder')} />
+      </FormField>
+
       <FormField label="Grind size">
-        <TextInput
-          style={fieldInputStyle}
+        <ComboBoxField
+          label="Grind size"
           value={values.grind}
-          onChangeText={set('grind')}
-          placeholder="14"
-          placeholderTextColor={colors.greyDark}
-          returnKeyType="next"
+          options={options.grind}
+          placeholder="Add grind size"
+          keyboardType="decimal-pad"
+          onChange={set('grind')}
         />
         <FieldDiffHint previous={hintFor('grind')} />
       </FormField>
 
       <View style={styles.row}>
         <FormField label="Beans (g)">
-          <TextInput
-            style={fieldInputStyle}
+          <ComboBoxField
+            label="Beans (g)"
             value={values.beansG}
-            onChangeText={set('beansG')}
-            placeholder="18"
-            placeholderTextColor={colors.greyDark}
+            options={options.beansG}
+            placeholder="🫘"
             keyboardType="decimal-pad"
-            returnKeyType="next"
+            onChange={set('beansG')}
           />
           <FieldDiffHint previous={hintFor('beansG')} />
         </FormField>
         <FormField label="Water (ml)">
-          <TextInput
-            style={fieldInputStyle}
+          <ComboBoxField
+            label="Water (ml)"
             value={values.waterMl}
-            onChangeText={set('waterMl')}
-            placeholder="300"
-            placeholderTextColor={colors.greyDark}
+            options={options.waterMl}
+            placeholder="💧"
             keyboardType="decimal-pad"
-            returnKeyType="next"
+            onChange={set('waterMl')}
           />
           <FieldDiffHint previous={hintFor('waterMl')} />
         </FormField>
-        <FormField label="Temp °C">
-          <TextInput
-            style={fieldInputStyle}
+        <FormField label="Temp °C/°F">
+          <ComboBoxField
+            label="Temp"
             value={values.tempC}
-            onChangeText={set('tempC')}
-            placeholder="94"
-            placeholderTextColor={colors.greyDark}
+            options={options.tempC}
+            placeholder="🔥"
             keyboardType="decimal-pad"
-            returnKeyType="next"
+            onChange={set('tempC')}
           />
           <FieldDiffHint previous={hintFor('tempC')} />
         </FormField>
       </View>
 
       <FormField label="Pour structure">
-        <TextInput
-          style={[fieldInputStyle, styles.recipeInput]}
-          value={values.recipeToTest}
-          onChangeText={set('recipeToTest')}
-          placeholder={'Bloom → 40ml swirl, P1 → 120ml center pour, brew time 2:45'}
-          placeholderTextColor={colors.greyDark}
-          multiline
-          textAlignVertical="top"
-          returnKeyType="done"
-        />
+        {/* iOS truncates a multiline TextInput's native placeholder to one line,
+            so render a wrapping Text overlay while the field is empty instead. */}
+        <View style={styles.recipeInputWrap}>
+          <TextInput
+            style={[fieldInputStyle, styles.recipeInput]}
+            value={values.recipeToTest}
+            onChangeText={set('recipeToTest')}
+            multiline
+            textAlignVertical="top"
+            returnKeyType="done"
+          />
+          {values.recipeToTest === '' && (
+            <Text style={styles.recipePlaceholder} pointerEvents="none">
+              Bloom 1 min → 50g, p1 → 100g, p2 → 150g, p3 → 200g, etc.
+            </Text>
+          )}
+        </View>
       </FormField>
 
       <FormField label="Date">
@@ -197,6 +266,18 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
 const styles = StyleSheet.create({
   fields: { gap: 14 },
   row: { flexDirection: 'row', gap: 10 },
+  recipeInputWrap: { position: 'relative' },
   recipeInput: { minHeight: 96, paddingTop: 12 },
+  recipePlaceholder: {
+    position: 'absolute',
+    left: 14,
+    right: 14,
+    top: 12,
+    fontFamily: fonts.sans,
+    fontSize: 15,
+    fontWeight: '500',
+    color: colors.greyDark,
+    lineHeight: 20,
+  },
   datePicker: { alignSelf: 'flex-start', marginTop: 2 },
 });

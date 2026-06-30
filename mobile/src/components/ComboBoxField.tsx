@@ -8,6 +8,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Keyboard,
+  type KeyboardTypeOptions,
   Pressable,
   StyleSheet,
   Text,
@@ -33,6 +34,8 @@ interface CommonProps {
   flagFor?: (option: string) => string;
   /** Aligns the trigger's value text. Defaults to left. */
   align?: 'left' | 'right';
+  /** Keyboard for the search/add input — e.g. 'decimal-pad' for numeric fields. */
+  keyboardType?: KeyboardTypeOptions;
 }
 
 type ComboBoxFieldProps = CommonProps &
@@ -42,7 +45,8 @@ type ComboBoxFieldProps = CommonProps &
   );
 
 export function ComboBoxField(props: ComboBoxFieldProps) {
-  const { label, options, placeholder, flagFor, align = 'left' } = props;
+  const { label, options, placeholder, flagFor, align = 'left', keyboardType } = props;
+  const numeric = keyboardType != null;
   const multiple = props.multiple === true;
   const selected = useMemo(
     () => (multiple ? props.value : props.value ? [props.value] : []),
@@ -225,7 +229,8 @@ export function ComboBoxField(props: ComboBoxFieldProps) {
                 onChangeText={setQuery}
                 placeholder={`Type to search or add ${label.toLowerCase()}`}
                 placeholderTextColor={colors.greyDark}
-                autoCapitalize="words"
+                keyboardType={keyboardType}
+                autoCapitalize={numeric ? 'none' : 'words'}
                 autoCorrect={false}
                 selectTextOnFocus
                 returnKeyType="done"

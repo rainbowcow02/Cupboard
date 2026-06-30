@@ -41,6 +41,7 @@ export function BrewForm({
 
   const [form, setForm] = useState<BrewFormValues>({
     brewer: source?.brewer ?? '',
+    grinder: source?.grinder ?? '',
     filter: source?.filter ?? '',
     grind: source?.grind ?? '',
     beansG: source?.beansG != null ? String(source.beansG) : '',
