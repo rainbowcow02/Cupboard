@@ -3,7 +3,6 @@ import { Animated, StyleSheet, Text, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { colors, fonts } from '@shared/theme';
 import { GlassBackButton } from '../GlassBackButton';
-import { TAB_BAR_HEIGHT } from '../TabBar';
 
 interface Props {
   onBack: () => void;
@@ -25,7 +24,8 @@ interface Props {
  */
 export function LogFormScaffold({ onBack, title, description, header, bottomInset, children }: Props) {
   const scrollY = useRef(new Animated.Value(0)).current;
-  const bottomPad = Math.max(bottomInset, 16) + TAB_BAR_HEIGHT + 48;
+  // Presented as a modal that covers the tab bar, so only the safe-area bottom is needed.
+  const bottomPad = Math.max(bottomInset, 16) + 48;
 
   return (
     <View style={styles.screen}>

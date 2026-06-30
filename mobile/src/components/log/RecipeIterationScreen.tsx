@@ -11,6 +11,7 @@ import {
   brewFieldsPayload,
   recipeValuesFrom,
 } from './BrewFieldSet';
+import { CascadeItem } from './CascadeItem';
 import { LogFormScaffold } from './LogFormScaffold';
 import { RecipeBeanHeader } from './RecipeBeanHeader';
 
@@ -64,7 +65,11 @@ export function RecipeIterationScreen({ coffee, base, onBack, onOpenBean, onSave
         <View style={styles.headerWrap}>
           <RecipeBeanHeader
             coffee={coffee}
-            description="Use an existing recipe or make a new one."
+            description={
+              base
+                ? 'Same bean, new ideas. Let\'s experiment.'
+                : 'A blank slate—dial it in your way.'
+            }
             onOpenBean={onOpenBean}
           />
         </View>
@@ -79,14 +84,17 @@ export function RecipeIterationScreen({ coffee, base, onBack, onOpenBean, onSave
         base={base}
       />
 
-      <PrimaryButton
-        label="Log this cup"
-        busyLabel="Saving…"
-        busy={saving}
-        onPress={save}
-        style={styles.save}
-        accessibilityLabel="Log this cup"
-      />
+      {/* Lands just after the last form row (BrewFieldSet ends at index 10). */}
+      <CascadeItem index={11}>
+        <PrimaryButton
+          label="Log this cup"
+          busyLabel="Saving…"
+          busy={saving}
+          onPress={save}
+          style={styles.save}
+          accessibilityLabel="Log this cup"
+        />
+      </CascadeItem>
     </LogFormScaffold>
   );
 }

@@ -5,6 +5,7 @@ import {
   BottomSheetTextInput,
   type BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet';
+import { useNavigation } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Keyboard,
@@ -56,6 +57,7 @@ export function ComboBoxField(props: ComboBoxFieldProps) {
     [multiple, props.value],
   );
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
   const { height: screenH } = useWindowDimensions();
   const modalRef = useRef<BottomSheetModal>(null);
   const inputRef = useRef<TextInput>(null);
@@ -110,6 +112,14 @@ export function ComboBoxField(props: ComboBoxFieldProps) {
     // options with the keyboard down. It only rises when the user taps search.
     modalRef.current?.present();
   }, [open]);
+
+  // Suspend the host modal's swipe-to-dismiss while the option sheet is open, so
+  // over-dragging the sheet down only dismisses the sheet — not the whole modal
+  // underneath. Restored on close (and on unmount via the cleanup).
+  useEffect(() => {
+    navigation.setOptions({ gestureEnabled: !open });
+    return () => navigation.setOptions({ gestureEnabled: true });
+  }, [navigation, open]);
 
   const handleDismiss = useCallback(() => setOpen(false), []);
 

@@ -33,6 +33,10 @@ export default function RootLayout() {
                 name="coffee/[beanId]"
                 options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
               />
+              <Stack.Screen
+                name="log-flow"
+                options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+              />
             </Stack>
           </BottomSheetModalProvider>
         </CoffeesProvider>

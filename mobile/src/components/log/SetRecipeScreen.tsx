@@ -6,7 +6,6 @@ import { colors, fonts, surfaces } from '@shared/theme';
 import { Chevron } from '../Chevron';
 import { GlassBackButton } from '../GlassBackButton';
 import { BrewCard } from '../BrewCard';
-import { TAB_BAR_HEIGHT } from '../TabBar';
 import { EmbeddedRecipeForm } from './EmbeddedRecipeForm';
 import { RecipeBeanHeader } from './RecipeBeanHeader';
 
@@ -41,7 +40,8 @@ export function SetRecipeScreen({
   const insets = useSafeAreaInsets();
   const brews = coffee.brews;
   const hasBrews = brews.length > 0;
-  const listBottomPad = Math.max(insets.bottom, 16) + TAB_BAR_HEIGHT + 48;
+  // Presented as a modal that covers the tab bar, so only the safe-area bottom is needed.
+  const listBottomPad = Math.max(insets.bottom, 16) + 48;
 
   const scrollY = useRef(new Animated.Value(0)).current;
 
@@ -81,6 +81,8 @@ export function SetRecipeScreen({
                 : 'No recipes yet—dial in your first one.'
             }
             onOpenBean={onOpenBean}
+            // Instant on the picker so returning here from the edit screen has no animation.
+            animateDescription={false}
           />
         }
         ListEmptyComponent={

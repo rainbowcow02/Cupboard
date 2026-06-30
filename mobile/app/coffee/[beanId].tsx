@@ -1,3 +1,4 @@
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
@@ -10,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import { Image } from 'expo-image';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Brew, Coffee } from '@shared/lib/coffees';
@@ -129,7 +131,9 @@ export default function CoffeeDetailScreen() {
   const flag = ORIGIN_FLAGS[coffee.origin ?? ''] ?? '';
 
   return (
-    <View style={styles.screen}>
+    <GestureHandlerRootView style={styles.screen}>
+      <BottomSheetModalProvider>
+        <View style={styles.screen}>
       {/* Back button — frosted circle fades in as the hero scrolls away */}
       <GlassBackButton
         onPress={() => router.back()}
@@ -236,7 +240,9 @@ export default function CoffeeDetailScreen() {
       {(addingBrew || editingBrew) && coffee && (
         <BrewForm coffee={coffee} brew={editingBrew} onClose={onBrewClose} onSaved={onBrewSaved} />
       )}
-    </View>
+        </View>
+      </BottomSheetModalProvider>
+    </GestureHandlerRootView>
   );
 }
 

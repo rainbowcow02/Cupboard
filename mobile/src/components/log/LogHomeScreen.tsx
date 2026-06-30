@@ -26,18 +26,48 @@ interface Props {
 
 /**
  * Default Log tab screen: the cupboard list is the home. Tapping a bean starts
- * an iteration; "Add" (subtle, top-right) starts a new bean. A search pill sits
- * directly under the title, scrolling with the list header.
+ * an iteration; "Add" (subtle, top-right) starts a new bean.
+ *
+ * The title + search pill ARE the list's header (ListHeaderComponent), but each
+ * is given a counter-scroll translate so they stay pinned while the list scrolls
+ * underneath. Because the cards are later siblings in the same scroll content,
+ * they always paint over the header — so the search fades and shrinks "behind"
+ * the rising cards with no z-index juggling, and stays tappable as a real child
+ * of the scroll view. The title pins until the top card rises to meet it, then
+ * detaches and rises with the list (locking an 8px gap), fading as it clears.
  */
-// Vertical breathing room above the brewing CTA, and the gap before the list
-// begins. Kept as constants so the fade threshold can be derived from them.
+// Vertical breathing room above the title, the gap between title and search, the
+// search pill height, and the gap before the first card. These are real layout
+// values (mirrored in the stylesheet) so the pin/handoff math can be derived.
 const CTA_PADDING_TOP = 100;
+const HEADER_GAP = 24;
+const SEARCH_BAR_HEIGHT = 50;
 const CTA_PADDING_BOTTOM = 16;
+const LIST_GAP = 12;
 
 // Number of sampled stops used to approximate an ease-in-out curve on the
 // scroll-linked CTA fade (RN's interpolate is linear between stops).
 const CTA_FADE_STEPS = 8;
 const easeInOut = Easing.inOut(Easing.ease);
+
+// How much the search pill shrinks (fraction) as it fades — a subtle scale-down
+// that emphasises the fade-out.
+const SEARCH_SHRINK = 0.08;
+
+// Gap locked between the title and the first card once they scroll together: the
+// title detaches this many px before the card would meet it.
+const GAP_TITLE_TO_LIST = 8;
+
+// Scroll distance at which the top card has risen to GAP_TITLE_TO_LIST below the
+// title — i.e. the resting gap between the title's bottom and the first card,
+// minus that lock. The title pins until here, then detaches and rises 1:1 with
+// the list. Constant because every term is a fixed layout value.
+const TITLE_HANDOFF =
+  HEADER_GAP + SEARCH_BAR_HEIGHT + CTA_PADDING_BOTTOM + LIST_GAP - GAP_TITLE_TO_LIST;
+
+// Scroll distance over which the search fades + shrinks: by the time the rising
+// top card has fully covered the pinned search bar, it has faded out.
+const SEARCH_FADE_END = CTA_PADDING_BOTTOM + LIST_GAP + SEARCH_BAR_HEIGHT;
 
 // How far (px) above the list's top edge a card begins fading before it clips
 // off — roughly one card height, so the fade reads as the card exiting.
@@ -79,7 +109,6 @@ export function LogHomeScreen({ coffees, onSelectCoffee, onAddNew }: Props) {
   const [query, setQuery] = useState('');
 
   const scrollY = useRef(new Animated.Value(0)).current;
-  const [ctaHeight, setCtaHeight] = useState(0);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -92,21 +121,57 @@ export function LogHomeScreen({ coffees, onSelectCoffee, onAddNew }: Props) {
     );
   }, [coffees, query]);
 
-  // Fade the title + search pill out as the CTA scrolls up, ease-in-out: fully
-  // gone by the time the title baseline reaches the top bar. Sampled across a
-  // few stops because RN's interpolate is linear between stops.
-  const titleBottom = Math.max(ctaHeight - CTA_PADDING_BOTTOM, 1);
-  const ctaFadeOpacity = scrollY.interpolate({
-    inputRange: Array.from(
-      { length: CTA_FADE_STEPS + 1 },
-      (_, i) => (titleBottom * i) / CTA_FADE_STEPS,
-    ),
-    outputRange: Array.from(
-      { length: CTA_FADE_STEPS + 1 },
-      (_, i) => 1 - easeInOut(i / CTA_FADE_STEPS),
-    ),
-    extrapolate: 'clamp',
-  });
+  // Counter-scroll transforms that pin the header's title + search at the top
+  // while the list scrolls beneath them (translateY = scrollY cancels the scroll).
+  // Memoized: the nodes are native-driver-backed and the inputs are constants, so
+  // a query-change re-render never rebuilds them. extrapolateLeft 'clamp' keeps
+  // them put during overscroll bounce.
+  const { titleTranslateY, titleOpacity, searchTranslateY, searchOpacity, searchScale } =
+    useMemo(() => {
+      const searchFadeInput = Array.from(
+        { length: CTA_FADE_STEPS + 1 },
+        (_, i) => (SEARCH_FADE_END * i) / CTA_FADE_STEPS,
+      );
+      return {
+        // Title pins (translateY follows scroll) until TITLE_HANDOFF, then clamps
+        // so it rises 1:1 with the list — the top card, locked GAP_TITLE_TO_LIST
+        // below, rises with it. Then it fades as both clear the top.
+        titleTranslateY: scrollY.interpolate({
+          inputRange: [0, TITLE_HANDOFF],
+          outputRange: [0, TITLE_HANDOFF],
+          extrapolate: 'clamp',
+        }),
+        titleOpacity: scrollY.interpolate({
+          inputRange: [TITLE_HANDOFF, TITLE_HANDOFF + CTA_PADDING_TOP],
+          outputRange: [1, 0],
+          extrapolate: 'clamp',
+        }),
+        // Search stays pinned for the whole scroll (it fades out long before it
+        // would matter), shrinking and fading as the rising cards cover it.
+        searchTranslateY: scrollY.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0, 1],
+          extrapolateLeft: 'clamp',
+          extrapolateRight: 'extend',
+        }),
+        searchOpacity: scrollY.interpolate({
+          inputRange: searchFadeInput,
+          outputRange: Array.from(
+            { length: CTA_FADE_STEPS + 1 },
+            (_, i) => 1 - easeInOut(i / CTA_FADE_STEPS),
+          ),
+          extrapolate: 'clamp',
+        }),
+        searchScale: scrollY.interpolate({
+          inputRange: searchFadeInput,
+          outputRange: Array.from(
+            { length: CTA_FADE_STEPS + 1 },
+            (_, i) => 1 - SEARCH_SHRINK * easeInOut(i / CTA_FADE_STEPS),
+          ),
+          extrapolate: 'clamp',
+        }),
+      };
+    }, [scrollY]);
 
   // Stable cell renderer so cells aren't remounted each render; injects the
   // (ref-backed, stable) scrollY into every row's fade.
@@ -123,6 +188,67 @@ export function LogHomeScreen({ coffees, onSelectCoffee, onAddNew }: Props) {
   // inset) plus breathing room so the last card clears the bottom chrome.
   const listBottomPad =
     Math.max(insets.bottom, 16) - insets.bottom + TAB_BAR_HEIGHT + 24;
+
+  // Memoized so an atTop re-render doesn't rebuild the native scroll binding
+  // (which can hiccup an in-flight scroll) or remeasure the spacer.
+  const onScroll = useMemo(
+    () =>
+      Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], {
+        useNativeDriver: true,
+      }),
+    [scrollY],
+  );
+  // The list's header IS the title + search. Pinned via counter-scroll transforms
+  // so it stays at the top while cards (later siblings in the same scroll content)
+  // rise and paint over it — the search reads as fading "behind" the cards, and
+  // stays tappable because it's a real child of the scroll view.
+  const listHeader = (
+    <View style={styles.listHeader} pointerEvents="box-none">
+      <Animated.Text
+        style={[
+          styles.ctaTitle,
+          { opacity: titleOpacity, transform: [{ translateY: titleTranslateY }] },
+        ]}
+      >
+        What are we brewing today?
+      </Animated.Text>
+      <Animated.View
+        style={[
+          styles.searchShadow,
+          {
+            opacity: searchOpacity,
+            transform: [{ translateY: searchTranslateY }, { scale: searchScale }],
+          },
+        ]}
+      >
+        <View style={styles.searchBar}>
+          <SearchIcon size={20} color={colors.greyDark} strokeWidth={2} />
+          <TextInput
+            style={styles.searchInput}
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search your cupboard"
+            placeholderTextColor={colors.greyDark}
+            selectionColor={colors.moss}
+            cursorColor={colors.moss}
+            accessibilityLabel="Search your cupboard"
+            returnKeyType="search"
+          />
+          {query.length > 0 ? (
+            <Pressable
+              onPress={() => setQuery('')}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Clear search"
+              style={styles.clearButton}
+            >
+              <Text style={styles.clearGlyph}>×</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      </Animated.View>
+    </View>
+  );
 
   return (
     <View style={styles.screen}>
@@ -145,44 +271,9 @@ export function LogHomeScreen({ coffees, onSelectCoffee, onAddNew }: Props) {
         contentContainerStyle={[styles.list, { paddingBottom: listBottomPad }]}
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={16}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-          { useNativeDriver: true },
-        )}
+        onScroll={onScroll}
         CellRendererComponent={CellRendererComponent}
-        ListHeaderComponent={
-          <Animated.View
-            style={[styles.cta, { opacity: ctaFadeOpacity }]}
-            onLayout={(e) => setCtaHeight(e.nativeEvent.layout.height)}
-          >
-            <Text style={styles.ctaTitle}>What are we brewing today?</Text>
-            <View style={styles.searchShadow}>
-              <View style={styles.searchBar}>
-                <SearchIcon size={20} color={colors.greyDark} strokeWidth={2} />
-                <TextInput
-                  style={styles.searchInput}
-                  value={query}
-                  onChangeText={setQuery}
-                  placeholder="Search your cupboard"
-                  placeholderTextColor={colors.greyDark}
-                  accessibilityLabel="Search your cupboard"
-                  returnKeyType="search"
-                />
-                {query.length > 0 ? (
-                  <Pressable
-                    onPress={() => setQuery('')}
-                    hitSlop={8}
-                    accessibilityRole="button"
-                    accessibilityLabel="Clear search"
-                    style={styles.clearButton}
-                  >
-                    <Text style={styles.clearGlyph}>×</Text>
-                  </Pressable>
-                ) : null}
-              </View>
-            </View>
-          </Animated.View>
-        }
+        ListHeaderComponent={listHeader}
         ListEmptyComponent={
           <Text style={styles.empty}>
             {query.trim()
@@ -219,12 +310,13 @@ const styles = StyleSheet.create({
   screen: { flex: 1 },
   header: {
     // Overlay the list (no fill) so cards stay visible flowing up behind the
-    // Add button as they fade past the top edge.
+    // Add button as they fade past the top edge. zIndex keeps the Add pill above
+    // the scrolling list content.
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    zIndex: 2,
+    zIndex: 3,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
@@ -232,11 +324,15 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     gap: 12,
   },
-  cta: {
+  listHeader: {
+    // The list's header (title + search). Its negative horizontal margin cancels
+    // the list's 24px content padding so the search keeps its full-bleed width;
+    // the gap/paddings here are the layout values the pin math is derived from.
+    marginHorizontal: -24,
     paddingTop: CTA_PADDING_TOP,
     paddingBottom: CTA_PADDING_BOTTOM,
     alignItems: 'center',
-    gap: 24,
+    gap: HEADER_GAP,
   },
   ctaTitle: {
     // H3 — Avenir Heavy 21/800, line-height 1.4 (see design system).
@@ -296,9 +392,12 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     gap: 10,
-    paddingHorizontal: 18,
+    // Right padding runs a touch larger than the left: the filled clear circle
+    // reads closer to the edge than the open magnifying glass, so the extra
+    // breathing room makes the two sides look optically even.
+    paddingLeft: 18,
+    paddingRight: 20,
     height: 50,
     borderRadius: 25,
     borderWidth: StyleSheet.hairlineWidth,
@@ -306,13 +405,16 @@ const styles = StyleSheet.create({
     backgroundColor: surfaces.pillFill,
     overflow: 'hidden',
   },
+  // Always left-aligned so the icon and placeholder hold their position when the
+  // field gains focus — only the caret appears, nothing shifts.
   searchInput: {
+    flexGrow: 1,
     flexShrink: 1,
     fontFamily: fonts.sans,
     fontSize: 16,
     fontWeight: '500',
     color: colors.black,
-    textAlign: 'center',
+    textAlign: 'left',
     padding: 0,
   },
   clearButton: {

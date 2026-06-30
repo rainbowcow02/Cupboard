@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, ViewStyle } from 'react-native';
+import { StyleProp, StyleSheet, Text, TextStyle, View, ViewStyle } from 'react-native';
 import { colors, fonts } from '@shared/theme';
 
 interface Props {
@@ -7,9 +7,11 @@ interface Props {
   style?: ViewStyle;
   /** Lay the label out left, the input right, as a single settings-style row. */
   horizontal?: boolean;
+  /** Override the (vertical-layout) label's text style, e.g. to match the row-label font. */
+  labelStyle?: StyleProp<TextStyle>;
 }
 
-export function FormField({ label, children, style, horizontal }: Props) {
+export function FormField({ label, children, style, horizontal, labelStyle }: Props) {
   if (horizontal) {
     return (
       <View style={[styles.rowContainer, style]}>
@@ -23,7 +25,7 @@ export function FormField({ label, children, style, horizontal }: Props) {
 
   return (
     <View style={[styles.container, style]}>
-      <Text style={styles.label}>{label}</Text>
+      <Text style={[styles.label, labelStyle]}>{label}</Text>
       {children}
     </View>
   );
