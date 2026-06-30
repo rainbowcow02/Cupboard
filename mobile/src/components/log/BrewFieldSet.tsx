@@ -21,6 +21,14 @@ function compareOptions(a: string, b: string): number {
   return a.localeCompare(b);
 }
 
+/** "92" → "92°C / 198°F" so the temp picker shows both scales (Celsius stays the stored value). */
+function tempWithFahrenheit(celsius: string): string {
+  const c = Number(celsius);
+  if (celsius.trim() === '' || !Number.isFinite(c)) return celsius;
+  const f = Math.round((c * 9) / 5 + 32);
+  return `${celsius}°C / ${f}°F`;
+}
+
 /** Distinct, non-empty values for a brew field across every logged brew. */
 function distinctBrewValues(coffees: Coffee[], field: keyof Brew): string[] {
   const seen = new Set<string>();
@@ -134,7 +142,7 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
         },
         tempC: {
           raw: base.tempC != null ? String(base.tempC) : '',
-          show: base.tempC != null ? `${base.tempC}°C` : '',
+          show: base.tempC != null ? tempWithFahrenheit(String(base.tempC)) : '',
         },
       }
     : null;
@@ -147,7 +155,7 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
 
   return (
     <View style={styles.fields}>
-      <FormField label="Brewer">
+      <FormField label="Brewer" horizontal>
         <ComboBoxField
           label="Brewer"
           value={values.brewer}
@@ -158,7 +166,7 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
         <FieldDiffHint previous={hintFor('brewer')} />
       </FormField>
 
-      <FormField label="Filter">
+      <FormField label="Filter" horizontal>
         <ComboBoxField
           label="Filter"
           value={values.filter}
@@ -169,7 +177,7 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
         <FieldDiffHint previous={hintFor('filter')} />
       </FormField>
 
-      <FormField label="Grinder">
+      <FormField label="Grinder" horizontal>
         <ComboBoxField
           label="Grinder"
           value={values.grinder}
@@ -180,7 +188,7 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
         <FieldDiffHint previous={hintFor('grinder')} />
       </FormField>
 
-      <FormField label="Grind size">
+      <FormField label="Grind size" horizontal>
         <ComboBoxField
           label="Grind size"
           value={values.grind}
@@ -192,41 +200,42 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
         <FieldDiffHint previous={hintFor('grind')} />
       </FormField>
 
-      <View style={styles.row}>
-        <FormField label="Beans (g)">
-          <ComboBoxField
-            label="Beans (g)"
-            value={values.beansG}
-            options={options.beansG}
-            placeholder="🫘"
-            keyboardType="decimal-pad"
-            onChange={set('beansG')}
-          />
-          <FieldDiffHint previous={hintFor('beansG')} />
-        </FormField>
-        <FormField label="Water (ml)">
-          <ComboBoxField
-            label="Water (ml)"
-            value={values.waterMl}
-            options={options.waterMl}
-            placeholder="💧"
-            keyboardType="decimal-pad"
-            onChange={set('waterMl')}
-          />
-          <FieldDiffHint previous={hintFor('waterMl')} />
-        </FormField>
-        <FormField label="Temp °C/°F">
-          <ComboBoxField
-            label="Temp"
-            value={values.tempC}
-            options={options.tempC}
-            placeholder="🔥"
-            keyboardType="decimal-pad"
-            onChange={set('tempC')}
-          />
-          <FieldDiffHint previous={hintFor('tempC')} />
-        </FormField>
-      </View>
+      <FormField label="Beans (g)" horizontal>
+        <ComboBoxField
+          label="Beans (g)"
+          value={values.beansG}
+          options={options.beansG}
+          placeholder="🫘"
+          keyboardType="decimal-pad"
+          onChange={set('beansG')}
+        />
+        <FieldDiffHint previous={hintFor('beansG')} />
+      </FormField>
+
+      <FormField label="Water (ml)" horizontal>
+        <ComboBoxField
+          label="Water (ml)"
+          value={values.waterMl}
+          options={options.waterMl}
+          placeholder="💧"
+          keyboardType="decimal-pad"
+          onChange={set('waterMl')}
+        />
+        <FieldDiffHint previous={hintFor('waterMl')} />
+      </FormField>
+
+      <FormField label="Temp °C/°F" horizontal>
+        <ComboBoxField
+          label="Temp"
+          value={values.tempC}
+          options={options.tempC}
+          formatOption={tempWithFahrenheit}
+          placeholder="🔥"
+          keyboardType="decimal-pad"
+          onChange={set('tempC')}
+        />
+        <FieldDiffHint previous={hintFor('tempC')} />
+      </FormField>
 
       <FormField label="Pour structure">
         {/* iOS truncates a multiline TextInput's native placeholder to one line,
@@ -248,7 +257,7 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
         </View>
       </FormField>
 
-      <FormField label="Date">
+      <FormField label="Date" horizontal>
         <DateField
           value={values.date}
           onChange={(date) => onChange({ date })}
@@ -256,8 +265,10 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
         />
       </FormField>
 
-      <FormField label="Rating">
-        <RatingInput value={values.rating} onChange={(rating) => onChange({ rating })} />
+      <FormField label="Rating" horizontal>
+        <View style={styles.ratingWrap}>
+          <RatingInput value={values.rating} onChange={(rating) => onChange({ rating })} />
+        </View>
       </FormField>
     </View>
   );
@@ -265,7 +276,6 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
 
 const styles = StyleSheet.create({
   fields: { gap: 14 },
-  row: { flexDirection: 'row', gap: 10 },
   recipeInputWrap: { position: 'relative' },
   recipeInput: { minHeight: 96, paddingTop: 12 },
   recipePlaceholder: {
@@ -280,4 +290,5 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   datePicker: { alignSelf: 'flex-start', marginTop: 2 },
+  ratingWrap: { alignItems: 'flex-start' },
 });
