@@ -155,7 +155,7 @@ export function NewBeanStep({
             label="Roaster"
             value={form.roaster}
             options={options.roaster}
-            placeholder="Pick a roaster"
+            placeholder="Who's the roaster?"
             onChange={set('roaster')}
           />
         </FormField>
@@ -164,7 +164,7 @@ export function NewBeanStep({
             label="Country"
             value={form.origin}
             options={options.origin}
-            placeholder="Where's it from?"
+            placeholder="Where was it sourced?"
             onChange={set('origin')}
             flagFor={(option) => ORIGIN_FLAGS[option] || ''}
           />
@@ -174,7 +174,7 @@ export function NewBeanStep({
             label="Process"
             value={form.process}
             options={options.process}
-            placeholder="Pick a process"
+            placeholder="How was it processed?"
             onChange={set('process')}
           />
         </FormField>
@@ -183,7 +183,7 @@ export function NewBeanStep({
             label="Roast"
             value={form.roastLevel}
             options={options.roastLevel}
-            placeholder="Pick a roast"
+            placeholder="What's the roast-level?"
             onChange={set('roastLevel')}
           />
         </FormField>
@@ -192,7 +192,7 @@ export function NewBeanStep({
             label="Region"
             value={form.region}
             options={options.region}
-            placeholder="Add a region"
+            placeholder="Know the region?"
             onChange={set('region')}
           />
         </FormField>
@@ -202,7 +202,7 @@ export function NewBeanStep({
             multiple
             value={varietyList}
             options={options.variety}
-            placeholder="Add a variety"
+            placeholder="Which varietal?"
             onChange={setVariety}
           />
         </FormField>
@@ -211,7 +211,7 @@ export function NewBeanStep({
             style={fieldInputStyle}
             value={form.notes}
             onChangeText={set('notes')}
-            placeholder="Rose Tea, Oolong, Cantalope"
+            placeholder="e.g. Rose Tea, Oolong, Cantalope"
             placeholderTextColor={colors.greyDark}
             returnKeyType="done"
           />

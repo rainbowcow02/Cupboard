@@ -34,6 +34,13 @@ function distinctBrewValues(coffees: Coffee[], field: keyof Brew): string[] {
   return [...seen].sort(compareOptions);
 }
 
+/** Formats a Celsius value (numeric string) as "94°C / 201°F"; passes through non-numeric input. */
+function formatTemp(celsius: string): string {
+  const c = Number(celsius);
+  if (celsius.trim() === '' || !Number.isFinite(c)) return celsius;
+  return `${celsius}°C / ${Math.round((c * 9) / 5 + 32)}°F`;
+}
+
 /** Coffee-to-water ratio ("1:N", whole number) from beans/water strings, or null if unset. */
 function ratioOf(beansG: string, waterMl: string): string | null {
   const beans = Number(beansG);
@@ -142,7 +149,7 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
         },
         tempC: {
           raw: base.tempC != null ? String(base.tempC) : '',
-          show: base.tempC != null ? `${base.tempC}°C` : '',
+          show: base.tempC != null ? formatTemp(String(base.tempC)) : '',
         },
       }
     : null;
@@ -172,7 +179,7 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
           label="Brewer"
           value={values.brewer}
           options={options.brewer}
-          placeholder="Pick a brewer"
+          placeholder="Which brewer?"
           onChange={set('brewer')}
         />
         <FieldDiffHint previous={hintFor('brewer')} />
@@ -183,7 +190,7 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
           label="Filter"
           value={values.filter}
           options={options.filter}
-          placeholder="Pick a filter"
+          placeholder="Which filter?"
           onChange={set('filter')}
         />
         <FieldDiffHint previous={hintFor('filter')} />
@@ -194,7 +201,7 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
           label="Grinder"
           value={values.grinder}
           options={options.grinder}
-          placeholder="Pick a grinder"
+          placeholder="Which grinder?"
           onChange={set('grinder')}
         />
         <FieldDiffHint previous={hintFor('grinder')} />
@@ -205,7 +212,7 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
           label="Grind size"
           value={values.grind}
           options={options.grind}
-          placeholder="Add grind size"
+          placeholder="How fine?"
           keyboardType="decimal-pad"
           onChange={set('grind')}
         />
@@ -217,7 +224,7 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
           label="Beans (g)"
           value={values.beansG}
           options={options.beansG}
-          placeholder="🫘"
+          placeholder="How much coffee?"
           keyboardType="decimal-pad"
           onChange={set('beansG')}
         />
@@ -229,7 +236,7 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
           label="Water (ml)"
           value={values.waterMl}
           options={options.waterMl}
-          placeholder="💧"
+          placeholder="How much water?"
           keyboardType="decimal-pad"
           onChange={set('waterMl')}
         />
@@ -241,19 +248,20 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
         <FieldDiffHint previous={ratioHint} />
       </FormField>
 
-      <FormField label="Temp °C/°F" horizontal>
+      <FormField label="Temperature" horizontal>
         <ComboBoxField
-          label="Temp"
+          label="Temperature"
           value={values.tempC}
           options={options.tempC}
-          placeholder="🔥"
+          placeholder="How hot?"
           keyboardType="decimal-pad"
+          formatOption={formatTemp}
           onChange={set('tempC')}
         />
         <FieldDiffHint previous={hintFor('tempC')} />
       </FormField>
 
-      <FormField label="Pour structure">
+      <FormField label="Pour structure" labelStyle={styles.pourLabel}>
         {/* iOS truncates a multiline TextInput's native placeholder to one line,
             so render a wrapping Text overlay while the field is empty instead. */}
         <View style={styles.recipeInputWrap}>
@@ -313,5 +321,13 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: colors.black,
+  },
+  // Match the other (horizontal) field labels while keeping the label above the input.
+  pourLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.black,
+    textTransform: 'none',
+    letterSpacing: 0,
   },
 });
