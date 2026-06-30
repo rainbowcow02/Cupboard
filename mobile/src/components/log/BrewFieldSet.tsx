@@ -34,6 +34,13 @@ function distinctBrewValues(coffees: Coffee[], field: keyof Brew): string[] {
   return [...seen].sort(compareOptions);
 }
 
+/** Formats a Celsius value (numeric string) as "94°C / 201°F"; passes through non-numeric input. */
+function formatTemp(celsius: string): string {
+  const c = Number(celsius);
+  if (celsius.trim() === '' || !Number.isFinite(c)) return celsius;
+  return `${celsius}°C / ${Math.round((c * 9) / 5 + 32)}°F`;
+}
+
 /** In-memory form state for a brew recipe (numbers held as strings). */
 export interface BrewFormValues {
   brewer: string;
@@ -134,7 +141,7 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
         },
         tempC: {
           raw: base.tempC != null ? String(base.tempC) : '',
-          show: base.tempC != null ? `${base.tempC}°C` : '',
+          show: base.tempC != null ? formatTemp(String(base.tempC)) : '',
         },
       }
     : null;
@@ -228,13 +235,14 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
         <Text style={styles.ratioValue}>{ratio}</Text>
       </FormField>
 
-      <FormField label="Temp °C/°F" horizontal>
+      <FormField label="Temperature" horizontal>
         <ComboBoxField
-          label="Temp"
+          label="Temperature"
           value={values.tempC}
           options={options.tempC}
           placeholder="🔥"
           keyboardType="decimal-pad"
+          formatOption={formatTemp}
           onChange={set('tempC')}
         />
         <FieldDiffHint previous={hintFor('tempC')} />
