@@ -64,7 +64,11 @@ export function RecipeIterationScreen({ coffee, base, onBack, onOpenBean, onSave
         <View style={styles.headerWrap}>
           <RecipeBeanHeader
             coffee={coffee}
-            description="Use an existing recipe or make a new one."
+            description={
+              base
+                ? 'Same bean, new ideas. Let\'s experiment.'
+                : 'A blank slate—dial it in your way.'
+            }
             onOpenBean={onOpenBean}
           />
         </View>
