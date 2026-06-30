@@ -161,7 +161,6 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
           value={values.brewer}
           options={options.brewer}
           placeholder="Pick a brewer"
-          align="right"
           onChange={set('brewer')}
         />
         <FieldDiffHint previous={hintFor('brewer')} />
@@ -173,7 +172,6 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
           value={values.filter}
           options={options.filter}
           placeholder="Pick a filter"
-          align="right"
           onChange={set('filter')}
         />
         <FieldDiffHint previous={hintFor('filter')} />
@@ -185,7 +183,6 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
           value={values.grinder}
           options={options.grinder}
           placeholder="Pick a grinder"
-          align="right"
           onChange={set('grinder')}
         />
         <FieldDiffHint previous={hintFor('grinder')} />
@@ -198,7 +195,6 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
           options={options.grind}
           placeholder="Add grind size"
           keyboardType="decimal-pad"
-          align="right"
           onChange={set('grind')}
         />
         <FieldDiffHint previous={hintFor('grind')} />
@@ -211,7 +207,6 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
           options={options.beansG}
           placeholder="🫘"
           keyboardType="decimal-pad"
-          align="right"
           onChange={set('beansG')}
         />
         <FieldDiffHint previous={hintFor('beansG')} />
@@ -224,7 +219,6 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
           options={options.waterMl}
           placeholder="💧"
           keyboardType="decimal-pad"
-          align="right"
           onChange={set('waterMl')}
         />
         <FieldDiffHint previous={hintFor('waterMl')} />
@@ -241,7 +235,6 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
           options={options.tempC}
           placeholder="🔥"
           keyboardType="decimal-pad"
-          align="right"
           onChange={set('tempC')}
         />
         <FieldDiffHint previous={hintFor('tempC')} />
@@ -303,7 +296,6 @@ const styles = StyleSheet.create({
   datePicker: { alignSelf: 'flex-start', marginTop: 2 },
   ratingWrap: { alignItems: 'flex-start' },
   ratioValue: {
-    textAlign: 'right',
     fontFamily: fonts.sans,
     fontSize: 15,
     fontWeight: '600',
