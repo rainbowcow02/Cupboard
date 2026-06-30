@@ -8,6 +8,7 @@ import { GlassBackButton } from '../GlassBackButton';
 import { BeanCard } from '../BeanCard';
 import { BrewCard } from '../BrewCard';
 import { TAB_BAR_HEIGHT } from '../TabBar';
+import { EmbeddedRecipeForm } from './EmbeddedRecipeForm';
 
 interface Props {
   coffee: Coffee;
@@ -18,6 +19,8 @@ interface Props {
   onNew: () => void;
   /** Open the full bean detail page for the chosen bean. */
   onOpenBean: () => void;
+  /** Save the inline recipe shown when the bean has no brews yet. */
+  onSaved: () => Promise<void>;
 }
 
 /** Right-pointing chevron used on the bean header and duplicate tabs. */
@@ -39,11 +42,20 @@ function Chevron({ color }: { color: string }) {
  * Recipe picker for a selected bean: a header showing the chosen bean, then the
  * bean's past brews as full BrewCards. Each card carries a green "Duplicate this
  * recipe" tab that seeds a new editable recipe. "New" (top-right) starts from a
- * blank form.
+ * blank form. When the bean has no brews yet, the blank recipe form is embedded
+ * inline below the divider instead.
  */
-export function SetRecipeScreen({ coffee, onBack, onPickRecipe, onNew, onOpenBean }: Props) {
+export function SetRecipeScreen({
+  coffee,
+  onBack,
+  onPickRecipe,
+  onNew,
+  onOpenBean,
+  onSaved,
+}: Props) {
   const insets = useSafeAreaInsets();
   const brews = coffee.brews;
+  const hasBrews = brews.length > 0;
   const listBottomPad = Math.max(insets.bottom, 16) + TAB_BAR_HEIGHT + 48;
 
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -52,14 +64,16 @@ export function SetRecipeScreen({ coffee, onBack, onPickRecipe, onNew, onOpenBea
     <View style={styles.screen}>
       <View style={styles.header}>
         <GlassBackButton onPress={onBack} scrollY={scrollY} style={styles.backButton} />
-        <Pressable
-          onPress={onNew}
-          style={({ pressed }) => [styles.newPill, pressed && styles.newPillPressed]}
-          accessibilityRole="button"
-          accessibilityLabel="Start a new recipe"
-        >
-          <Text style={styles.newPillText}>New</Text>
-        </Pressable>
+        {hasBrews ? (
+          <Pressable
+            onPress={onNew}
+            style={({ pressed }) => [styles.newPill, pressed && styles.newPillPressed]}
+            accessibilityRole="button"
+            accessibilityLabel="Start a new recipe"
+          >
+            <Text style={styles.newPillText}>New</Text>
+          </Pressable>
+        ) : null}
       </View>
 
       <Animated.FlatList
@@ -67,6 +81,7 @@ export function SetRecipeScreen({ coffee, onBack, onPickRecipe, onNew, onOpenBea
         keyExtractor={(brew: Brew) => String(brew.id)}
         contentContainerStyle={[styles.list, { paddingBottom: listBottomPad }]}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
         scrollEventThrottle={16}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
@@ -76,9 +91,11 @@ export function SetRecipeScreen({ coffee, onBack, onPickRecipe, onNew, onOpenBea
           <View style={styles.listHeader}>
             <View style={styles.intro}>
               <View style={styles.titleBlock}>
-                <Text style={styles.title}>Set your recipe</Text>
+                <Text style={styles.title}>Set a recipe</Text>
                 <Text style={styles.description}>
-                  Iterate on an existing recipe or make a new one.
+                  {hasBrews
+                    ? 'Use an existing recipe or make a new one.'
+                    : 'No recipes yet—dial in your first one.'}
                 </Text>
               </View>
               <BeanCard
@@ -93,9 +110,7 @@ export function SetRecipeScreen({ coffee, onBack, onPickRecipe, onNew, onOpenBea
           </View>
         }
         ListEmptyComponent={
-          <Text style={styles.empty}>
-            No recipes yet for this bean — tap New to dial one in.
-          </Text>
+          <EmbeddedRecipeForm coffee={coffee} onSaved={onSaved} />
         }
         renderItem={({ item }: { item: Brew }) => (
           <View style={styles.recipeItem}>
@@ -193,13 +208,4 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
   cardWrap: { marginTop: -36, zIndex: 1 },
-  empty: {
-    fontFamily: fonts.sans,
-    fontWeight: '500',
-    fontSize: 14,
-    color: colors.greyDark,
-    textAlign: 'center',
-    paddingVertical: 32,
-    lineHeight: 20,
-  },
 });

@@ -86,6 +86,7 @@ export default function LogScreen() {
           onPickRecipe={(base) => setStep({ name: 'editRecipe', coffee: step.coffee, base })}
           onNew={() => setStep({ name: 'editRecipe', coffee: step.coffee, base: null })}
           onOpenBean={() => router.push(`/coffee/${encodeURIComponent(step.coffee.id)}`)}
+          onSaved={onSavedAndReset}
         />
       )}
 
