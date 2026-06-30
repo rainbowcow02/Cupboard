@@ -1,178 +1,111 @@
+import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { SafeAreaView, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Brew, Coffee } from '@shared/lib/coffees';
 import { colors } from '@shared/theme';
-import { BrewForm } from '../coffee/BrewForm';
-import { BeanPickerStep } from '../../src/components/log/BeanPickerStep';
-import { BrewLandingStep } from '../../src/components/log/BrewLandingStep';
-import { LogHeader } from '../../src/components/log/LogHeader';
+import { AddViaLinkStep } from '../../src/components/log/AddViaLinkStep';
+import { LogHomeScreen } from '../../src/components/log/LogHomeScreen';
 import { NewBeanStep } from '../../src/components/log/NewBeanStep';
-import { QuickLogStep } from '../../src/components/log/QuickLogStep';
-import { RecipeChoiceStep, RecipePath } from '../../src/components/log/RecipeChoiceStep';
-import { RecipePickerStep } from '../../src/components/log/RecipePickerStep';
+import { RecipeIterationScreen } from '../../src/components/log/RecipeIterationScreen';
+import { SetRecipeScreen } from '../../src/components/log/SetRecipeScreen';
+import { BottomChromeScrim } from '../../src/components/surfaces/BottomChromeScrim';
 import { useCoffees } from '../../src/hooks/useCoffees';
 
 type Step =
-  | { name: 'landing' }
-  | { name: 'pickExisting' }
+  | { name: 'logHome' }
   | { name: 'newBean' }
-  | { name: 'choice'; coffee: Coffee }
-  | { name: 'pickRecipe'; coffee: Coffee; path: 'repeat' | 'tweak' }
-  | { name: 'quickLog'; coffee: Coffee; template: Brew }
-  | { name: 'brewForm'; coffee: Coffee; template: Brew | null };
-
-function titleFor(step: Step): { title?: string; subtitle?: string } {
-  switch (step.name) {
-    case 'landing':
-      return {};
-    case 'pickExisting':
-      return { title: 'Choose a coffee' };
-    case 'newBean':
-      return { title: 'New coffee', subtitle: 'Add it to your cupboard' };
-    case 'choice':
-      return { title: step.coffee.bean, subtitle: step.coffee.roaster };
-    case 'pickRecipe':
-      return {
-        title: step.path === 'repeat' ? 'Pick a recipe' : 'Choose a starting point',
-        subtitle: step.coffee.bean,
-      };
-    case 'quickLog':
-      return { title: 'Log this cup', subtitle: step.coffee.bean };
-    case 'brewForm':
-      return {
-        title: step.template ? 'Tweak recipe' : 'New recipe',
-        subtitle: step.coffee.bean,
-      };
-  }
-}
+  | { name: 'addViaLink' }
+  | { name: 'setRecipe'; coffee: Coffee }
+  | { name: 'editRecipe'; coffee: Coffee; base: Brew | null };
 
 export default function LogScreen() {
   const { coffees, refresh } = useCoffees();
+  const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [step, setStep] = useState<Step>({ name: 'landing' });
+  const [step, setStep] = useState<Step>({ name: 'logHome' });
 
-  const reset = useCallback(() => setStep({ name: 'landing' }), []);
+  const reset = useCallback(() => setStep({ name: 'logHome' }), []);
 
   const onSavedAndReset = useCallback(async () => {
     await refresh();
     reset();
   }, [refresh, reset]);
 
+  const openBean = useCallback(
+    (coffee: Coffee) =>
+      router.push({
+        pathname: '/coffee/[beanId]',
+        // Carry the full draft so a not-yet-saved bean still renders its detail page.
+        params: { beanId: coffee.id, draft: JSON.stringify(coffee) },
+      }),
+    [router],
+  );
+
   const goBack = useCallback(() => {
     setStep((current) => {
       switch (current.name) {
-        case 'landing':
+        case 'logHome':
           return current;
-        case 'pickExisting':
-          return { name: 'landing' };
         case 'newBean':
-          return { name: 'landing' };
-        case 'choice':
-          return { name: 'pickExisting' };
-        case 'pickRecipe':
-          return { name: 'choice', coffee: current.coffee };
-        case 'quickLog':
-          return { name: 'pickRecipe', coffee: current.coffee, path: 'repeat' };
-        case 'brewForm':
-          return current.coffee.brews.length > 0
-            ? { name: 'choice', coffee: current.coffee }
-            : { name: 'landing' };
+          return { name: 'logHome' };
+        case 'addViaLink':
+          return { name: 'newBean' };
+        case 'setRecipe':
+          return { name: 'logHome' };
+        case 'editRecipe':
+          return { name: 'setRecipe', coffee: current.coffee };
       }
     });
   }, []);
 
-  const onSelectCoffee = useCallback((coffee: Coffee) => {
-    if (coffee.brews.length > 0) {
-      setStep({ name: 'choice', coffee });
-    } else {
-      setStep({ name: 'brewForm', coffee, template: null });
-    }
-  }, []);
-
-  const onChoosePath = useCallback((coffee: Coffee, path: RecipePath) => {
-    if (path === 'new') {
-      setStep({ name: 'brewForm', coffee, template: null });
-    } else {
-      setStep({ name: 'pickRecipe', coffee, path });
-    }
-  }, []);
-
-  const onPickRecipe = useCallback(
-    (coffee: Coffee, path: 'repeat' | 'tweak', brew: Brew) => {
-      if (path === 'repeat') {
-        setStep({ name: 'quickLog', coffee, template: brew });
-      } else {
-        setStep({ name: 'brewForm', coffee, template: brew });
-      }
-    },
-    [],
-  );
-
-  const { title, subtitle } = titleFor(step);
-
   return (
     <SafeAreaView style={styles.container}>
-      <LogHeader
-        title={title}
-        subtitle={subtitle}
-        onBack={step.name === 'landing' ? undefined : goBack}
-      />
+      {/* logHome renders its own scrim so the floating search bar can sit above it. */}
+      {step.name !== 'logHome' && <BottomChromeScrim />}
 
-      {step.name === 'landing' && (
-        <BrewLandingStep
-          coffeeCount={coffees.length}
-          onSelectExisting={() => setStep({ name: 'pickExisting' })}
-          onAddNew={() => setStep({ name: 'newBean' })}
-        />
-      )}
-
-      {step.name === 'pickExisting' && (
-        <BeanPickerStep
+      {step.name === 'logHome' && (
+        <LogHomeScreen
           coffees={coffees}
-          bottomInset={insets.bottom}
-          onSelectCoffee={onSelectCoffee}
+          onSelectCoffee={(coffee) => setStep({ name: 'setRecipe', coffee })}
+          onAddNew={() => setStep({ name: 'newBean' })}
         />
       )}
 
       {step.name === 'newBean' && (
         <NewBeanStep
           bottomInset={insets.bottom}
-          onContinue={(coffee) => setStep({ name: 'brewForm', coffee, template: null })}
+          onBack={goBack}
+          onContinue={(coffee) => setStep({ name: 'setRecipe', coffee })}
+          onAddViaLink={() => setStep({ name: 'addViaLink' })}
         />
       )}
 
-      {step.name === 'choice' && (
-        <RecipeChoiceStep
+      {step.name === 'addViaLink' && (
+        <AddViaLinkStep
+          bottomInset={insets.bottom}
+          onBack={goBack}
+          onConfirm={(coffee) => setStep({ name: 'setRecipe', coffee })}
+        />
+      )}
+
+      {step.name === 'setRecipe' && (
+        <SetRecipeScreen
           coffee={step.coffee}
-          bottomInset={insets.bottom}
-          onChoose={(path) => onChoosePath(step.coffee, path)}
-        />
-      )}
-
-      {step.name === 'pickRecipe' && (
-        <RecipePickerStep
-          brews={step.coffee.brews}
-          bottomInset={insets.bottom}
-          onSelect={(brew) => onPickRecipe(step.coffee, step.path, brew)}
-        />
-      )}
-
-      {step.name === 'quickLog' && (
-        <QuickLogStep
-          coffee={step.coffee}
-          template={step.template}
-          bottomInset={insets.bottom}
+          onBack={goBack}
+          onPickRecipe={(base) => setStep({ name: 'editRecipe', coffee: step.coffee, base })}
+          onNew={() => setStep({ name: 'editRecipe', coffee: step.coffee, base: null })}
+          onOpenBean={() => openBean(step.coffee)}
           onSaved={onSavedAndReset}
         />
       )}
 
-      {step.name === 'brewForm' && (
-        <BrewForm
+      {step.name === 'editRecipe' && (
+        <RecipeIterationScreen
           coffee={step.coffee}
-          templateBrew={step.template}
-          embedded
-          onClose={goBack}
+          base={step.base}
+          onBack={goBack}
+          onOpenBean={() => openBean(step.coffee)}
           onSaved={onSavedAndReset}
         />
       )}

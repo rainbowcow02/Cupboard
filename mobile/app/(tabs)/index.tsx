@@ -177,6 +177,7 @@ export default function HomeScreen() {
       <FilterSheet
         filterKey={filterSheetKey}
         coffees={coffees}
+        filters={filters}
         activeValues={filterSheetKey ? filters[filterSheetKey] : []}
         onSelect={(values) => {
           if (filterSheetKey) setFilters((prev) => ({ ...prev, [filterSheetKey]: values }));

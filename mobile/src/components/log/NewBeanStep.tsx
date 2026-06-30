@@ -1,18 +1,13 @@
 import { useMemo, useState } from 'react';
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { bagImgFor, coffeeId, Coffee, ORIGIN_FLAGS } from '@shared/lib/coffees';
 import { colors, fonts } from '@shared/theme';
 import { useCoffees } from '../../hooks/useCoffees';
 import { ComboBoxField } from '../ComboBoxField';
+import { ErrorBox } from '../ErrorBox';
 import { FormField, fieldInputStyle } from '../FormField';
-import { TAB_BAR_HEIGHT } from '../TabBar';
+import { PrimaryButton } from '../PrimaryButton';
+import { LogFormScaffold } from './LogFormScaffold';
 
 /** Distinct, non-empty values for a coffee field, sorted A–Z. */
 function distinctValues(coffees: Coffee[], field: keyof Coffee): string[] {
@@ -48,12 +43,29 @@ const blank: NewBeanDraft = {
 
 interface Props {
   bottomInset: number;
+  onBack: () => void;
   onContinue: (coffee: Coffee) => void;
+  /** Shown on the manual-add path; opens the paste-a-link flow. Hidden in review mode. */
+  onAddViaLink?: () => void;
+  /** Pre-fills the form — used to review details extracted from a link. */
+  initialDraft?: Partial<NewBeanDraft>;
+  title?: string;
+  description?: string;
+  submitLabel?: string;
 }
 
-export function NewBeanStep({ bottomInset, onContinue }: Props) {
+export function NewBeanStep({
+  bottomInset,
+  onBack,
+  onContinue,
+  onAddViaLink,
+  initialDraft,
+  title = 'Add new coffee',
+  description = 'Enter your coffee details, or add a link to the coffee bean.',
+  submitLabel = 'Continue',
+}: Props) {
   const { coffees } = useCoffees();
-  const [form, setForm] = useState({ ...blank });
+  const [form, setForm] = useState<NewBeanDraft>({ ...blank, ...initialDraft });
   const [error, setError] = useState<string | null>(null);
 
   const options = useMemo(
@@ -70,6 +82,12 @@ export function NewBeanStep({ bottomInset, onContinue }: Props) {
 
   const set = (k: keyof NewBeanDraft) => (v: string) =>
     setForm((f) => ({ ...f, [k]: v }));
+
+  // Variety is stored as a comma-joined string but edited as a multi-select list.
+  const varietyList = form.variety
+    ? form.variety.split(',').map((v) => v.trim()).filter(Boolean)
+    : [];
+  const setVariety = (list: string[]) => set('variety')(list.join(', '));
 
   const continueToRecipe = () => {
     if (!form.bean.trim()) {
@@ -97,148 +115,148 @@ export function NewBeanStep({ bottomInset, onContinue }: Props) {
     onContinue(coffee);
   };
 
-  const scrollBottomPad = Math.max(bottomInset, 16) + TAB_BAR_HEIGHT + 48;
-
   return (
-    <ScrollView
-      contentContainerStyle={[styles.content, { paddingBottom: scrollBottomPad }]}
-      keyboardShouldPersistTaps="handled"
+    <LogFormScaffold
+      onBack={onBack}
+      title={title}
+      description={description}
+      bottomInset={bottomInset}
     >
-      <Text style={styles.prompt}>Tell Cupboard about the bag you’re opening.</Text>
-
-      {error ? (
-        <View style={styles.errorBox}>
-          <Text style={styles.errorText}>{error}</Text>
-        </View>
+      {onAddViaLink ? (
+        <Pressable
+          onPress={onAddViaLink}
+          style={({ pressed }) => [styles.linkRow, pressed && styles.linkRowPressed]}
+          accessibilityRole="button"
+          accessibilityLabel="Add a coffee from a link"
+        >
+          <Text style={styles.linkGlyph}>🔗</Text>
+          <View style={styles.linkText}>
+            <Text style={styles.linkTitle}>Add bean via link</Text>
+            <Text style={styles.linkSubtitle}>Get bean details from roaster automatically</Text>
+          </View>
+        </Pressable>
       ) : null}
 
+      {error ? <ErrorBox message={error} style={styles.error} /> : null}
+
       <View style={styles.fields}>
-        <FormField label="Bean">
+        <FormField label="Bean" horizontal>
           <TextInput
             style={fieldInputStyle}
             value={form.bean}
             onChangeText={set('bean')}
-            placeholder="Gitega 861"
+            placeholder="Add bean name"
             placeholderTextColor={colors.greyDark}
             returnKeyType="next"
           />
         </FormField>
-        <FormField label="Roaster">
+        <FormField label="Roaster" horizontal>
           <ComboBoxField
             label="Roaster"
             value={form.roaster}
             options={options.roaster}
-            placeholder="H&S Coffee Roasters"
+            placeholder="Pick a roaster"
             onChange={set('roaster')}
           />
         </FormField>
-        <FormField label="Country">
+        <FormField label="Country" horizontal>
           <ComboBoxField
             label="Country"
             value={form.origin}
             options={options.origin}
-            placeholder="Rwanda"
+            placeholder="Where's it from?"
             onChange={set('origin')}
             flagFor={(option) => ORIGIN_FLAGS[option] || ''}
           />
         </FormField>
-        <View style={styles.row}>
-          <FormField label="Process">
-            <ComboBoxField
-              label="Process"
-              value={form.process}
-              options={options.process}
-              placeholder="Washed"
-              onChange={set('process')}
-            />
-          </FormField>
-          <FormField label="Roast">
-            <ComboBoxField
-              label="Roast"
-              value={form.roastLevel}
-              options={options.roastLevel}
-              placeholder="Light"
-              onChange={set('roastLevel')}
-            />
-          </FormField>
-        </View>
-        <FormField label="Region">
+        <FormField label="Process" horizontal>
+          <ComboBoxField
+            label="Process"
+            value={form.process}
+            options={options.process}
+            placeholder="Pick a process"
+            onChange={set('process')}
+          />
+        </FormField>
+        <FormField label="Roast" horizontal>
+          <ComboBoxField
+            label="Roast"
+            value={form.roastLevel}
+            options={options.roastLevel}
+            placeholder="Pick a roast"
+            onChange={set('roastLevel')}
+          />
+        </FormField>
+        <FormField label="Region" horizontal>
           <ComboBoxField
             label="Region"
             value={form.region}
             options={options.region}
-            placeholder="Nyamagabe"
+            placeholder="Add a region"
             onChange={set('region')}
           />
         </FormField>
-        <FormField label="Variety">
+        <FormField label="Variety" horizontal>
           <ComboBoxField
             label="Variety"
-            value={form.variety}
+            multiple
+            value={varietyList}
             options={options.variety}
-            placeholder="Red Bourbon"
-            onChange={set('variety')}
+            placeholder="Add a variety"
+            onChange={setVariety}
           />
         </FormField>
-        <FormField label="Tasting notes">
+        <FormField label="Tasting notes" horizontal>
           <TextInput
             style={fieldInputStyle}
             value={form.notes}
             onChangeText={set('notes')}
-            placeholder="Red Apple, Peach, Hibiscus"
+            placeholder="Rose Tea, Oolong, Cantalope"
             placeholderTextColor={colors.greyDark}
             returnKeyType="done"
           />
         </FormField>
       </View>
 
-      <Pressable
+      <PrimaryButton
+        label={submitLabel}
         onPress={continueToRecipe}
         style={styles.continueBtn}
-        accessibilityRole="button"
         accessibilityLabel="Continue to recipe setup"
-      >
-        <Text style={styles.continueBtnText}>Continue</Text>
-      </Pressable>
-    </ScrollView>
+      />
+    </LogFormScaffold>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { paddingHorizontal: 24, paddingTop: 4 },
-  prompt: {
-    fontFamily: fonts.sans,
-    fontWeight: '500',
-    fontSize: 15,
-    color: colors.greyDark,
-    lineHeight: 21,
-    marginBottom: 16,
-  },
   fields: { gap: 14 },
-  row: { flexDirection: 'row', gap: 10 },
-  errorBox: {
-    backgroundColor: 'rgba(252,153,155,0.22)',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 16,
+  linkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 0.5,
+    borderColor: 'rgba(0,0,0,0.12)',
+    backgroundColor: 'rgba(255,255,255,0.7)',
+    marginBottom: 32,
   },
-  errorText: {
+  linkRowPressed: { opacity: 0.85 },
+  linkGlyph: { fontSize: 20 },
+  linkText: { flex: 1, minWidth: 0 },
+  linkTitle: {
+    fontFamily: fonts.sans,
+    fontWeight: '700',
+    fontSize: 15,
+    color: colors.black,
+  },
+  linkSubtitle: {
     fontFamily: fonts.sans,
     fontWeight: '500',
     fontSize: 13,
-    color: colors.burgundy,
+    color: colors.greyDark,
+    marginTop: 2,
   },
-  continueBtn: {
-    marginTop: 24,
-    backgroundColor: colors.burgundy,
-    borderRadius: 100,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  continueBtnText: {
-    fontFamily: fonts.sans,
-    fontWeight: '800',
-    fontSize: 15,
-    color: colors.pearl,
-  },
+  error: { marginBottom: 16 },
+  continueBtn: { marginTop: 24 },
 });

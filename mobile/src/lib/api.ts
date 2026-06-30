@@ -39,3 +39,24 @@ export async function updateCup(id: string, fields: Partial<Cup>): Promise<Cup> 
 export async function deleteCup(id: string): Promise<void> {
   await request<{ ok: boolean }>(`/api/cups/${id}`, { method: 'DELETE' });
 }
+
+/** Bean details auto-extracted from a roaster URL (all fields optional). */
+export interface ExtractedBean {
+  bean?: string;
+  roaster?: string;
+  origin?: string;
+  region?: string;
+  process?: string;
+  roastLevel?: string;
+  variety?: string;
+  altitude?: string;
+  notes?: string;
+}
+
+export async function extractBean(url: string): Promise<ExtractedBean> {
+  const data = await request<{ bean: ExtractedBean }>('/api/extract-bean', {
+    method: 'POST',
+    body: JSON.stringify({ url }),
+  });
+  return data.bean;
+}

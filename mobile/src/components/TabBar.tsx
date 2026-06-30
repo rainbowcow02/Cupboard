@@ -44,16 +44,19 @@ const TAB_STEP = TAB_W - 8; // = 64px per step, accounting for -8px tab gap
 const SLIDE_SPRING = { damping: 18, stiffness: 220, mass: 0.8 };
 const SCALE_SPRING = { damping: 14, stiffness: 250 };
 
+// Tab-bar-specific shadow — crisper/darker than the shared surfaces.shadow so the
+// pill reads as a distinct layer against scrolling cards. Kept local on purpose:
+// surfaces.shadow is shared by bottom sheets and the beans screen.
 const pillShadow = Platform.select({
   ios: {
-    shadowColor: surfaces.shadow.shadowColor,
-    shadowOffset: surfaces.shadow.shadowOffset,
-    shadowOpacity: surfaces.shadow.shadowOpacity,
-    shadowRadius: surfaces.shadow.shadowRadius,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 24,
   },
-  android: { elevation: surfaces.shadow.elevation },
+  android: { elevation: 12 },
   web: {
-    boxShadow: '0 8px 40px rgba(0, 0, 0, 0.12)',
+    boxShadow: '0 10px 28px rgba(0, 0, 0, 0.18)',
   },
 });
 

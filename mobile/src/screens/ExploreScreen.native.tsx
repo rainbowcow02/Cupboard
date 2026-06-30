@@ -7,7 +7,6 @@ import { Pressable, StyleSheet, Text, TouchableOpacity, View, useWindowDimension
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Bag } from '../components/Bag';
 import { BeanMarker } from '../components/BeanMarker';
-import { BottomChromeScrim } from '../components/surfaces/BottomChromeScrim';
 import { DetachedSheetBackground } from '../components/surfaces/DetachedSheetBackground';
 import { DetachedSheetContentClip } from '../components/surfaces/DetachedSheetContentClip';
 import { SheetHeader } from '../components/surfaces/SheetHeader';
@@ -323,8 +322,6 @@ export default function ExploreScreen() {
         })}
       </MapboxGL.MapView>
 
-      <BottomChromeScrim />
-
       <View style={[styles.zoomControls, { bottom: zoomBtnBottom }]} pointerEvents="box-none">
         <Pressable
           onPress={() => handleZoom(0.75)}
@@ -454,7 +451,7 @@ const styles = StyleSheet.create({
   beanName: {
     fontFamily: fonts.condensed,
     fontWeight: '600',
-    fontSize: 17,
+    fontSize: 19,
     color: colors.black,
     letterSpacing: -0.5,
     lineHeight: 24,
@@ -462,21 +459,21 @@ const styles = StyleSheet.create({
   roasterName: {
     fontFamily: fonts.sans,
     fontWeight: '500',
-    fontSize: 13,
+    fontSize: 14,
     color: colors.greyDark,
     lineHeight: 20,
   },
   originText: {
     fontFamily: fonts.sans,
     fontWeight: '500',
-    fontSize: 13,
+    fontSize: 14,
     color: colors.greyDark,
     lineHeight: 20,
   },
   dateText: {
     fontFamily: fonts.sans,
     fontWeight: '500',
-    fontSize: 13,
+    fontSize: 14,
     color: colors.greyDark,
     lineHeight: 20,
     flexShrink: 0,

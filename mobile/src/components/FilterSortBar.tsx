@@ -19,6 +19,7 @@ const FILTER_CHIPS: { key: FilterKey; label: string }[] = [
   { key: 'country', label: 'country' },
   { key: 'process', label: 'process' },
   { key: 'roast', label: 'roast' },
+  { key: 'roaster', label: 'roaster' },
 ];
 
 interface FilterSortBarProps {

@@ -1,7 +1,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import {
-  Image,
+  Animated as RNAnimated,
   NativeScrollEvent,
   NativeSyntheticEvent,
   Pressable,
@@ -9,16 +9,18 @@ import {
   Text,
   View,
 } from 'react-native';
+import { Image } from 'expo-image';
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Brew, Coffee } from '@shared/lib/coffees';
 import { colors, fonts } from '@shared/theme';
-import { BackButton } from '../../src/components/BackButton';
+import { GlassBackButton } from '../../src/components/GlassBackButton';
 import { BagLabel } from '../../src/components/BagLabel';
 import { BrewCard } from '../../src/components/BrewCard';
 import { Card } from '../../src/components/Card';
 import { OriginMap } from '../../src/components/OriginMap';
 import { useCoffees } from '../../src/hooks/useCoffees';
+import { BrewSummary } from '../../src/components/BrewSummary';
 import { BrewForm } from './BrewForm';
 
 const ORIGIN_FLAGS: Record<string, string> = {
@@ -28,10 +30,10 @@ const ORIGIN_FLAGS: Record<string, string> = {
 };
 
 const BAG_IMAGES: Record<string, ReturnType<typeof require>> = {
-  white: require('../../../shared/assets/bag-white.png'),
-  blue: require('../../../shared/assets/bag-blue.png'),
-  green: require('../../../shared/assets/bag-green.png'),
-  orange: require('../../../shared/assets/bag-orange.png'),
+  white: require('../../../shared/assets/bag-white-lrg.png'),
+  blue: require('../../../shared/assets/bag-blue-lrg.png'),
+  green: require('../../../shared/assets/bag-green-lrg.png'),
+  orange: require('../../../shared/assets/bag-orange-lrg.png'),
 };
 
 function DetailRow({ label, value, last }: { label: string; value?: string | null; last?: boolean }) {
@@ -60,7 +62,7 @@ function SectionHeader({ title, action, onAction }: { title: string; action?: st
 }
 
 export default function CoffeeDetailScreen() {
-  const { beanId } = useLocalSearchParams<{ beanId: string }>();
+  const { beanId, draft } = useLocalSearchParams<{ beanId: string; draft?: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { coffees, refresh } = useCoffees();
@@ -69,10 +71,16 @@ export default function CoffeeDetailScreen() {
   // Synchronous scroll channel so BrewCard can keep the expand button anchored on collapse.
   const scrollViewRef = useRef<Animated.ScrollView | null>(null);
   const scrollYRef = useRef(0);
+  // Drives the frosted circle behind the back button as the hero scrolls away.
+  const scrollY = useRef(new RNAnimated.Value(0)).current;
 
-  const captureScrollPosition = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    scrollYRef.current = e.nativeEvent.contentOffset.y;
-  }, []);
+  const captureScrollPosition = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      scrollYRef.current = e.nativeEvent.contentOffset.y;
+      scrollY.setValue(e.nativeEvent.contentOffset.y);
+    },
+    [scrollY],
+  );
 
   const scrollToY = useCallback((y: number) => {
     const next = Math.max(0, y);
@@ -82,7 +90,18 @@ export default function CoffeeDetailScreen() {
 
   const getCurrentScrollY = useCallback(() => scrollYRef.current, []);
 
-  const coffee = coffees.find((c) => c.id === beanId) as Coffee | undefined;
+  // A persisted bean is the source of truth; fall back to a draft passed through
+  // navigation for a bean just entered in the Log flow that has no saved cups yet.
+  const stored = coffees.find((c) => c.id === beanId) as Coffee | undefined;
+  const draftCoffee = useMemo<Coffee | undefined>(() => {
+    if (!draft) return undefined;
+    try {
+      return JSON.parse(draft) as Coffee;
+    } catch {
+      return undefined;
+    }
+  }, [draft]);
+  const coffee = stored ?? draftCoffee;
 
   const onBrewClose = useCallback(() => {
     setAddingBrew(false);
@@ -111,8 +130,14 @@ export default function CoffeeDetailScreen() {
 
   return (
     <View style={styles.screen}>
-      {/* Back button — floats over scroll content with no background fill */}
-      <BackButton onPress={() => router.back()} style={[styles.backBtn, { top: 16 }]} />
+      {/* Back button — frosted circle fades in as the hero scrolls away */}
+      <GlassBackButton
+        onPress={() => router.back()}
+        scrollY={scrollY}
+        fadeStart={220}
+        fadeEnd={300}
+        style={[styles.backBtn, { top: 16 }]}
+      />
 
       <Animated.ScrollView
         ref={scrollViewRef}
@@ -131,7 +156,9 @@ export default function CoffeeDetailScreen() {
             <Image
               source={BAG_IMAGES[coffee.bagImg] ?? BAG_IMAGES.white}
               style={styles.bagImage}
-              resizeMode="contain"
+              contentFit="contain"
+              cachePolicy="memory-disk"
+              recyclingKey={`${coffee.bagImg}-hero`}
             />
             <BagLabel coffee={coffee} bagWidth={300} />
           </View>
@@ -184,6 +211,7 @@ export default function CoffeeDetailScreen() {
           {/* Brew recipes */}
           <View style={styles.section}>
             <SectionHeader title="Brew recipes" action="+ Add" onAction={() => setAddingBrew(true)} />
+            {brews.length > 0 && <BrewSummary brews={brews} />}
             <View style={styles.brewList}>
               {brews.length === 0 ? (
                 <Card>

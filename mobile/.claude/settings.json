@@ -14,7 +14,8 @@
       "Bash(git fetch *)",
       "Bash(npx tsc *)",
       "Bash(npx eslint *)",
-      "Bash(git checkout *)"
+      "Bash(git checkout *)",
+      "mcp__claude_ai_Figma__get_metadata"
     ],
     "additionalDirectories": [
       "/Users/lindsaylee/Documents/Side Projects/Cupboard-mobile/docs"

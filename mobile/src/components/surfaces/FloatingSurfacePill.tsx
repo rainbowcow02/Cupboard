@@ -24,6 +24,8 @@ const styles = StyleSheet.create({
   pill: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: surfaces.pillFill,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: surfaces.pillHairline,
     overflow: 'hidden',
   },
 });
