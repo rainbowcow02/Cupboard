@@ -61,7 +61,7 @@ export function NewBeanStep({
   onAddViaLink,
   initialDraft,
   title = 'Add new coffee',
-  description = 'Enter your coffee details, or add a link to the coffee bean.',
+  description = 'Share the origin story of your coffee bean.',
   submitLabel = 'Continue',
 }: Props) {
   const { coffees } = useCoffees();
@@ -132,7 +132,7 @@ export function NewBeanStep({
           <Text style={styles.linkGlyph}>🔗</Text>
           <View style={styles.linkText}>
             <Text style={styles.linkTitle}>Add bean via link</Text>
-            <Text style={styles.linkSubtitle}>Get bean details from roaster automatically</Text>
+            <Text style={styles.linkSubtitle}>Bean details will be imported from the link.</Text>
           </View>
         </Pressable>
       ) : null}
