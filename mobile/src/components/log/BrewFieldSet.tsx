@@ -21,14 +21,6 @@ function compareOptions(a: string, b: string): number {
   return a.localeCompare(b);
 }
 
-/** "92" → "92°C / 198°F" so the temp picker shows both scales (Celsius stays the stored value). */
-function tempWithFahrenheit(celsius: string): string {
-  const c = Number(celsius);
-  if (celsius.trim() === '' || !Number.isFinite(c)) return celsius;
-  const f = Math.round((c * 9) / 5 + 32);
-  return `${celsius}°C / ${f}°F`;
-}
-
 /** Distinct, non-empty values for a brew field across every logged brew. */
 function distinctBrewValues(coffees: Coffee[], field: keyof Brew): string[] {
   const seen = new Set<string>();
@@ -142,7 +134,7 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
         },
         tempC: {
           raw: base.tempC != null ? String(base.tempC) : '',
-          show: base.tempC != null ? tempWithFahrenheit(String(base.tempC)) : '',
+          show: base.tempC != null ? `${base.tempC}°C` : '',
         },
       }
     : null;
@@ -153,6 +145,14 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
     return values[k] !== raw ? show : undefined;
   };
 
+  // Coffee-to-water ratio (1:N) derived from the beans and water inputs.
+  const beans = Number(values.beansG);
+  const water = Number(values.waterMl);
+  const ratio =
+    values.beansG.trim() && values.waterMl.trim() && beans > 0 && Number.isFinite(water)
+      ? `1:${(water / beans).toFixed(2)}`
+      : '—';
+
   return (
     <View style={styles.fields}>
       <FormField label="Brewer" horizontal>
@@ -161,6 +161,7 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
           value={values.brewer}
           options={options.brewer}
           placeholder="Pick a brewer"
+          align="right"
           onChange={set('brewer')}
         />
         <FieldDiffHint previous={hintFor('brewer')} />
@@ -172,6 +173,7 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
           value={values.filter}
           options={options.filter}
           placeholder="Pick a filter"
+          align="right"
           onChange={set('filter')}
         />
         <FieldDiffHint previous={hintFor('filter')} />
@@ -183,6 +185,7 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
           value={values.grinder}
           options={options.grinder}
           placeholder="Pick a grinder"
+          align="right"
           onChange={set('grinder')}
         />
         <FieldDiffHint previous={hintFor('grinder')} />
@@ -195,6 +198,7 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
           options={options.grind}
           placeholder="Add grind size"
           keyboardType="decimal-pad"
+          align="right"
           onChange={set('grind')}
         />
         <FieldDiffHint previous={hintFor('grind')} />
@@ -207,6 +211,7 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
           options={options.beansG}
           placeholder="🫘"
           keyboardType="decimal-pad"
+          align="right"
           onChange={set('beansG')}
         />
         <FieldDiffHint previous={hintFor('beansG')} />
@@ -219,19 +224,24 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
           options={options.waterMl}
           placeholder="💧"
           keyboardType="decimal-pad"
+          align="right"
           onChange={set('waterMl')}
         />
         <FieldDiffHint previous={hintFor('waterMl')} />
       </FormField>
 
-      <FormField label="Temperature" horizontal>
+      <FormField label="Ratio" horizontal>
+        <Text style={styles.ratioValue}>{ratio}</Text>
+      </FormField>
+
+      <FormField label="Temp °C/°F" horizontal>
         <ComboBoxField
           label="Temp"
           value={values.tempC}
           options={options.tempC}
-          formatOption={tempWithFahrenheit}
           placeholder="🔥"
           keyboardType="decimal-pad"
+          align="right"
           onChange={set('tempC')}
         />
         <FieldDiffHint previous={hintFor('tempC')} />
@@ -276,6 +286,7 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
 
 const styles = StyleSheet.create({
   fields: { gap: 14 },
+  row: { flexDirection: 'row', gap: 10 },
   recipeInputWrap: { position: 'relative' },
   recipeInput: { minHeight: 96, paddingTop: 12 },
   recipePlaceholder: {
@@ -291,4 +302,11 @@ const styles = StyleSheet.create({
   },
   datePicker: { alignSelf: 'flex-start', marginTop: 2 },
   ratingWrap: { alignItems: 'flex-start' },
+  ratioValue: {
+    textAlign: 'right',
+    fontFamily: fonts.sans,
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.black,
+  },
 });
