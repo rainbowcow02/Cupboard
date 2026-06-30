@@ -165,6 +165,8 @@ export function LogHomeScreen({ coffees, onSelectCoffee, onAddNew }: Props) {
                   onChangeText={setQuery}
                   placeholder="Search your cupboard"
                   placeholderTextColor={colors.greyDark}
+                  selectionColor={colors.moss}
+                  cursorColor={colors.moss}
                   accessibilityLabel="Search your cupboard"
                   returnKeyType="search"
                 />
@@ -296,9 +298,12 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     gap: 10,
-    paddingHorizontal: 18,
+    // Right padding runs a touch larger than the left: the filled clear circle
+    // reads closer to the edge than the open magnifying glass, so the extra
+    // breathing room makes the two sides look optically even.
+    paddingLeft: 18,
+    paddingRight: 20,
     height: 50,
     borderRadius: 25,
     borderWidth: StyleSheet.hairlineWidth,
@@ -306,13 +311,16 @@ const styles = StyleSheet.create({
     backgroundColor: surfaces.pillFill,
     overflow: 'hidden',
   },
+  // Always left-aligned so the icon and placeholder hold their position when the
+  // field gains focus — only the caret appears, nothing shifts.
   searchInput: {
+    flexGrow: 1,
     flexShrink: 1,
     fontFamily: fonts.sans,
     fontSize: 16,
     fontWeight: '500',
     color: colors.black,
-    textAlign: 'center',
+    textAlign: 'left',
     padding: 0,
   },
   clearButton: {
