@@ -26,8 +26,9 @@ interface Props {
 
 /**
  * Default Log tab screen: the cupboard list is the home. Tapping a bean starts
- * an iteration; "Add" (subtle, top-right) starts a new bean. A search pill sits
- * directly under the title, scrolling with the list header.
+ * an iteration; "Add" (subtle, top-right) starts a new bean. The title + search
+ * pill are anchored behind the list: as cards scroll up over the search it fades
+ * out, then the title detaches and rises with the list.
  */
 // Vertical breathing room above the brewing CTA, and the gap before the list
 // begins. Kept as constants so the fade threshold can be derived from them.
@@ -38,6 +39,14 @@ const CTA_PADDING_BOTTOM = 16;
 // scroll-linked CTA fade (RN's interpolate is linear between stops).
 const CTA_FADE_STEPS = 8;
 const easeInOut = Easing.inOut(Easing.ease);
+
+// How much the search pill shrinks (fraction) as it fades — a subtle scale-down
+// that emphasises the fade-out.
+const SEARCH_SHRINK = 0.08;
+
+// Gap locked between the title and the first card once they scroll together: the
+// title detaches this many px before the card would meet it.
+const GAP_TITLE_TO_LIST = 8;
 
 // How far (px) above the list's top edge a card begins fading before it clips
 // off — roughly one card height, so the fade reads as the card exiting.
@@ -79,7 +88,11 @@ export function LogHomeScreen({ coffees, onSelectCoffee, onAddNew }: Props) {
   const [query, setQuery] = useState('');
 
   const scrollY = useRef(new Animated.Value(0)).current;
-  const [ctaHeight, setCtaHeight] = useState(0);
+  // Full height of the anchored header (title + search) → reserved as a list
+  // spacer so cards begin just below the search bar. titleHeight feeds the
+  // handoff threshold below.
+  const [overlayHeight, setOverlayHeight] = useState(0);
+  const [titleHeight, setTitleHeight] = useState(0);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -92,19 +105,49 @@ export function LogHomeScreen({ coffees, onSelectCoffee, onAddNew }: Props) {
     );
   }, [coffees, query]);
 
-  // Fade the title + search pill out as the CTA scrolls up, ease-in-out: fully
-  // gone by the time the title baseline reaches the top bar. Sampled across a
-  // few stops because RN's interpolate is linear between stops.
-  const titleBottom = Math.max(ctaHeight - CTA_PADDING_BOTTOM, 1);
-  const ctaFadeOpacity = scrollY.interpolate({
-    inputRange: Array.from(
-      { length: CTA_FADE_STEPS + 1 },
-      (_, i) => (titleBottom * i) / CTA_FADE_STEPS,
-    ),
+  // Scroll distance at which the top card rises to meet the title's bottom edge:
+  // the top card sits at viewport (overlayHeight - scrollY) and the title bottom
+  // is fixed at (CTA_PADDING_TOP + titleHeight). The title detaches GAP_TITLE_TO_LIST
+  // px early so the card locks that gap below it as they rise together.
+  const cardMeetsTitle = Math.max(overlayHeight - CTA_PADDING_TOP - titleHeight, 1);
+  const titleHandoff = Math.max(cardMeetsTitle - GAP_TITLE_TO_LIST, 1);
+
+  // Phase A — fade AND slightly shrink the search pill as cards scroll up over
+  // it; the shrink emphasises the fade. Eased, sampled across a few stops
+  // because RN's interpolate is linear between stops.
+  const searchFadeInput = Array.from(
+    { length: CTA_FADE_STEPS + 1 },
+    (_, i) => (titleHandoff * i) / CTA_FADE_STEPS,
+  );
+  const searchOpacity = scrollY.interpolate({
+    inputRange: searchFadeInput,
     outputRange: Array.from(
       { length: CTA_FADE_STEPS + 1 },
       (_, i) => 1 - easeInOut(i / CTA_FADE_STEPS),
     ),
+    extrapolate: 'clamp',
+  });
+  const searchScale = scrollY.interpolate({
+    inputRange: searchFadeInput,
+    outputRange: Array.from(
+      { length: CTA_FADE_STEPS + 1 },
+      (_, i) => 1 - SEARCH_SHRINK * easeInOut(i / CTA_FADE_STEPS),
+    ),
+    extrapolate: 'clamp',
+  });
+
+  // Phase B — the title stays pinned through the search fade, then detaches and
+  // travels up 1:1 with the list (extend keeps the -1px/px slope past handoff),
+  // fading out as it (and the first card) rise off the top of the screen.
+  const titleTranslateY = scrollY.interpolate({
+    inputRange: [titleHandoff, titleHandoff + 1],
+    outputRange: [0, -1],
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'extend',
+  });
+  const titleOpacity = scrollY.interpolate({
+    inputRange: [titleHandoff, titleHandoff + CTA_PADDING_TOP],
+    outputRange: [1, 0],
     extrapolate: 'clamp',
   });
 
@@ -137,6 +180,56 @@ export function LogHomeScreen({ coffees, onSelectCoffee, onAddNew }: Props) {
         </Pressable>
       </View>
 
+      {/* Anchored title + search, painted behind the list so cards scroll over
+          it. box-none lets touches reach the search field through this view. */}
+      <Animated.View
+        style={styles.anchoredHeader}
+        pointerEvents="box-none"
+        onLayout={(e) => setOverlayHeight(e.nativeEvent.layout.height)}
+      >
+        <Animated.Text
+          style={[
+            styles.ctaTitle,
+            { opacity: titleOpacity, transform: [{ translateY: titleTranslateY }] },
+          ]}
+          onLayout={(e) => setTitleHeight(e.nativeEvent.layout.height)}
+        >
+          What are we brewing today?
+        </Animated.Text>
+        <Animated.View
+          style={[
+            styles.searchShadow,
+            { opacity: searchOpacity, transform: [{ scale: searchScale }] },
+          ]}
+        >
+          <View style={styles.searchBar}>
+            <SearchIcon size={20} color={colors.greyDark} strokeWidth={2} />
+            <TextInput
+              style={styles.searchInput}
+              value={query}
+              onChangeText={setQuery}
+              placeholder="Search your cupboard"
+              placeholderTextColor={colors.greyDark}
+              selectionColor={colors.moss}
+              cursorColor={colors.moss}
+              accessibilityLabel="Search your cupboard"
+              returnKeyType="search"
+            />
+            {query.length > 0 ? (
+              <Pressable
+                onPress={() => setQuery('')}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Clear search"
+                style={styles.clearButton}
+              >
+                <Text style={styles.clearGlyph}>×</Text>
+              </Pressable>
+            ) : null}
+          </View>
+        </Animated.View>
+      </Animated.View>
+
       <Animated.FlatList
         data={filtered}
         keyExtractor={(c: Coffee) => c.id}
@@ -151,39 +244,10 @@ export function LogHomeScreen({ coffees, onSelectCoffee, onAddNew }: Props) {
         )}
         CellRendererComponent={CellRendererComponent}
         ListHeaderComponent={
-          <Animated.View
-            style={[styles.cta, { opacity: ctaFadeOpacity }]}
-            onLayout={(e) => setCtaHeight(e.nativeEvent.layout.height)}
-          >
-            <Text style={styles.ctaTitle}>What are we brewing today?</Text>
-            <View style={styles.searchShadow}>
-              <View style={styles.searchBar}>
-                <SearchIcon size={20} color={colors.greyDark} strokeWidth={2} />
-                <TextInput
-                  style={styles.searchInput}
-                  value={query}
-                  onChangeText={setQuery}
-                  placeholder="Search your cupboard"
-                  placeholderTextColor={colors.greyDark}
-                  selectionColor={colors.moss}
-                  cursorColor={colors.moss}
-                  accessibilityLabel="Search your cupboard"
-                  returnKeyType="search"
-                />
-                {query.length > 0 ? (
-                  <Pressable
-                    onPress={() => setQuery('')}
-                    hitSlop={8}
-                    accessibilityRole="button"
-                    accessibilityLabel="Clear search"
-                    style={styles.clearButton}
-                  >
-                    <Text style={styles.clearGlyph}>×</Text>
-                  </Pressable>
-                ) : null}
-              </View>
-            </View>
-          </Animated.View>
+          // Transparent spacer reserving room for the anchored header so cards
+          // begin below the search bar. pointerEvents none lets taps fall through
+          // to the search field painted beneath.
+          <View style={{ height: overlayHeight }} pointerEvents="none" />
         }
         ListEmptyComponent={
           <Text style={styles.empty}>
@@ -234,7 +298,14 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     gap: 12,
   },
-  cta: {
+  anchoredHeader: {
+    // Pinned behind the list (zIndex 0): cards render after it in JSX and scroll
+    // over the fading search bar. The Add pill header (zIndex 2) stays on top.
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 0,
     paddingTop: CTA_PADDING_TOP,
     paddingBottom: CTA_PADDING_BOTTOM,
     alignItems: 'center',
