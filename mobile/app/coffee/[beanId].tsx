@@ -17,6 +17,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Brew, Coffee } from '@shared/lib/coffees';
 import { colors, fonts } from '@shared/theme';
 import { GlassBackButton } from '../../src/components/GlassBackButton';
+import { HeaderPillButton } from '../../src/components/HeaderPillButton';
+import { EditBeanStep } from '../../src/components/log/EditBeanStep';
 import { BagLabel } from '../../src/components/BagLabel';
 import { BrewCard } from '../../src/components/BrewCard';
 import { Card } from '../../src/components/Card';
@@ -70,6 +72,7 @@ export default function CoffeeDetailScreen() {
   const { coffees, refresh } = useCoffees();
   const [addingBrew, setAddingBrew] = useState(false);
   const [editingBrew, setEditingBrew] = useState<Brew | null>(null);
+  const [editingBean, setEditingBean] = useState(false);
   // Synchronous scroll channel so BrewCard can keep the expand button anchored on collapse.
   const scrollViewRef = useRef<Animated.ScrollView | null>(null);
   const scrollYRef = useRef(0);
@@ -115,6 +118,17 @@ export default function CoffeeDetailScreen() {
     onBrewClose();
   }, [refresh, onBrewClose]);
 
+  const onBeanSaved = useCallback(
+    async (newId: string) => {
+      await refresh();
+      setEditingBean(false);
+      // Renaming the bean/roaster changes the derived id — re-point this screen
+      // at the new id so it keeps resolving the (now renamed) coffee.
+      if (newId !== beanId) router.setParams({ beanId: newId });
+    },
+    [refresh, beanId, router],
+  );
+
   if (!coffee) {
     return (
       <View style={[styles.notFound, { paddingTop: insets.top + 16 }]}>
@@ -140,8 +154,19 @@ export default function CoffeeDetailScreen() {
         scrollY={scrollY}
         fadeStart={220}
         fadeEnd={300}
+        size={40}
         style={[styles.backBtn, { top: 16 }]}
       />
+
+      {/* Edit — white pill opposite the back button. Only a persisted bean can be edited. */}
+      {stored && (
+        <HeaderPillButton
+          label="Edit"
+          onPress={() => setEditingBean(true)}
+          accessibilityLabel="Edit coffee details"
+          style={[styles.editBtn, { top: 16 }]}
+        />
+      )}
 
       <Animated.ScrollView
         ref={scrollViewRef}
@@ -240,6 +265,10 @@ export default function CoffeeDetailScreen() {
       {(addingBrew || editingBrew) && coffee && (
         <BrewForm coffee={coffee} brew={editingBrew} onClose={onBrewClose} onSaved={onBrewSaved} />
       )}
+
+      {editingBean && stored && (
+        <EditBeanStep coffee={stored} onClose={() => setEditingBean(false)} onSaved={onBeanSaved} />
+      )}
         </View>
       </BottomSheetModalProvider>
     </GestureHandlerRootView>
@@ -252,12 +281,13 @@ const styles = StyleSheet.create({
   scrollContent: {},
   backBtn: {
     position: 'absolute',
-    left: 8,
+    left: 16,
     zIndex: 10,
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
+  },
+  editBtn: {
+    position: 'absolute',
+    right: 16,
+    zIndex: 10,
   },
   hero: {
     alignItems: 'center',

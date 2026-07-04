@@ -127,19 +127,29 @@ export function groupIntoCoffees(rows: Cup[]): Coffee[] {
   for (const [id, group] of groups) {
     const sorted = [...group].sort((a, b) => dateValue(b.date) - dateValue(a.date));
     const latest = sorted[0];
+    // Bean-level metadata is stable across cups, but any given cup may leave a
+    // field blank — take the most recent non-empty value so a newer cup that
+    // omits e.g. altitude doesn't wipe it from the bean.
+    const latestFilled = (field: keyof Cup): string | undefined => {
+      for (const cup of sorted) {
+        const raw = cup[field];
+        if (typeof raw === 'string' && raw.trim()) return raw;
+      }
+      return undefined;
+    };
     coffees.push({
       id,
       bean: latest.bean,
       roaster: latest.roaster,
-      origin: latest.origin,
-      process: latest.process,
-      roastLevel: latest.roastLevel,
-      region: latest.region,
-      variety: latest.variety,
-      notes: latest.notes,
+      origin: latestFilled('origin'),
+      process: latestFilled('process'),
+      roastLevel: latestFilled('roastLevel'),
+      region: latestFilled('region'),
+      variety: latestFilled('variety'),
+      notes: latestFilled('notes'),
       rating: latest.rating,
       date: latest.date,
-      altitude: latest.altitude,
+      altitude: latestFilled('altitude'),
       bagImg: bagImgFor(latest.bean, latest.roaster),
       brews: sorted
         .map((r) => ({

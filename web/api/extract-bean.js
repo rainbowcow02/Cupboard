@@ -13,7 +13,14 @@ const SAVE_BEAN_TOOL = {
   input_schema: {
     type: 'object',
     properties: {
-      bean: { type: 'string', description: 'The coffee / lot name (not the roaster).' },
+      bean: {
+        type: 'string',
+        description:
+          'The coffee / lot name (not the roaster), as the words read on the page. ' +
+          'Do not insert " - " or other separators between parts of the name — join ' +
+          'a title split across lines with single spaces (e.g. "Castillo Lychee Washed ' +
+          'Santa Monica", not "Castillo - Lychee Washed - Santa Monica").',
+      },
       roaster: { type: 'string', description: 'The roaster or brand name.' },
       origin: { type: 'string', description: 'Country of origin, e.g. "Ethiopia".' },
       region: { type: 'string', description: 'Growing region, e.g. "Yirgacheffe".' },
@@ -26,6 +33,17 @@ const SAVE_BEAN_TOOL = {
     required: [],
   },
 };
+
+// Stored product titles often join a bean's name parts with " - " (e.g.
+// "Castillo - Lychee Washed - Santa Monica") even when the page renders them on
+// separate lines. Collapse those spaced-dash separators to a single space, while
+// preserving real intra-word hyphens like "Co-ferment".
+function cleanBeanName(name) {
+  return String(name)
+    .replace(/\s+[-–—]\s+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
 /** Crudely strip a fetched HTML document to visible-ish text. */
 function htmlToText(html) {
@@ -93,6 +111,7 @@ export default async function handler(req, res) {
 
     const toolUse = message.content.find((block) => block.type === 'tool_use');
     const bean = toolUse && toolUse.input ? toolUse.input : {};
+    if (typeof bean.bean === 'string') bean.bean = cleanBeanName(bean.bean);
     return res.status(200).json({ bean });
   } catch (err) {
     console.error('[api/extract-bean] extraction failed:', err);

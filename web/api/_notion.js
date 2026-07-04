@@ -198,5 +198,13 @@ export function cupToProperties(cup) {
     const f = Math.round(Number(cup.tempC) * 9 / 5 + 32);
     props[c.tempC] = { select: { name: `${cup.tempC}C/${f}F` } };
   }
+
+  // Free-form text columns — read back by rowToCup but historically never
+  // written, so they stayed empty in Notion. All map to `text` properties.
+  setText(c.altitude, cup.altitude);
+  setText(c.recipeToTest, cup.recipeToTest);
+  setText(c.brewNotes, cup.brewNotes);
+  setText(c.tastingNotes, cup.tastingNotes);
+  setText(c.reflections, cup.reflections);
   return props;
 }

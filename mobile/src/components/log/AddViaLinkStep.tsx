@@ -24,6 +24,7 @@ function draftFrom(extracted: ExtractedBean): Partial<NewBeanDraft> {
     roastLevel: extracted.roastLevel ?? '',
     region: extracted.region ?? '',
     variety: extracted.variety ?? '',
+    altitude: extracted.altitude ?? '',
     notes: extracted.notes ?? '',
   };
 }

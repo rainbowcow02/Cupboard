@@ -398,8 +398,8 @@ export function BrewCard({ brew, onEdit, getCurrentScrollY, scrollToY }: Props) 
 
   return (
     <Card
-      onLongPress={onEdit}
-      accessibilityRole="summary"
+      onPress={onEdit}
+      accessibilityRole={onEdit ? 'button' : 'summary'}
       accessibilityLabel={`Brew on ${formatDate(brew.date)}`}
     >
       <View style={styles.header}>

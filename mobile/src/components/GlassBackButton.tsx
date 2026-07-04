@@ -11,7 +11,9 @@ interface Props {
   fadeStart?: number;
   /** Scroll offset (px) where the circle reaches full opacity. */
   fadeEnd?: number;
-  /** Positioning applied to the 44×44 hit area (e.g. absolute placement). */
+  /** Diameter of the circular hit area / frosted circle. Icon scales with it. */
+  size?: number;
+  /** Positioning applied to the hit area (e.g. absolute placement). */
   style?: StyleProp<ViewStyle>;
 }
 
@@ -21,35 +23,38 @@ interface Props {
  * the page's pill buttons, and the chevron is nudged left so it reads optically
  * centered inside the circle. Shared by Set recipe and the bean detail page.
  */
-export function GlassBackButton({ onPress, scrollY, fadeStart = 0, fadeEnd = 32, style }: Props) {
+export function GlassBackButton({ onPress, scrollY, fadeStart = 0, fadeEnd = 32, size = 44, style }: Props) {
   const glassOpacity = scrollY.interpolate({
     inputRange: [fadeStart, fadeEnd],
     outputRange: [0, 1],
     extrapolate: 'clamp',
   });
 
+  const radius = size / 2;
+  // Chevron scales with the circle, keeping its original 14×22 proportions,
+  // sitting 2px in from half-height so it reads a touch smaller in the circle.
+  const iconHeight = Math.round(size / 2) - 2;
+  const iconWidth = Math.round((iconHeight * 14) / 22);
+
   return (
-    <View style={[styles.hitArea, style]}>
-      <Animated.View style={[styles.glass, { opacity: glassOpacity }]} pointerEvents="none">
-        <View style={styles.glassFill}>
+    <View style={[styles.hitArea, { width: size, height: size }, style]}>
+      <Animated.View style={[styles.glass, { borderRadius: radius, opacity: glassOpacity }]} pointerEvents="none">
+        <View style={[styles.glassFill, { borderRadius: radius }]}>
           <BlurView intensity={28} tint="light" style={StyleSheet.absoluteFill} />
         </View>
       </Animated.View>
-      <BackButton onPress={onPress} style={styles.icon} />
+      <BackButton onPress={onPress} width={iconWidth} height={iconHeight} style={styles.icon} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   hitArea: {
-    width: 44,
-    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },
   glass: {
     ...StyleSheet.absoluteFillObject,
-    borderRadius: 22,
     backgroundColor: '#ffffff',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -59,7 +64,6 @@ const styles = StyleSheet.create({
   },
   glassFill: {
     ...StyleSheet.absoluteFillObject,
-    borderRadius: 22,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: surfaces.pillHairline,

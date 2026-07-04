@@ -89,6 +89,7 @@ Status key: ✅ done · ❌ missing · ⚠️ partial · — not applicable
 | Origin mini-map | ✅ | ✅ | 4 | A small inset map (~120px tall) below the origin rows shows a zoomed-out view centered on the bean's country of origin |
 | Bag hero size + shadow | ✅ | ✅ | 4 | Hero bag is 300×300 with drop shadow matching web |
 | Section spacing (36px / 8px) | ✅ | ✅ | 4 | Section container gap 36px; section header-to-content gap 8px |
+| Edit bean details | ❌ | ✅ | — | White "Edit" pill top-right (opposite the glass back button) opens `EditBeanStep`, a full-screen sheet reusing the shared `BeanFields` (same field set as `NewBeanStep`, pre-filled from the coffee). Save PATCHes the bean fields across every cup of that bean via `updateBeanDetails`; renaming bean/roaster re-points the screen at the new derived id. Mobile-only — web has no bean-edit flow |
 
 ### Log Cup
 

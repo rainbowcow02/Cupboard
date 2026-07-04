@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Brew, Coffee } from '@shared/lib/coffees';
 import { colors, fonts } from '@shared/theme';
 import {
+  beanFieldsPayload,
   BrewFieldSet,
   BrewFormValues,
   brewFieldsPayload,
@@ -48,6 +49,9 @@ export function BrewForm({
     waterMl: source?.waterMl != null ? String(source.waterMl) : '',
     tempC: source?.tempC != null ? String(source.tempC) : '',
     recipeToTest: source?.recipeToTest ?? '',
+    brewNotes: source?.brewNotes ?? '',
+    reflections: source?.reflections ?? '',
+    tastingNotes: source?.tastingNotes ?? '',
     date: toDateInput(editing ? brew?.date : undefined),
     rating: editing ? (brew?.rating ?? 0) : 0,
   });
@@ -66,14 +70,7 @@ export function BrewForm({
         await updateCup(String(brew.id), brewFields);
       } else {
         await createCup({
-          bean: coffee.bean,
-          roaster: coffee.roaster,
-          origin: coffee.origin,
-          process: coffee.process,
-          roastLevel: coffee.roastLevel,
-          region: coffee.region,
-          variety: coffee.variety,
-          notes: coffee.notes,
+          ...beanFieldsPayload(coffee),
           ...brewFields,
         });
       }
