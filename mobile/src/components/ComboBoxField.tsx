@@ -269,7 +269,6 @@ export function ComboBoxField(props: ComboBoxFieldProps) {
                 keyboardType={keyboardType}
                 autoCapitalize={numeric ? 'none' : 'words'}
                 autoCorrect={false}
-                selectTextOnFocus
                 returnKeyType="done"
                 onSubmitEditing={addCustom}
               />
@@ -328,10 +327,8 @@ export function ComboBoxField(props: ComboBoxFieldProps) {
                     <Text style={floatingSurfaceStyles.optionLabel} numberOfLines={1}>
                       {display(option)}
                     </Text>
-                    {multiple ? (
+                    {multiple || isActive ? (
                       <FilterCheckbox checked={isActive} />
-                    ) : isActive ? (
-                      <Text style={styles.check}>✓</Text>
                     ) : null}
                   </Pressable>
                 );
@@ -420,12 +417,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.sans,
     fontSize: 17,
     fontWeight: '600',
-    color: colors.burgundy,
-  },
-  check: {
-    fontFamily: fonts.sans,
-    fontSize: 17,
-    fontWeight: '700',
     color: colors.burgundy,
   },
   emptyText: {

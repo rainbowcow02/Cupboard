@@ -4,7 +4,6 @@ import { Brew, Coffee } from '@shared/lib/coffees';
 import { colors, fonts } from '@shared/theme';
 import { useCoffees } from '../../hooks/useCoffees';
 import { ComboBoxField } from '../ComboBoxField';
-import { DateField } from '../DateField';
 import { FieldDiffHint } from '../FieldDiffHint';
 import { FormField, fieldInputStyle } from '../FormField';
 import { RatingInput } from '../RatingInput';
@@ -353,17 +352,10 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
         </CascadeItem>
       ))}
 
+      {/* Date is intentionally not shown: it always defaults to today (see
+          recipeValuesFrom) and is logged via brewFieldsPayload so it still
+          surfaces on the BrewCard. */}
       <CascadeItem index={12}>
-        <FormField label="Date" horizontal>
-          <DateField
-            value={values.date}
-            onChange={(date) => onChange({ date })}
-            style={styles.datePicker}
-          />
-        </FormField>
-      </CascadeItem>
-
-      <CascadeItem index={13}>
         <FormField label="Rating" horizontal>
           <View style={styles.ratingWrap}>
             <RatingInput value={values.rating} onChange={(rating) => onChange({ rating })} />
@@ -390,7 +382,6 @@ const styles = StyleSheet.create({
     color: colors.greyDark,
     lineHeight: 20,
   },
-  datePicker: { alignSelf: 'flex-start', marginTop: 2 },
   ratingWrap: { alignItems: 'flex-start' },
   ratioValue: {
     fontFamily: fonts.sans,
