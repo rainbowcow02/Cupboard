@@ -5,10 +5,12 @@ import { colors } from '@shared/theme';
 interface Props {
   onPress: () => void;
   color?: string;
+  width?: number;
+  height?: number;
   style?: StyleProp<ViewStyle>;
 }
 
-export function BackButton({ onPress, color = colors.black, style }: Props) {
+export function BackButton({ onPress, color = colors.black, width = 14, height = 22, style }: Props) {
   return (
     <Pressable
       onPress={onPress}
@@ -17,7 +19,7 @@ export function BackButton({ onPress, color = colors.black, style }: Props) {
       accessibilityRole="button"
       accessibilityLabel="Go back"
     >
-      <Svg width={14} height={22} viewBox="0 0 14 22" fill="none">
+      <Svg width={width} height={height} viewBox="0 0 14 22" fill="none">
         <Path
           d="M12 2L3 11L12 20"
           stroke={color}

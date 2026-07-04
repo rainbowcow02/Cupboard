@@ -6,6 +6,7 @@ import { createCup } from '../../lib/api';
 import { ErrorBox } from '../ErrorBox';
 import { PrimaryButton } from '../PrimaryButton';
 import {
+  beanFieldsPayload,
   BrewFieldSet,
   BrewFormValues,
   brewFieldsPayload,
@@ -41,14 +42,7 @@ export function RecipeIterationScreen({ coffee, base, onBack, onOpenBean, onSave
     setError(null);
     try {
       await createCup({
-        bean: coffee.bean,
-        roaster: coffee.roaster,
-        origin: coffee.origin,
-        process: coffee.process,
-        roastLevel: coffee.roastLevel,
-        region: coffee.region,
-        variety: coffee.variety,
-        notes: coffee.notes,
+        ...beanFieldsPayload(coffee),
         ...brewFieldsPayload(form),
       });
       await onSaved();
@@ -84,8 +78,8 @@ export function RecipeIterationScreen({ coffee, base, onBack, onOpenBean, onSave
         base={base}
       />
 
-      {/* Lands just after the last form row (BrewFieldSet ends at index 10). */}
-      <CascadeItem index={11}>
+      {/* Lands just after the last form row (BrewFieldSet ends at index 13). */}
+      <CascadeItem index={14}>
         <PrimaryButton
           label="Log this cup"
           busyLabel="Saving…"

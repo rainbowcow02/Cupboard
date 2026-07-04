@@ -61,6 +61,7 @@ export function ComboBoxField(props: ComboBoxFieldProps) {
   const { height: screenH } = useWindowDimensions();
   const modalRef = useRef<BottomSheetModal>(null);
   const inputRef = useRef<TextInput>(null);
+  const shouldFocusRef = useRef(false);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
 
@@ -76,13 +77,13 @@ export function ComboBoxField(props: ComboBoxFieldProps) {
 
   const trimmedQuery = query.trim();
 
-  // In multi-select, surface any custom values the user has already added so
-  // they render as toggleable rows alongside the known options.
+  // Surface any custom values not in the known options — ones the user added,
+  // or (single-select) a value pre-filled from an extracted link — so they
+  // render as active rows alongside the known options rather than vanishing.
   const baseOptions = useMemo(() => {
-    if (!multiple) return options;
     const extras = selected.filter((s) => !options.includes(s));
     return extras.length ? [...extras, ...options] : options;
-  }, [multiple, options, selected]);
+  }, [options, selected]);
 
   const filtered = useMemo(() => {
     const q = trimmedQuery.toLowerCase();
@@ -100,17 +101,31 @@ export function ComboBoxField(props: ComboBoxFieldProps) {
     // Drop any keyboard from a previously focused field (e.g. the Bean name
     // input) so the detached sheet doesn't open hidden behind it.
     Keyboard.dismiss();
-    // Start with an empty query so the full option list shows first —
-    // searching/adding is the secondary action.
-    setQuery('');
+    // A single-select value that isn't one of the known options — e.g. a long
+    // Process pre-filled from an extracted link — only shows truncated in the
+    // trigger. Seed the search box with it (and focus below) so its full text
+    // is visible and editable. Otherwise start empty so the full list shows
+    // first — searching/adding is the secondary action.
+    const current = props.multiple ? '' : props.value;
+    const isCustom =
+      current.length > 0 && !options.some((o) => o.toLowerCase() === current.toLowerCase());
+    setQuery(isCustom ? current : '');
+    shouldFocusRef.current = isCustom;
     setOpen(true);
-  }, []);
+  }, [props.multiple, props.value, options]);
 
   useEffect(() => {
     if (!open) return;
     // Present without auto-focusing the input: the sheet opens showing the
     // options with the keyboard down. It only rises when the user taps search.
     modalRef.current?.present();
+    // Exception: when we seeded the search box with a custom value to edit,
+    // focus it so it's immediately editable. Delay past the present animation
+    // so the keyboard rises with the settled sheet rather than behind it.
+    if (shouldFocusRef.current) {
+      const timer = setTimeout(() => inputRef.current?.focus(), 250);
+      return () => clearTimeout(timer);
+    }
   }, [open]);
 
   // Suspend the host modal's swipe-to-dismiss while the option sheet is open, so
@@ -121,7 +136,10 @@ export function ComboBoxField(props: ComboBoxFieldProps) {
     return () => navigation.setOptions({ gestureEnabled: true });
   }, [navigation, open]);
 
-  const handleDismiss = useCallback(() => setOpen(false), []);
+  const handleDismiss = useCallback(() => {
+    shouldFocusRef.current = false;
+    setOpen(false);
+  }, []);
 
   // Single-select: commit and close. Multi-select: toggle membership, stay open.
   const choose = useCallback(

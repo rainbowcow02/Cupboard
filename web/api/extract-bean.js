@@ -13,7 +13,14 @@ const SAVE_BEAN_TOOL = {
   input_schema: {
     type: 'object',
     properties: {
-      bean: { type: 'string', description: 'The coffee / lot name (not the roaster).' },
+      bean: {
+        type: 'string',
+        description:
+          'The coffee / lot name (not the roaster), as the words read on the page. ' +
+          'Do not insert " - " or other separators between parts of the name — join ' +
+          'a title split across lines with single spaces (e.g. "Castillo Lychee Washed ' +
+          'Santa Monica", not "Castillo - Lychee Washed - Santa Monica").',
+      },
       roaster: { type: 'string', description: 'The roaster or brand name.' },
       origin: { type: 'string', description: 'Country of origin, e.g. "Ethiopia".' },
       region: { type: 'string', description: 'Growing region, e.g. "Yirgacheffe".' },

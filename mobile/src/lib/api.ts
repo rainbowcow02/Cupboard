@@ -1,5 +1,5 @@
 import Constants from 'expo-constants';
-import { Cup } from '@shared/lib/coffees';
+import { coffeeId, Cup } from '@shared/lib/coffees';
 
 const BASE = (Constants.expoConfig?.extra?.apiUrl as string) ?? '';
 
@@ -38,6 +38,24 @@ export async function updateCup(id: string, fields: Partial<Cup>): Promise<Cup> 
 
 export async function deleteCup(id: string): Promise<void> {
   await request<{ ok: boolean }>(`/api/cups/${id}`, { method: 'DELETE' });
+}
+
+/** Bean-identity + detail fields, duplicated across every cup of a coffee. */
+export type BeanDetails = Pick<
+  Cup,
+  'bean' | 'roaster' | 'origin' | 'process' | 'roastLevel' | 'region' | 'variety' | 'altitude' | 'notes'
+>;
+
+/**
+ * Bean details live on every cup row, so editing them PATCHes each cup belonging
+ * to the coffee. Returns the coffee's new id, since changing bean/roaster changes
+ * the derived id used to group and route to it.
+ */
+export async function updateBeanDetails(id: string, fields: BeanDetails): Promise<string> {
+  const cups = await fetchCups();
+  const targets = cups.filter((c) => coffeeId(c.bean, c.roaster) === id);
+  await Promise.all(targets.map((c) => updateCup(String(c.id), fields)));
+  return coffeeId(fields.bean, fields.roaster);
 }
 
 /** Bean details auto-extracted from a roaster URL (all fields optional). */

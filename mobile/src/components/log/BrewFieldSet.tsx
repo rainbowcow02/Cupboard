@@ -60,6 +60,9 @@ export interface BrewFormValues {
   waterMl: string;
   tempC: string;
   recipeToTest: string;
+  brewNotes: string;
+  reflections: string;
+  tastingNotes: string;
   date: Date;
   rating: number;
 }
@@ -75,8 +78,26 @@ export function recipeValuesFrom(source: Brew | null | undefined): BrewFormValue
     waterMl: source?.waterMl != null ? String(source.waterMl) : '',
     tempC: source?.tempC != null ? String(source.tempC) : '',
     recipeToTest: source?.recipeToTest ?? '',
+    brewNotes: source?.brewNotes ?? '',
+    reflections: source?.reflections ?? '',
+    tastingNotes: source?.tastingNotes ?? '',
     date: new Date(),
     rating: 0,
+  };
+}
+
+/** Bean metadata denormalized onto each logged cup row (one row = one cup). */
+export function beanFieldsPayload(coffee: Coffee) {
+  return {
+    bean: coffee.bean,
+    roaster: coffee.roaster,
+    origin: coffee.origin,
+    process: coffee.process,
+    roastLevel: coffee.roastLevel,
+    region: coffee.region,
+    variety: coffee.variety,
+    altitude: coffee.altitude,
+    notes: coffee.notes,
   };
 }
 
@@ -91,6 +112,9 @@ export function brewFieldsPayload(values: BrewFormValues) {
     waterMl: values.waterMl ? Number(values.waterMl) : undefined,
     tempC: values.tempC ? Number(values.tempC) : undefined,
     recipeToTest: values.recipeToTest.trim() || undefined,
+    brewNotes: values.brewNotes.trim() || undefined,
+    reflections: values.reflections.trim() || undefined,
+    tastingNotes: values.tastingNotes.trim() || undefined,
     date: values.date.toISOString().slice(0, 10),
     rating: values.rating || undefined,
   };
@@ -112,7 +136,10 @@ type TextKey =
   | 'beansG'
   | 'waterMl'
   | 'tempC'
-  | 'recipeToTest';
+  | 'recipeToTest'
+  | 'brewNotes'
+  | 'reflections'
+  | 'tastingNotes';
 
 export function BrewFieldSet({ values, onChange, base }: Props) {
   const { coffees } = useCoffees();
@@ -172,6 +199,14 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
         )
       : null;
   const ratioHint = baseRatio && baseRatio !== ratio ? baseRatio : undefined;
+
+  // Free-form note fields logged with the cup — rendered as stacked multiline
+  // inputs after the pour structure (CascadeItem indices 9–11).
+  const noteFields: { key: 'brewNotes' | 'reflections' | 'tastingNotes'; label: string; placeholder: string }[] = [
+    { key: 'brewNotes', label: 'Brew notes', placeholder: 'How did the brew go?' },
+    { key: 'reflections', label: 'Reflections', placeholder: 'What would you change next time?' },
+    { key: 'tastingNotes', label: 'Cup tasting notes', placeholder: 'What did you taste in the cup?' },
+  ];
 
   return (
     <View style={styles.fields}>
@@ -300,7 +335,25 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
         </FormField>
       </CascadeItem>
 
-      <CascadeItem index={9}>
+      {noteFields.map((field, i) => (
+        <CascadeItem key={field.key} index={9 + i}>
+          <FormField label={field.label} labelStyle={styles.pourLabel}>
+            <TextInput
+              style={[fieldInputStyle, styles.recipeInput]}
+              value={values[field.key]}
+              onChangeText={set(field.key)}
+              placeholder={field.placeholder}
+              placeholderTextColor={colors.greyDark}
+              multiline
+              textAlignVertical="top"
+              returnKeyType="done"
+              accessibilityLabel={field.label}
+            />
+          </FormField>
+        </CascadeItem>
+      ))}
+
+      <CascadeItem index={12}>
         <FormField label="Date" horizontal>
           <DateField
             value={values.date}
@@ -310,7 +363,7 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
         </FormField>
       </CascadeItem>
 
-      <CascadeItem index={10}>
+      <CascadeItem index={13}>
         <FormField label="Rating" horizontal>
           <View style={styles.ratingWrap}>
             <RatingInput value={values.rating} onChange={(rating) => onChange({ rating })} />

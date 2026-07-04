@@ -1,45 +1,13 @@
-import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { bagImgFor, coffeeId, Coffee, ORIGIN_FLAGS } from '@shared/lib/coffees';
+import { useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { bagImgFor, coffeeId, Coffee } from '@shared/lib/coffees';
 import { colors, fonts } from '@shared/theme';
-import { useCoffees } from '../../hooks/useCoffees';
-import { ComboBoxField } from '../ComboBoxField';
+import { BeanFields, NewBeanDraft, blankBeanDraft } from './BeanFields';
 import { ErrorBox } from '../ErrorBox';
-import { FormField, fieldInputStyle } from '../FormField';
 import { PrimaryButton } from '../PrimaryButton';
 import { LogFormScaffold } from './LogFormScaffold';
 
-/** Distinct, non-empty values for a coffee field, sorted A–Z. */
-function distinctValues(coffees: Coffee[], field: keyof Coffee): string[] {
-  const seen = new Set<string>();
-  for (const coffee of coffees) {
-    const raw = coffee[field];
-    if (typeof raw === 'string' && raw.trim()) seen.add(raw.trim());
-  }
-  return [...seen].sort((a, b) => a.localeCompare(b));
-}
-
-export interface NewBeanDraft {
-  bean: string;
-  roaster: string;
-  origin: string;
-  process: string;
-  roastLevel: string;
-  region: string;
-  variety: string;
-  notes: string;
-}
-
-const blank: NewBeanDraft = {
-  bean: '',
-  roaster: '',
-  origin: '',
-  process: '',
-  roastLevel: '',
-  region: '',
-  variety: '',
-  notes: '',
-};
+export type { NewBeanDraft } from './BeanFields';
 
 interface Props {
   bottomInset: number;
@@ -64,30 +32,11 @@ export function NewBeanStep({
   description = 'Share the origin story of your coffee bean.',
   submitLabel = 'Continue',
 }: Props) {
-  const { coffees } = useCoffees();
-  const [form, setForm] = useState<NewBeanDraft>({ ...blank, ...initialDraft });
+  const [form, setForm] = useState<NewBeanDraft>({ ...blankBeanDraft, ...initialDraft });
   const [error, setError] = useState<string | null>(null);
-
-  const options = useMemo(
-    () => ({
-      roaster: distinctValues(coffees, 'roaster'),
-      origin: distinctValues(coffees, 'origin'),
-      process: distinctValues(coffees, 'process'),
-      roastLevel: distinctValues(coffees, 'roastLevel'),
-      region: distinctValues(coffees, 'region'),
-      variety: distinctValues(coffees, 'variety'),
-    }),
-    [coffees],
-  );
 
   const set = (k: keyof NewBeanDraft) => (v: string) =>
     setForm((f) => ({ ...f, [k]: v }));
-
-  // Variety is stored as a comma-joined string but edited as a multi-select list.
-  const varietyList = form.variety
-    ? form.variety.split(',').map((v) => v.trim()).filter(Boolean)
-    : [];
-  const setVariety = (list: string[]) => set('variety')(list.join(', '));
 
   const continueToRecipe = () => {
     if (!form.bean.trim()) {
@@ -108,6 +57,7 @@ export function NewBeanStep({
       roastLevel: form.roastLevel.trim() || undefined,
       region: form.region.trim() || undefined,
       variety: form.variety.trim() || undefined,
+      altitude: form.altitude.trim() || undefined,
       notes: form.notes.trim() || undefined,
       bagImg: bagImgFor(form.bean, form.roaster),
       brews: [],
@@ -139,84 +89,7 @@ export function NewBeanStep({
 
       {error ? <ErrorBox message={error} style={styles.error} /> : null}
 
-      <View style={styles.fields}>
-        <FormField label="Bean" horizontal>
-          <TextInput
-            style={fieldInputStyle}
-            value={form.bean}
-            onChangeText={set('bean')}
-            placeholder="Add bean name"
-            placeholderTextColor={colors.greyDark}
-            returnKeyType="next"
-          />
-        </FormField>
-        <FormField label="Roaster" horizontal>
-          <ComboBoxField
-            label="Roaster"
-            value={form.roaster}
-            options={options.roaster}
-            placeholder="Who's the roaster?"
-            onChange={set('roaster')}
-          />
-        </FormField>
-        <FormField label="Country" horizontal>
-          <ComboBoxField
-            label="Country"
-            value={form.origin}
-            options={options.origin}
-            placeholder="Where was it sourced?"
-            onChange={set('origin')}
-            flagFor={(option) => ORIGIN_FLAGS[option] || ''}
-          />
-        </FormField>
-        <FormField label="Process" horizontal>
-          <ComboBoxField
-            label="Process"
-            value={form.process}
-            options={options.process}
-            placeholder="How was it processed?"
-            onChange={set('process')}
-          />
-        </FormField>
-        <FormField label="Roast" horizontal>
-          <ComboBoxField
-            label="Roast"
-            value={form.roastLevel}
-            options={options.roastLevel}
-            placeholder="What's the roast-level?"
-            onChange={set('roastLevel')}
-          />
-        </FormField>
-        <FormField label="Region" horizontal>
-          <ComboBoxField
-            label="Region"
-            value={form.region}
-            options={options.region}
-            placeholder="Know the region?"
-            onChange={set('region')}
-          />
-        </FormField>
-        <FormField label="Variety" horizontal>
-          <ComboBoxField
-            label="Variety"
-            multiple
-            value={varietyList}
-            options={options.variety}
-            placeholder="Which varietal?"
-            onChange={setVariety}
-          />
-        </FormField>
-        <FormField label="Tasting notes" horizontal>
-          <TextInput
-            style={fieldInputStyle}
-            value={form.notes}
-            onChangeText={set('notes')}
-            placeholder="e.g. Rose Tea, Oolong, Cantalope"
-            placeholderTextColor={colors.greyDark}
-            returnKeyType="done"
-          />
-        </FormField>
-      </View>
+      <BeanFields form={form} set={set} />
 
       <PrimaryButton
         label={submitLabel}
@@ -229,7 +102,6 @@ export function NewBeanStep({
 }
 
 const styles = StyleSheet.create({
-  fields: { gap: 14 },
   linkRow: {
     flexDirection: 'row',
     alignItems: 'center',

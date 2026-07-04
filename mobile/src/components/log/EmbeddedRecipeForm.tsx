@@ -5,6 +5,7 @@ import { createCup } from '../../lib/api';
 import { ErrorBox } from '../ErrorBox';
 import { PrimaryButton } from '../PrimaryButton';
 import {
+  beanFieldsPayload,
   BrewFieldSet,
   BrewFormValues,
   brewFieldsPayload,
@@ -32,14 +33,7 @@ export function EmbeddedRecipeForm({ coffee, onSaved }: Props) {
     setError(null);
     try {
       await createCup({
-        bean: coffee.bean,
-        roaster: coffee.roaster,
-        origin: coffee.origin,
-        process: coffee.process,
-        roastLevel: coffee.roastLevel,
-        region: coffee.region,
-        variety: coffee.variety,
-        notes: coffee.notes,
+        ...beanFieldsPayload(coffee),
         ...brewFieldsPayload(form),
       });
       await onSaved();
