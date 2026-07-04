@@ -11,6 +11,8 @@ interface Props {
   description?: string;
   /** Custom header node rendered in place of the title / description block. */
   header?: React.ReactNode;
+  /** Optional action rendered opposite the back button (e.g. a HeaderPillButton). */
+  rightAction?: React.ReactNode;
   /** Safe-area bottom inset, used to pad scroll content above the tab bar. */
   bottomInset: number;
   children: React.ReactNode;
@@ -22,7 +24,7 @@ interface Props {
  * it, plus a left-aligned title / description block. Mirrors the Set recipe and
  * coffee detail pages so the back affordance is consistent across the app.
  */
-export function LogFormScaffold({ onBack, title, description, header, bottomInset, children }: Props) {
+export function LogFormScaffold({ onBack, title, description, header, rightAction, bottomInset, children }: Props) {
   const scrollY = useRef(new Animated.Value(0)).current;
   // Presented as a modal that covers the tab bar, so only the safe-area bottom is needed.
   const bottomPad = Math.max(bottomInset, 16) + 48;
@@ -31,14 +33,16 @@ export function LogFormScaffold({ onBack, title, description, header, bottomInse
     <View style={styles.screen}>
       <View style={styles.header}>
         {/* Offset + gentle ramp so the frosted circle eases in smoothly on scroll
-            rather than snapping in immediately. */}
+            rather than snapping in immediately. Size/spacing mirror the coffee-detail
+            header so the back affordance is identical across the app. */}
         <GlassBackButton
           onPress={onBack}
           scrollY={scrollY}
           fadeStart={16}
           fadeEnd={64}
-          style={styles.backButton}
+          size={40}
         />
+        {rightAction}
       </View>
 
       {/* KeyboardAwareScrollView lifts a focused field above the keyboard. It forks
@@ -83,12 +87,14 @@ const styles = StyleSheet.create({
     zIndex: 10,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     minHeight: 36,
-    paddingHorizontal: 24,
+    // 16px on both edges so the back button — and any right-aligned action —
+    // mirror the coffee-detail header spacing.
+    paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 8,
   },
-  backButton: { marginLeft: -14 },
   content: { paddingHorizontal: 24, paddingTop: 64 },
   titleBlock: { gap: 4, marginTop: 8, marginBottom: 20 },
   title: {

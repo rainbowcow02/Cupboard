@@ -15,8 +15,9 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Brew, Coffee } from '@shared/lib/coffees';
-import { colors, fonts, surfaces } from '@shared/theme';
+import { colors, fonts } from '@shared/theme';
 import { GlassBackButton } from '../../src/components/GlassBackButton';
+import { HeaderPillButton } from '../../src/components/HeaderPillButton';
 import { EditBeanStep } from '../../src/components/log/EditBeanStep';
 import { BagLabel } from '../../src/components/BagLabel';
 import { BrewCard } from '../../src/components/BrewCard';
@@ -159,15 +160,12 @@ export default function CoffeeDetailScreen() {
 
       {/* Edit — white pill opposite the back button. Only a persisted bean can be edited. */}
       {stored && (
-        <Pressable
+        <HeaderPillButton
+          label="Edit"
           onPress={() => setEditingBean(true)}
-          style={({ pressed }) => [styles.editBtn, { top: 16 }, pressed && styles.editBtnPressed]}
-          hitSlop={8}
-          accessibilityRole="button"
           accessibilityLabel="Edit coffee details"
-        >
-          <Text style={styles.editBtnText}>Edit</Text>
-        </Pressable>
+          style={[styles.editBtn, { top: 16 }]}
+        />
       )}
 
       <Animated.ScrollView
@@ -283,29 +281,14 @@ const styles = StyleSheet.create({
   scrollContent: {},
   backBtn: {
     position: 'absolute',
-    left: 8,
+    left: 16,
     zIndex: 10,
   },
   editBtn: {
     position: 'absolute',
     right: 16,
     zIndex: 10,
-    height: 40,
-    paddingHorizontal: 18,
-    borderRadius: surfaces.pillRadius,
-    backgroundColor: surfaces.pillFill,
-    borderWidth: 1,
-    borderColor: surfaces.pillHairline,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 2,
   },
-  editBtnPressed: { opacity: 0.7 },
-  editBtnText: { fontFamily: fonts.sans, fontWeight: '700', fontSize: 15, color: colors.black },
   hero: {
     alignItems: 'center',
     paddingTop: 24,

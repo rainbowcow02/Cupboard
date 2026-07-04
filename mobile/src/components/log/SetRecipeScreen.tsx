@@ -5,6 +5,7 @@ import { Brew, Coffee } from '@shared/lib/coffees';
 import { colors, fonts, surfaces } from '@shared/theme';
 import { Chevron } from '../Chevron';
 import { GlassBackButton } from '../GlassBackButton';
+import { HeaderPillButton } from '../HeaderPillButton';
 import { BrewCard } from '../BrewCard';
 import { EmbeddedRecipeForm } from './EmbeddedRecipeForm';
 import { RecipeBeanHeader } from './RecipeBeanHeader';
@@ -48,16 +49,13 @@ export function SetRecipeScreen({
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
-        <GlassBackButton onPress={onBack} scrollY={scrollY} style={styles.backButton} />
+        <GlassBackButton onPress={onBack} scrollY={scrollY} size={40} />
         {hasBrews ? (
-          <Pressable
+          <HeaderPillButton
+            label="New"
             onPress={onNew}
-            style={({ pressed }) => [styles.newPill, pressed && styles.newPillPressed]}
-            accessibilityRole="button"
             accessibilityLabel="Start a new recipe"
-          >
-            <Text style={styles.newPillText}>New</Text>
-          </Pressable>
+          />
         ) : null}
       </View>
 
@@ -122,28 +120,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     minHeight: 36,
-    paddingHorizontal: 24,
+    // 16px on both edges so the back button and New pill mirror the coffee-detail header.
+    paddingHorizontal: 16,
     paddingTop: 16,
     paddingBottom: 8,
-  },
-  backButton: { marginLeft: -14 },
-  newPill: {
-    paddingHorizontal: 18,
-    paddingVertical: 9,
-    borderRadius: surfaces.pillRadius,
-    backgroundColor: '#ffffff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 2,
-  },
-  newPillPressed: { opacity: 0.85 },
-  newPillText: {
-    fontFamily: fonts.sans,
-    fontWeight: '700',
-    fontSize: 15,
-    color: colors.black,
   },
   list: { paddingHorizontal: 24, paddingTop: 64, gap: 24 },
   recipeItem: {},

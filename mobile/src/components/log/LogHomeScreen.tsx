@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Coffee, formatDate } from '@shared/lib/coffees';
 import { colors, fonts, surfaces } from '@shared/theme';
 import { BeanCard } from '../BeanCard';
+import { HeaderPillButton } from '../HeaderPillButton';
 import { SearchIcon } from '../SearchIcon';
 import { BottomChromeScrim } from '../surfaces/BottomChromeScrim';
 import { TAB_BAR_HEIGHT } from '../TabBar';
@@ -253,14 +254,7 @@ export function LogHomeScreen({ coffees, onSelectCoffee, onAddNew }: Props) {
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
-        <Pressable
-          onPress={onAddNew}
-          style={({ pressed }) => [styles.addPill, pressed && styles.addPillPressed]}
-          accessibilityRole="button"
-          accessibilityLabel="Add a new coffee"
-        >
-          <Text style={styles.addPillText}>Add</Text>
-        </Pressable>
+        <HeaderPillButton label="Add" onPress={onAddNew} accessibilityLabel="Add a new coffee" />
       </View>
 
       <Animated.FlatList
@@ -320,7 +314,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
-    paddingHorizontal: 24,
+    paddingHorizontal: 16,
     paddingVertical: 8,
     gap: 12,
   },
@@ -344,24 +338,6 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
     textAlign: 'center',
     alignSelf: 'stretch',
-  },
-  addPill: {
-    paddingHorizontal: 18,
-    paddingVertical: 9,
-    borderRadius: 100,
-    backgroundColor: '#ffffff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 1,
-  },
-  addPillPressed: { opacity: 0.85 },
-  addPillText: {
-    fontFamily: fonts.sans,
-    fontWeight: '700',
-    fontSize: 15,
-    color: colors.black,
   },
   listFill: { flex: 1 },
   list: { paddingHorizontal: 24, gap: 12 },
