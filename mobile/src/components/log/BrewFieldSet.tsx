@@ -1,13 +1,25 @@
-import { useMemo } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { useMemo, useRef } from 'react';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Brew, Coffee } from '@shared/lib/coffees';
-import { colors, fonts } from '@shared/theme';
+import { colors, fonts, surfaces } from '@shared/theme';
 import { useCoffees } from '../../hooks/useCoffees';
+import {
+  BrewNotesParts,
+  parseBrewNotes,
+  parseTastingNotes,
+  serializeBrewNotes,
+  serializeTastingNotes,
+  TastingNotesParts,
+} from '../../lib/notesStructure';
+import { defaultPours, pourFormFromRecipeText, PourFormEntry, serializePourStructure } from '../../lib/pourStructure';
 import { ComboBoxField } from '../ComboBoxField';
+import { Divider } from '../Divider';
 import { FieldDiffHint } from '../FieldDiffHint';
-import { FormField, fieldInputStyle } from '../FormField';
+import { FormField } from '../FormField';
 import { RatingInput } from '../RatingInput';
 import { CascadeItem } from './CascadeItem';
+import { PourStructureField } from './PourStructureField';
+import { StructuredNotesField } from './StructuredNotesField';
 
 /** Orders numeric strings numerically (so "20" precedes "100"), text A–Z. */
 function compareOptions(a: string, b: string): number {
@@ -58,15 +70,22 @@ export interface BrewFormValues {
   beansG: string;
   waterMl: string;
   tempC: string;
-  recipeToTest: string;
-  brewNotes: string;
-  tastingNotes: string;
+  pours: PourFormEntry[];
+  pourNote: string;
+  brewTime: string;
+  tastingSmell: string;
+  tastingTaste: string;
+  brewThoughts: string;
+  brewToTry: string;
   date: Date;
   rating: number;
 }
 
 /** Recipe fields seeded from a source brew; date/rating reset for a fresh cup. */
 export function recipeValuesFrom(source: Brew | null | undefined): BrewFormValues {
+  const { pours, note, brewTime } = pourFormFromRecipeText(source?.recipeToTest);
+  const tasting: TastingNotesParts = parseTastingNotes(source?.tastingNotes);
+  const brewNotes: BrewNotesParts = parseBrewNotes(source?.brewNotes);
   return {
     brewer: source?.brewer ?? '',
     grinder: source?.grinder ?? '',
@@ -75,9 +94,13 @@ export function recipeValuesFrom(source: Brew | null | undefined): BrewFormValue
     beansG: source?.beansG != null ? String(source.beansG) : '',
     waterMl: source?.waterMl != null ? String(source.waterMl) : '',
     tempC: source?.tempC != null ? String(source.tempC) : '',
-    recipeToTest: source?.recipeToTest ?? '',
-    brewNotes: source?.brewNotes ?? '',
-    tastingNotes: source?.tastingNotes ?? '',
+    pours,
+    pourNote: note,
+    brewTime,
+    tastingSmell: tasting.smell,
+    tastingTaste: tasting.taste,
+    brewThoughts: brewNotes.thoughts,
+    brewToTry: brewNotes.toTry,
     date: new Date(),
     rating: 0,
   };
@@ -108,9 +131,9 @@ export function brewFieldsPayload(values: BrewFormValues) {
     beansG: values.beansG ? Number(values.beansG) : undefined,
     waterMl: values.waterMl ? Number(values.waterMl) : undefined,
     tempC: values.tempC ? Number(values.tempC) : undefined,
-    recipeToTest: values.recipeToTest.trim() || undefined,
-    brewNotes: values.brewNotes.trim() || undefined,
-    tastingNotes: values.tastingNotes.trim() || undefined,
+    recipeToTest: serializePourStructure(values.pours, values.pourNote, values.brewTime),
+    tastingNotes: serializeTastingNotes(values.tastingSmell, values.tastingTaste),
+    brewNotes: serializeBrewNotes(values.brewThoughts, values.brewToTry),
     date: values.date.toISOString().slice(0, 10),
     rating: values.rating || undefined,
   };
@@ -132,13 +155,17 @@ type TextKey =
   | 'beansG'
   | 'waterMl'
   | 'tempC'
-  | 'recipeToTest'
-  | 'brewNotes'
-  | 'tastingNotes';
+  | 'pourNote'
+  | 'brewTime'
+  | 'tastingSmell'
+  | 'tastingTaste'
+  | 'brewThoughts'
+  | 'brewToTry';
 
 export function BrewFieldSet({ values, onChange, base }: Props) {
   const { coffees } = useCoffees();
   const set = (k: TextKey) => (v: string) => onChange({ [k]: v } as Partial<BrewFormValues>);
+  const brewTimeInputRef = useRef<TextInput>(null);
 
   // Picker options sourced from the user's own brew history (so the values they
   // always reach for are one tap away) plus a sensible range for numeric fields.
@@ -194,13 +221,6 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
         )
       : null;
   const ratioHint = baseRatio && baseRatio !== ratio ? baseRatio : undefined;
-
-  // Free-form note fields logged with the cup — rendered as stacked multiline
-  // inputs after the pour structure (CascadeItem indices 9–11).
-  const noteFields: { key: 'brewNotes' | 'tastingNotes'; label: string; placeholder: string }[] = [
-    { key: 'brewNotes', label: 'Brew notes', placeholder: 'How did the brew go?' },
-    { key: 'tastingNotes', label: 'Cup tasting notes', placeholder: 'What did you taste in the cup?' },
-  ];
 
   return (
     <View style={styles.fields}>
@@ -307,45 +327,88 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
         </FormField>
       </CascadeItem>
 
+      <View style={styles.sectionDivider}>
+        <Divider color={colors.supremeBeige} opacity={0.7} />
+      </View>
+
       <CascadeItem index={8}>
-        <FormField label="Pour structure" labelStyle={styles.pourLabel}>
-          {/* iOS truncates a multiline TextInput's native placeholder to one line,
-              so render a wrapping Text overlay while the field is empty instead. */}
-          <View style={styles.recipeInputWrap}>
+        <PourStructureField
+          pours={values.pours.length ? values.pours : defaultPours()}
+          onChange={(pours) => onChange({ pours })}
+          note={values.pourNote}
+          onNoteChange={set('pourNote')}
+        />
+      </CascadeItem>
+
+      <CascadeItem index={9}>
+        <FormField label="Brew time" horizontal>
+          <Pressable
+            style={styles.brewTimeField}
+            onPress={() => brewTimeInputRef.current?.focus()}
+            accessibilityRole="button"
+            accessibilityLabel="Edit brew time"
+          >
             <TextInput
-              style={[fieldInputStyle, styles.recipeInput]}
-              value={values.recipeToTest}
-              onChangeText={set('recipeToTest')}
-              multiline
-              textAlignVertical="top"
+              ref={brewTimeInputRef}
+              style={styles.brewTimeInput}
+              value={values.brewTime}
+              onChangeText={set('brewTime')}
+              placeholder="3:20"
+              placeholderTextColor={colors.greyDark}
+              keyboardType="numbers-and-punctuation"
               returnKeyType="done"
+              accessibilityLabel="Brew time"
             />
-            {values.recipeToTest === '' && (
-              <Text style={styles.recipePlaceholder} pointerEvents="none">
-                Bloom 1 min → 50g, p1 → 100g, p2 → 150g, p3 → 200g, etc.
-              </Text>
-            )}
-          </View>
+            <Text style={styles.brewTimeUnit}>min</Text>
+          </Pressable>
         </FormField>
       </CascadeItem>
 
-      {noteFields.map((field, i) => (
-        <CascadeItem key={field.key} index={9 + i}>
-          <FormField label={field.label} labelStyle={styles.pourLabel}>
-            <TextInput
-              style={[fieldInputStyle, styles.recipeInput]}
-              value={values[field.key]}
-              onChangeText={set(field.key)}
-              placeholder={field.placeholder}
-              placeholderTextColor={colors.greyDark}
-              multiline
-              textAlignVertical="top"
-              returnKeyType="done"
-              accessibilityLabel={field.label}
-            />
-          </FormField>
-        </CascadeItem>
-      ))}
+      <View style={styles.sectionDivider}>
+        <Divider color={colors.supremeBeige} opacity={0.7} />
+      </View>
+
+      <CascadeItem index={10}>
+        <FormField label="Tasting notes" horizontal>
+          <StructuredNotesField
+            top={{
+              value: values.tastingSmell,
+              onChange: set('tastingSmell'),
+              placeholder: 'Smell',
+              accessibilityLabel: 'Tasting notes, smell',
+            }}
+            bottom={{
+              value: values.tastingTaste,
+              onChange: set('tastingTaste'),
+              placeholder: 'Taste',
+              accessibilityLabel: 'Tasting notes, taste',
+            }}
+          />
+        </FormField>
+      </CascadeItem>
+
+      <CascadeItem index={11}>
+        <FormField label="Brew notes" horizontal>
+          <StructuredNotesField
+            top={{
+              value: values.brewThoughts,
+              onChange: set('brewThoughts'),
+              placeholder: 'Thoughts',
+              accessibilityLabel: 'Brew notes, thoughts',
+            }}
+            bottom={{
+              value: values.brewToTry,
+              onChange: set('brewToTry'),
+              placeholder: 'To Try',
+              accessibilityLabel: 'Brew notes, to try',
+            }}
+          />
+        </FormField>
+      </CascadeItem>
+
+      <View style={styles.sectionDivider}>
+        <Divider color={colors.supremeBeige} opacity={0.7} />
+      </View>
 
       {/* Date is intentionally not shown: it always defaults to today (see
           recipeValuesFrom) and is logged via brewFieldsPayload so it still
@@ -362,21 +425,8 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
 }
 
 const styles = StyleSheet.create({
-  fields: { gap: 14 },
-  row: { flexDirection: 'row', gap: 10 },
-  recipeInputWrap: { position: 'relative' },
-  recipeInput: { minHeight: 96, paddingTop: 12 },
-  recipePlaceholder: {
-    position: 'absolute',
-    left: 14,
-    right: 14,
-    top: 12,
-    fontFamily: fonts.sans,
-    fontSize: 15,
-    fontWeight: '500',
-    color: colors.greyDark,
-    lineHeight: 20,
-  },
+  fields: { gap: 10 },
+  sectionDivider: { paddingVertical: 24 },
   ratingWrap: { alignItems: 'flex-start' },
   ratioValue: {
     fontFamily: fonts.sans,
@@ -384,12 +434,32 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.black,
   },
-  // Match the other (horizontal) field labels while keeping the label above the input.
-  pourLabel: {
+  brewTimeField: {
+    alignSelf: 'flex-start',
+    width: 100,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 14,
+    borderWidth: 0.5,
+    borderColor: 'rgba(0,0,0,0.14)',
+    backgroundColor: surfaces.pillFill,
+  },
+  brewTimeInput: {
+    flex: 1,
+    padding: 0,
+    fontFamily: fonts.sans,
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: '500',
     color: colors.black,
-    textTransform: 'none',
-    letterSpacing: 0,
+  },
+  brewTimeUnit: {
+    fontFamily: fonts.sans,
+    fontSize: 15,
+    fontWeight: '800',
+    color: colors.greyDark,
   },
 });

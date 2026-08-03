@@ -8,6 +8,7 @@ import {
   BrewFieldSet,
   BrewFormValues,
   brewFieldsPayload,
+  recipeValuesFrom,
 } from '../../src/components/log/BrewFieldSet';
 import { createCup, updateCup, deleteCup } from '../../src/lib/api';
 
@@ -40,20 +41,11 @@ export function BrewForm({
   const source = brew ?? templateBrew;
   const insets = useSafeAreaInsets();
 
-  const [form, setForm] = useState<BrewFormValues>({
-    brewer: source?.brewer ?? '',
-    grinder: source?.grinder ?? '',
-    filter: source?.filter ?? '',
-    grind: source?.grind ?? '',
-    beansG: source?.beansG != null ? String(source.beansG) : '',
-    waterMl: source?.waterMl != null ? String(source.waterMl) : '',
-    tempC: source?.tempC != null ? String(source.tempC) : '',
-    recipeToTest: source?.recipeToTest ?? '',
-    brewNotes: source?.brewNotes ?? '',
-    tastingNotes: source?.tastingNotes ?? '',
+  const [form, setForm] = useState<BrewFormValues>(() => ({
+    ...recipeValuesFrom(source),
     date: toDateInput(editing ? brew?.date : undefined),
     rating: editing ? (brew?.rating ?? 0) : 0,
-  });
+  }));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);

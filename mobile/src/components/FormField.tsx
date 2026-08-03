@@ -1,5 +1,5 @@
 import { StyleProp, StyleSheet, Text, TextStyle, View, ViewStyle } from 'react-native';
-import { colors, fonts } from '@shared/theme';
+import { colors, fonts, surfaces } from '@shared/theme';
 
 interface Props {
   label: string;
@@ -33,11 +33,11 @@ export function FormField({ label, children, style, horizontal, labelStyle }: Pr
 
 export const fieldInputStyle = {
   paddingHorizontal: 14,
-  paddingVertical: 12,
+  paddingVertical: 10,
   borderRadius: 14,
   borderWidth: 0.5,
   borderColor: 'rgba(0,0,0,0.14)',
-  backgroundColor: 'rgba(255,255,255,0.7)',
+  backgroundColor: surfaces.pillFill,
   fontFamily: fonts.sans,
   fontSize: 15,
   fontWeight: '500' as const,
@@ -50,14 +50,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 12,
-    minHeight: 46,
+    minHeight: 43,
   },
   // Matches the field's min height and centers the label within it, so a
   // diff hint rendered below the field doesn't drag the label down with it.
-  rowLabelWrap: { width: 92, minHeight: 46, justifyContent: 'center' },
+  rowLabelWrap: { width: 92, minHeight: 43, justifyContent: 'center' },
   rowLabel: {
     fontFamily: fonts.sans,
-    fontWeight: '600',
+    fontWeight: '800',
     fontSize: 15,
     color: colors.black,
   },

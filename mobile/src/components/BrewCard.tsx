@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Brew, formatDate, parseRecipe } from '@shared/lib/coffees';
 import { colors, fonts } from '@shared/theme';
+import { BrewNotesParts, parseBrewNotes, parseTastingNotes } from '../lib/notesStructure';
 import { Card } from './Card';
 import { CupRating } from './CupRating';
 import { Divider } from './Divider';
@@ -29,26 +30,8 @@ interface AnchorSnapshot {
   screenY: number;
 }
 
-interface ParsedBrewNotes {
-  thoughts: string;
-  toTry: string;
-}
-
 function brewNotesText(brew: Brew): string | undefined {
   return brew.brewNotes?.trim() || undefined;
-}
-
-function parseBrewNotes(text: string | undefined): ParsedBrewNotes | null {
-  if (!text?.trim()) return null;
-  const thoughtsMatch = text.match(/Thoughts:\s*([\s\S]*?)(?=To Try:|$)/i);
-  const toTryMatch = text.match(/To Try:\s*([\s\S]*)/i);
-  if (thoughtsMatch || toTryMatch) {
-    return {
-      thoughts: thoughtsMatch?.[1]?.trim() ?? '',
-      toTry: toTryMatch?.[1]?.trim() ?? '',
-    };
-  }
-  return { thoughts: text.trim(), toTry: '' };
 }
 
 function parseToTryBullets(toTry: string): { intro: string; bullets: string[] } {
@@ -63,20 +46,6 @@ function parseToTryBullets(toTry: string): { intro: string; bullets: string[] } 
     }
   }
   return { intro: introLines.join('\n'), bullets };
-}
-
-function parseTastingNotes(text: string | undefined): { smell: string; taste: string; raw: boolean } {
-  if (!text?.trim()) return { smell: '', taste: '', raw: false };
-  const smellMatch = text.match(/Smell:\s*([\s\S]*?)(?=Taste:|$)/i);
-  const tasteMatch = text.match(/Taste:\s*([\s\S]*)/i);
-  if (!smellMatch && !tasteMatch) {
-    return { smell: '', taste: text.trim(), raw: true };
-  }
-  return {
-    smell: smellMatch?.[1]?.trim() ?? '',
-    taste: tasteMatch?.[1]?.trim() ?? '',
-    raw: false,
-  };
 }
 
 function Row({ label, value }: { label: string; value?: string | null }) {
@@ -126,7 +95,7 @@ function ThoughtHighlight({ thoughts }: { thoughts: string }) {
   );
 }
 
-function BrewNotesBody({ parsed }: { parsed: ParsedBrewNotes }) {
+function BrewNotesBody({ parsed }: { parsed: BrewNotesParts }) {
   const { intro, bullets } = parseToTryBullets(parsed.toTry);
   return (
     <Text style={styles.bodyText}>
@@ -189,7 +158,7 @@ function NotesAndBrewNotes({
   brewNotes,
 }: {
   brew: Brew;
-  brewNotes: ParsedBrewNotes | null;
+  brewNotes: BrewNotesParts | null;
 }) {
   return (
     <>
@@ -239,8 +208,8 @@ function EquipmentAndRecipe({
                 {technique ? <Text style={styles.pourTechnique}>{technique}</Text> : null}
               </View>
             ))}
-            {parsed.agitation ? (
-              <Text style={[styles.detailLabel, styles.agitation]}>{parsed.agitation}</Text>
+            {parsed.note ? (
+              <Text style={[styles.detailLabel, styles.pourNote]}>{parsed.note}</Text>
             ) : null}
           </View>
           <View style={styles.insetDivider}>
@@ -287,7 +256,8 @@ export function BrewCard({ brew, onEdit, getCurrentScrollY, scrollToY }: Props) 
   const opacityAnimation = useRef(new Animated.Value(0)).current;
 
   const parsed = parseRecipe(brew.recipeToTest);
-  const brewNotes = parseBrewNotes(brewNotesText(brew));
+  const rawBrewNotes = brewNotesText(brew);
+  const brewNotes = rawBrewNotes ? parseBrewNotes(rawBrewNotes) : null;
   const brewTime = parsed?.brewTime;
 
   const hasExpandableContent = Boolean(
@@ -572,7 +542,7 @@ const styles = StyleSheet.create({
     color: colors.black,
     lineHeight: 20,
   },
-  agitation: { marginTop: 10},
+  pourNote: { marginTop: 10 },
   section: { padding: 16, paddingHorizontal: 24 },
   sectionTitle: {
     fontFamily: fonts.sans,
