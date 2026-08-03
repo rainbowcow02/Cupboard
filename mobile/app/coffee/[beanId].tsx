@@ -222,20 +222,30 @@ export default function CoffeeDetailScreen() {
             </View>
           )}
 
-          {/* Origin */}
-          <View style={styles.section}>
-            <SectionHeader title="Origin" />
-            <Card>
-              <DetailRow label="Country" value={`${flag} ${coffee.origin ?? ''}`} />
-              <DetailRow label="Region" value={coffee.region} last={!coffee.altitude} />
-              {coffee.altitude && <DetailRow label="Altitude" value={coffee.altitude} last />}
-              {coffee.origin && (
-                <View style={styles.originMapWrap}>
-                  <OriginMap country={coffee.origin} />
-                </View>
-              )}
-            </Card>
-          </View>
+          {/* Origin — only shown when the bean has a region or country to display */}
+          {(coffee.region || coffee.origin) && (
+            <View style={styles.section}>
+              <SectionHeader title="Origin" />
+              <Card>
+                {coffee.origin && (
+                  <DetailRow
+                    label="Country"
+                    value={`${flag} ${coffee.origin}`}
+                    last={!coffee.region && !coffee.altitude}
+                  />
+                )}
+                {coffee.region && (
+                  <DetailRow label="Region" value={coffee.region} last={!coffee.altitude} />
+                )}
+                {coffee.altitude && <DetailRow label="Altitude" value={coffee.altitude} last />}
+                {coffee.origin && (
+                  <View style={styles.originMapWrap}>
+                    <OriginMap country={coffee.origin} region={coffee.region} />
+                  </View>
+                )}
+              </Card>
+            </View>
+          )}
 
           {/* Brew recipes */}
           <View style={styles.section}>

@@ -24,14 +24,16 @@ const MAPBOX_STYLE = 'mapbox://styles/rainbowcow02/cmpbsoxbv002n01qhe2v56lsw';
 
 interface Props {
   country?: string | null;
+  region?: string | null;
 }
 
-export function OriginMap({ country }: Props) {
+export function OriginMap({ country, region }: Props) {
   const coords = country ? ORIGIN_COORDS[country] : undefined;
   if (!coords) return null;
+  const label = region || country;
 
   return (
-    <View style={styles.container} accessibilityRole="image" accessibilityLabel={`Map of ${country}`}>
+    <View style={styles.container} accessibilityRole="image" accessibilityLabel={`Map of ${label}`}>
       <MapboxGL.MapView
         style={styles.map}
         styleURL={MAPBOX_STYLE}

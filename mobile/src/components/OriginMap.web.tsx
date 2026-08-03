@@ -4,21 +4,23 @@ import { colors, fonts } from '@shared/theme';
 
 interface Props {
   country?: string | null;
+  region?: string | null;
 }
 
-export function OriginMap({ country }: Props) {
+export function OriginMap({ country, region }: Props) {
   if (!country) return null;
+  const label = region || country;
 
   return (
     <View
       style={styles.placeholder}
       accessibilityRole="image"
-      accessibilityLabel={`Map preview of ${country}`}
+      accessibilityLabel={`Map preview of ${label}`}
     >
       <View style={styles.markerPill}>
         <BeanIcon width={17} height={17} />
       </View>
-      <Text style={styles.countryLabel}>{country}</Text>
+      <Text style={styles.countryLabel}>{label}</Text>
       <Text style={styles.previewNote}>Map preview unavailable on web</Text>
     </View>
   );
