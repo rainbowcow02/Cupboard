@@ -2,6 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { Polyline, Svg } from 'react-native-svg';
 import { Brew } from '@shared/lib/coffees';
 import { colors, fonts } from '@shared/theme';
+import { Divider } from './Divider';
 
 interface Props {
   brews: Brew[];
@@ -80,13 +81,13 @@ export function BrewSummary({ brews }: Props) {
     <View style={styles.card}>
       <View style={styles.stats}>
         <StatCell value={String(brews.length)} label="Cups" />
-        <View style={styles.divider} />
+        <Divider orientation="vertical" length={28} thickness={0.5} opacity={1} />
         <StatCell value={totalGrams > 0 ? `${totalGrams}g` : '—'} label="Brewed" />
-        <View style={styles.divider} />
+        <Divider orientation="vertical" length={28} thickness={0.5} opacity={1} />
         <StatCell value={medianRating != null ? `${medianRating.toFixed(1)} ☕️` : '—'} label="Median" />
         {showSpark && (
           <>
-            <View style={styles.divider} />
+            <Divider orientation="vertical" length={28} thickness={0.5} opacity={1} />
             <SparkCell brews={brews} />
           </>
         )}
@@ -119,7 +120,6 @@ const styles = StyleSheet.create({
   },
   statCell: { flex: 1, alignItems: 'center', gap: 4 },
   sparkCell: { flex: 1, alignItems: 'stretch', gap: 4, paddingHorizontal: 12 },
-  divider: { width: 0.5, height: 28, backgroundColor: colors.greyLight },
   statValue: {
     fontFamily: fonts.sans,
     fontWeight: '800',

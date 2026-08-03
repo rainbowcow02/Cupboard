@@ -11,9 +11,10 @@ import { DetachedSheetBackground } from '../components/surfaces/DetachedSheetBac
 import { DetachedSheetContentClip } from '../components/surfaces/DetachedSheetContentClip';
 import { SheetHeader } from '../components/surfaces/SheetHeader';
 import { floatingSurfaceStyles } from '../components/surfaces/floatingSurfaceStyles';
+import { Divider } from '../components/Divider';
 import { useCoffees } from '../hooks/useCoffees';
 import { tabBarChromeInset } from '../lib/chromeInsets';
-import { colors, fonts } from '@shared/theme';
+import { colors, fonts, surfaces } from '@shared/theme';
 import { Coffee, ORIGIN_FLAGS, formatDate } from '@shared/lib/coffees';
 
 MapboxGL.setAccessToken(
@@ -270,10 +271,16 @@ export default function ExploreScreen() {
 
   const coffeeCount = filteredCoffees.length;
   const countryCount = selectedOrigin ? 1 : Object.keys(originGroups).length;
+  const regionCount = useMemo(() => {
+    if (!selectedOrigin) return 0;
+    return new Set(filteredCoffees.map(c => c.region).filter(Boolean)).size;
+  }, [selectedOrigin, filteredCoffees]);
   const titleText = selectedOrigin
     ? `${ORIGIN_FLAGS[selectedOrigin] ?? ''} ${selectedOrigin}`
     : 'All coffees';
-  const subtitleText = `${coffeeCount} ${coffeeCount === 1 ? 'coffee' : 'coffees'} · ${countryCount} ${countryCount === 1 ? 'country' : 'countries'}`;
+  const subtitleText = selectedOrigin && regionCount > 0
+    ? `${coffeeCount} ${coffeeCount === 1 ? 'coffee' : 'coffees'} · ${regionCount} ${regionCount === 1 ? 'region' : 'regions'}`
+    : `${coffeeCount} ${coffeeCount === 1 ? 'coffee' : 'coffees'} · ${countryCount} ${countryCount === 1 ? 'country' : 'countries'}`;
 
   return (
     <View style={styles.container}>
@@ -391,7 +398,9 @@ export default function ExploreScreen() {
                   </View>
                   <Text style={styles.dateText}>{formatDate(coffee.date)}</Text>
                 </TouchableOpacity>
-                {i < filteredCoffees.length - 1 && <View style={floatingSurfaceStyles.divider} />}
+                {i < filteredCoffees.length - 1 && (
+                  <Divider color={surfaces.divider} thickness={0.5} opacity={1} />
+                )}
               </View>
             ))}
           </BottomSheetScrollView>

@@ -4,6 +4,7 @@ import { Coffee } from '@shared/lib/coffees';
 import { colors, fonts } from '@shared/theme';
 import { BeanCard } from '../BeanCard';
 import { Chevron } from '../Chevron';
+import { Divider } from '../Divider';
 
 interface Props {
   coffee: Coffee;
@@ -56,7 +57,7 @@ export function RecipeBeanHeader({
           trailing={<Chevron color={colors.greyDark} />}
         />
       </View>
-      <View style={styles.headerDivider} />
+      <Divider color={colors.supremeBeige} opacity={0.7} />
     </View>
   );
 }
@@ -79,5 +80,4 @@ const styles = StyleSheet.create({
     color: colors.greyDark,
     lineHeight: 21,
   },
-  headerDivider: { height: 1, backgroundColor: colors.supremeBeige, opacity: 0.7 },
 });

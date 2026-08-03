@@ -12,6 +12,7 @@ import { Brew, formatDate, parseRecipe } from '@shared/lib/coffees';
 import { colors, fonts } from '@shared/theme';
 import { Card } from './Card';
 import { CupRating } from './CupRating';
+import { Divider } from './Divider';
 import { SortChevron } from './SortChevron';
 
 const ANIMATION_DURATION = 320;
@@ -28,16 +29,16 @@ interface AnchorSnapshot {
   screenY: number;
 }
 
-interface ParsedReflections {
+interface ParsedBrewNotes {
   thoughts: string;
   toTry: string;
 }
 
-function reflectionsText(brew: Brew): string | undefined {
-  return brew.reflections?.trim() || brew.brewNotes?.trim() || undefined;
+function brewNotesText(brew: Brew): string | undefined {
+  return brew.brewNotes?.trim() || undefined;
 }
 
-function parseReflections(text: string | undefined): ParsedReflections | null {
+function parseBrewNotes(text: string | undefined): ParsedBrewNotes | null {
   if (!text?.trim()) return null;
   const thoughtsMatch = text.match(/Thoughts:\s*([\s\S]*?)(?=To Try:|$)/i);
   const toTryMatch = text.match(/To Try:\s*([\s\S]*)/i);
@@ -78,10 +79,6 @@ function parseTastingNotes(text: string | undefined): { smell: string; taste: st
   };
 }
 
-function Divider() {
-  return <View style={styles.divider} />;
-}
-
 function Row({ label, value }: { label: string; value?: string | null }) {
   return (
     <View style={styles.rowBlock}>
@@ -105,7 +102,7 @@ function ExpandLink({ expanded, onPress }: { expanded: boolean; onPress: () => v
       accessibilityHint={
         expanded
           ? 'Collapses brew details'
-          : 'Expands grinder, recipe, tasting notes, and reflections'
+          : 'Expands grinder, recipe, tasting notes, and brew notes'
       }
     >
       <Text style={styles.expandLinkText}>{expanded ? 'See less' : 'See more'}</Text>
@@ -122,12 +119,14 @@ function ThoughtHighlight({ thoughts }: { thoughts: string }) {
           {thoughts}
         </Text>
       </View>
-      <Divider />
+      <View style={styles.insetDivider}>
+        <Divider />
+      </View>
     </View>
   );
 }
 
-function ReflectionsBody({ parsed }: { parsed: ParsedReflections }) {
+function BrewNotesBody({ parsed }: { parsed: ParsedBrewNotes }) {
   const { intro, bullets } = parseToTryBullets(parsed.toTry);
   return (
     <Text style={styles.bodyText}>
@@ -185,12 +184,12 @@ function NotesSection({ title, children }: { title: string; children: ReactNode 
   );
 }
 
-function NotesAndReflections({
+function NotesAndBrewNotes({
   brew,
-  reflections,
+  brewNotes,
 }: {
   brew: Brew;
-  reflections: ParsedReflections | null;
+  brewNotes: ParsedBrewNotes | null;
 }) {
   return (
     <>
@@ -200,29 +199,38 @@ function NotesAndReflections({
         </NotesSection>
       ) : null}
 
-      {reflections ? (
-        <View style={styles.reflectionsSection}>
-          <Text style={styles.sectionTitle}>Reflections</Text>
-          <ReflectionsBody parsed={reflections} />
+      {brewNotes ? (
+        <View style={styles.brewNotesSection}>
+          <Text style={styles.sectionTitle}>Brew Notes</Text>
+          <BrewNotesBody parsed={brewNotes} />
         </View>
       ) : null}
     </>
   );
 }
 
-function EquipmentAndRecipe({ brew, parsed }: { brew: Brew; parsed: ReturnType<typeof parseRecipe> }) {
+function EquipmentAndRecipe({
+  brew,
+  parsed,
+  skipLeadingDivider,
+}: {
+  brew: Brew;
+  parsed: ReturnType<typeof parseRecipe>;
+  skipLeadingDivider?: boolean;
+}) {
   return (
     <>
-      <View style={styles.insetDivider}>
-        <Divider />
-      </View>
+      {skipLeadingDivider ? null : (
+        <View style={styles.insetDivider}>
+          <Divider />
+        </View>
+      )}
       <Row label="Grinder" value={brew.grinder} />
       <Row label="Dripper" value={brew.brewer} />
       <Row label="Filter paper" value={brew.filter} />
 
       {parsed && parsed.pours.length > 0 ? (
         <>
-          <Divider />
           <View style={styles.pourSection}>
             {parsed.pours.map(({ step, amount, technique }) => (
               <View key={step} style={styles.pourRow}>
@@ -235,18 +243,21 @@ function EquipmentAndRecipe({ brew, parsed }: { brew: Brew; parsed: ReturnType<t
               <Text style={[styles.detailLabel, styles.agitation]}>{parsed.agitation}</Text>
             ) : null}
           </View>
-          <Divider />
+          <View style={styles.insetDivider}>
+            <Divider />
+          </View>
         </>
       ) : null}
 
       {!parsed && brew.recipeToTest ? (
         <>
-          <Divider />
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Recipe</Text>
             <Text style={styles.bodyText}>{brew.recipeToTest}</Text>
           </View>
-          <Divider />
+          <View style={styles.insetDivider}>
+            <Divider />
+          </View>
         </>
       ) : null}
     </>
@@ -276,7 +287,7 @@ export function BrewCard({ brew, onEdit, getCurrentScrollY, scrollToY }: Props) 
   const opacityAnimation = useRef(new Animated.Value(0)).current;
 
   const parsed = parseRecipe(brew.recipeToTest);
-  const reflections = parseReflections(reflectionsText(brew));
+  const brewNotes = parseBrewNotes(brewNotesText(brew));
   const brewTime = parsed?.brewTime;
 
   const hasExpandableContent = Boolean(
@@ -285,7 +296,7 @@ export function BrewCard({ brew, onEdit, getCurrentScrollY, scrollToY }: Props) 
       brew.filter ||
       brew.recipeToTest ||
       brew.tastingNotes ||
-      reflections,
+      brewNotes,
   );
 
   const hasRatio = brew.beansG && brew.waterMl;
@@ -390,9 +401,8 @@ export function BrewCard({ brew, onEdit, getCurrentScrollY, scrollToY }: Props) 
 
   const bodyContent = (
     <>
-      <EquipmentAndRecipe brew={brew} parsed={parsed} />
-      {brewTime ? <BrewTimeRow brewTime={brewTime} /> : null}
-      <NotesAndReflections brew={brew} reflections={reflections} />
+      <EquipmentAndRecipe brew={brew} parsed={parsed} skipLeadingDivider={Boolean(brewTime)} />
+      <NotesAndBrewNotes brew={brew} brewNotes={brewNotes} />
     </>
   );
 
@@ -407,7 +417,7 @@ export function BrewCard({ brew, onEdit, getCurrentScrollY, scrollToY }: Props) 
         <CupRating rating={brew.rating} />
       </View>
 
-      {reflections?.thoughts ? <ThoughtHighlight thoughts={reflections.thoughts} /> : null}
+      {brewNotes?.thoughts ? <ThoughtHighlight thoughts={brewNotes.thoughts} /> : null}
 
       <View style={styles.stats}>
         {[
@@ -423,6 +433,15 @@ export function BrewCard({ brew, onEdit, getCurrentScrollY, scrollToY }: Props) 
           </View>
         ))}
       </View>
+
+      {brewTime ? (
+        <>
+          <View style={styles.insetDivider}>
+            <Divider />
+          </View>
+          <BrewTimeRow brewTime={brewTime} />
+        </>
+      ) : null}
 
       {hasExpandableContent ? (
         <>
@@ -501,7 +520,6 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
     lineHeight: 24,
   },
-  divider: { height: 0.5, backgroundColor: '#E7E7E7' },
   insetDivider: { paddingHorizontal: 24 },
   rowBlock: { paddingTop: 16, paddingHorizontal: 24, gap: 16 },
   detailRow: {
@@ -566,7 +584,7 @@ const styles = StyleSheet.create({
   },
   notesSection: { paddingTop: 16, paddingHorizontal: 24, gap: 8 },
   notesBody: { paddingBottom: 16 },
-  reflectionsSection: { paddingHorizontal: 24, paddingVertical: 16, gap: 8 },
+  brewNotesSection: { paddingHorizontal: 24, paddingVertical: 16, gap: 8 },
   bodyText: {
     fontFamily: fonts.sans,
     fontWeight: '400',
