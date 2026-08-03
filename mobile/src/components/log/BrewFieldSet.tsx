@@ -60,7 +60,6 @@ export interface BrewFormValues {
   tempC: string;
   recipeToTest: string;
   brewNotes: string;
-  reflections: string;
   tastingNotes: string;
   date: Date;
   rating: number;
@@ -78,7 +77,6 @@ export function recipeValuesFrom(source: Brew | null | undefined): BrewFormValue
     tempC: source?.tempC != null ? String(source.tempC) : '',
     recipeToTest: source?.recipeToTest ?? '',
     brewNotes: source?.brewNotes ?? '',
-    reflections: source?.reflections ?? '',
     tastingNotes: source?.tastingNotes ?? '',
     date: new Date(),
     rating: 0,
@@ -112,7 +110,6 @@ export function brewFieldsPayload(values: BrewFormValues) {
     tempC: values.tempC ? Number(values.tempC) : undefined,
     recipeToTest: values.recipeToTest.trim() || undefined,
     brewNotes: values.brewNotes.trim() || undefined,
-    reflections: values.reflections.trim() || undefined,
     tastingNotes: values.tastingNotes.trim() || undefined,
     date: values.date.toISOString().slice(0, 10),
     rating: values.rating || undefined,
@@ -137,7 +134,6 @@ type TextKey =
   | 'tempC'
   | 'recipeToTest'
   | 'brewNotes'
-  | 'reflections'
   | 'tastingNotes';
 
 export function BrewFieldSet({ values, onChange, base }: Props) {
@@ -201,9 +197,8 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
 
   // Free-form note fields logged with the cup — rendered as stacked multiline
   // inputs after the pour structure (CascadeItem indices 9–11).
-  const noteFields: { key: 'brewNotes' | 'reflections' | 'tastingNotes'; label: string; placeholder: string }[] = [
+  const noteFields: { key: 'brewNotes' | 'tastingNotes'; label: string; placeholder: string }[] = [
     { key: 'brewNotes', label: 'Brew notes', placeholder: 'How did the brew go?' },
-    { key: 'reflections', label: 'Reflections', placeholder: 'What would you change next time?' },
     { key: 'tastingNotes', label: 'Cup tasting notes', placeholder: 'What did you taste in the cup?' },
   ];
 

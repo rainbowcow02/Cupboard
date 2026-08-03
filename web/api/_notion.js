@@ -39,7 +39,6 @@ export const COLUMNS = {
   waterMl:      'Amt water 💧',   // select, e.g. "190ml"
   altitude:     'Altitude',
   brewNotes:    'Brew Notes',
-  reflections:  'Reflections',
   recipeToTest: 'Recipe to test', // free-form paragraph: pour structure + brew time
   tastingNotes: 'Tasting notes',  // detailed per-brew tasting notes (distinct from short Notes chips)
 };
@@ -131,7 +130,6 @@ export function rowToCup(page) {
     waterMl:      readNumber(p[c.waterMl]),
     altitude:     readText(p[c.altitude]),
     brewNotes:    readText(p[c.brewNotes]),
-    reflections:  readText(p[c.reflections]) || readText(p[c.brewNotes]),
     recipeToTest: readText(p[c.recipeToTest]),
     tastingNotes: readText(p[c.tastingNotes]),
   };
@@ -205,6 +203,5 @@ export function cupToProperties(cup) {
   setText(c.recipeToTest, cup.recipeToTest);
   setText(c.brewNotes, cup.brewNotes);
   setText(c.tastingNotes, cup.tastingNotes);
-  setText(c.reflections, cup.reflections);
   return props;
 }

@@ -50,7 +50,6 @@ export function BrewForm({
     tempC: source?.tempC != null ? String(source.tempC) : '',
     recipeToTest: source?.recipeToTest ?? '',
     brewNotes: source?.brewNotes ?? '',
-    reflections: source?.reflections ?? '',
     tastingNotes: source?.tastingNotes ?? '',
     date: toDateInput(editing ? brew?.date : undefined),
     rating: editing ? (brew?.rating ?? 0) : 0,

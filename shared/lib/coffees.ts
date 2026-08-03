@@ -25,7 +25,6 @@ export interface Cup {
   beansG?: number;
   waterMl?: number;
   brewNotes?: string;
-  reflections?: string;
   recipeToTest?: string;
   tastingNotes?: string;
 }
@@ -43,7 +42,6 @@ export interface Brew {
   rating?: number;
   notes?: string;
   brewNotes?: string;
-  reflections?: string;
   recipeToTest?: string;
   tastingNotes?: string;
 }
@@ -165,7 +163,6 @@ export function groupIntoCoffees(rows: Cup[]): Coffee[] {
           rating: r.rating,
           notes: r.notes,
           brewNotes: r.brewNotes,
-          reflections: r.reflections ?? r.brewNotes,
           recipeToTest: r.recipeToTest,
           tastingNotes: r.tastingNotes,
         }))
