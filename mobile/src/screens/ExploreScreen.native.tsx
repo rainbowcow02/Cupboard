@@ -379,9 +379,15 @@ export default function ExploreScreen() {
                   <View style={styles.listItemText}>
                     <Text style={styles.beanName} numberOfLines={1}>{coffee.bean}</Text>
                     <Text style={styles.roasterName} numberOfLines={1}>{coffee.roaster}</Text>
-                    <Text style={styles.originText} numberOfLines={1}>
-                      {ORIGIN_FLAGS[coffee.origin ?? ''] ?? ''} {coffee.origin}
-                    </Text>
+                    {selectedOrigin
+                      ? coffee.region && (
+                          <Text style={styles.originText} numberOfLines={1}>{coffee.region}</Text>
+                        )
+                      : (
+                          <Text style={styles.originText} numberOfLines={1}>
+                            {`${ORIGIN_FLAGS[coffee.origin ?? ''] ?? ''} ${coffee.origin}`}
+                          </Text>
+                        )}
                   </View>
                   <Text style={styles.dateText}>{formatDate(coffee.date)}</Text>
                 </TouchableOpacity>
