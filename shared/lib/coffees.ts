@@ -183,18 +183,7 @@ export interface PourStep {
 export interface Recipe {
   pours: PourStep[];
   brewTime: string | null;
-  agitation: string | null;
-}
-
-function cleanPourTechnique(raw: string): string {
-  const trimmed = raw.trim().replace(/\.\s*$/, '');
-  const dotIdx = trimmed.indexOf('. ');
-  if (dotIdx === -1) return trimmed;
-  const after = trimmed.slice(dotIdx + 2);
-  if (/cafec|filter|grinder|dripper|switch|chemex|brew\s*time|my\s+grinder/i.test(after)) {
-    return trimmed.slice(0, dotIdx).trim();
-  }
-  return trimmed;
+  note: string | null;
 }
 
 function looksLikePourMetadata(candidate: string): boolean {
@@ -228,14 +217,16 @@ export function parseRecipe(text: string | null | undefined): Recipe | null {
   }
 
   const pours: PourStep[] = [];
-  const re = /\b(bloom|p(\d+))\s*[-→>]+\s*(\d+(?:ml|g)?)\s*([^,→\n]*)/gi;
+  // Filler between the step keyword and the arrow tolerates inline text like
+  // "Bloom 1:30m -> 60" without swallowing the next pour's own digits.
+  const re = /\b(bloom|p(\d+))\b[^\-→>\n]{0,20}[-→>]+\s*(\d+(?:ml|g)?)\s*([^,→\n.]*)/gi;
   let m: RegExpExecArray | null;
   let lastMatchEnd = -1;
   while ((m = re.exec(text)) !== null) {
     const step = m[2] ? `P${m[2]}` : 'Bloom';
     const rawAmt = m[3].trim();
     const amount = /^\d+$/.test(rawAmt) ? `${rawAmt}ml` : rawAmt;
-    let technique = cleanPourTechnique(m[4]);
+    let technique = m[4].trim();
     if (step === 'Bloom') {
       if (!technique) {
         technique = bloomPreText(text, m.index);
@@ -248,22 +239,15 @@ export function parseRecipe(text: string | null | undefined): Recipe | null {
     lastMatchEnd = re.lastIndex;
   }
 
-  let agitation: string | null = null;
+  // Everything left after the last matched pour is a free-form note (agitation,
+  // caveats, timer glitches, etc.) rather than more pour steps.
+  let note: string | null = null;
   if (pours.length > 0 && lastMatchEnd >= 0) {
-    const tail = text.slice(lastMatchEnd);
-    const ag = tail.match(/^,?\s*(.+?)(?=\.\s|\.$|\n|$)/);
-    if (ag) {
-      const candidate = ag[1].trim();
-      if (
-        /agitat|pours?\s+(with|no|gentle|low)|gentle\s+pour|low\s+agit|all\s+agit|circular/i.test(candidate) &&
-        !/cafec|filter|grinder|dripper|switch|chemex/i.test(candidate)
-      ) {
-        agitation = candidate;
-      }
-    }
+    const tail = text.slice(lastMatchEnd).replace(/^[.,\s]+/, '').trim();
+    if (tail) note = tail;
   }
 
-  return (pours.length || brewTime) ? { pours, brewTime, agitation } : null;
+  return (pours.length || brewTime) ? { pours, brewTime, note } : null;
 }
 
 // Sample data for Weekend 1 — used when API is not yet connected.
