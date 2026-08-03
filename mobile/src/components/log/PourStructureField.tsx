@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Animated, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Animated, Keyboard, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { colors, fonts } from '@shared/theme';
 import { fieldInputStyle } from '../FormField';
@@ -8,7 +8,7 @@ import { defaultPours, emptyPour, pourDisplayLabel, PourFormEntry } from '../../
 interface Props {
   pours: PourFormEntry[];
   onChange: (pours: PourFormEntry[]) => void;
-  /** Free-form note covering agitation, timing, or anything else — hidden behind "+ Add notes" until needed. */
+  /** Free-form note covering agitation, timing, or anything else — hidden behind "+ Add note" until needed. */
   note: string;
   onNoteChange: (note: string) => void;
 }
@@ -17,6 +17,7 @@ interface Props {
 const FIXED_ROW_COUNT = 4;
 
 export function PourStructureField({ pours, onChange, note, onNoteChange }: Props) {
+  // Hidden by default for a new recipe; auto-shown when editing/duplicating one that already has a note.
   const [showNote, setShowNote] = useState(() => note.trim().length > 0);
   const rows = pours.length ? pours : defaultPours();
 
@@ -63,16 +64,38 @@ export function PourStructureField({ pours, onChange, note, onNoteChange }: Prop
         }
 
         return (
-          <Swipeable
+          // Dismiss the keyboard the instant a touch on this row starts moving (a real
+          // drag, not a stationary tap) — this fires well before the swipe gesture
+          // itself activates, pre-empting the race where the note/amount TextInput's
+          // own tap recognizer grabs focus first. Returning false means it's purely a
+          // side effect; it never steals the touch from the Swipeable or the inputs.
+          <View
             key={pour.id}
-            overshootFriction={8}
-            rightThreshold={40}
-            renderRightActions={(progress) => (
-              <PourRemoveAction progress={progress} label={label} onPress={() => removePour(index)} />
-            )}
+            onMoveShouldSetResponderCapture={() => {
+              Keyboard.dismiss();
+              return false;
+            }}
           >
-            {row}
-          </Swipeable>
+            <Swipeable
+              overshootFriction={8}
+              rightThreshold={40}
+              dragOffsetFromLeftEdge={20}
+              dragOffsetFromRightEdge={20}
+              onSwipeableOpenStartDrag={() => Keyboard.dismiss()}
+              onSwipeableCloseStartDrag={() => Keyboard.dismiss()}
+              // The focus race actually resolves on release, not mid-drag: the
+              // note/amount TextInput's own tap recognizer can win right as the
+              // finger lifts. These fire synchronously the moment release is
+              // handled, before the settle animation starts, to catch that.
+              onSwipeableWillOpen={() => Keyboard.dismiss()}
+              onSwipeableWillClose={() => Keyboard.dismiss()}
+              renderRightActions={(progress) => (
+                <PourRemoveAction progress={progress} label={label} onPress={() => removePour(index)} />
+              )}
+            >
+              {row}
+            </Swipeable>
+          </View>
         );
       })}
 
@@ -90,25 +113,28 @@ export function PourStructureField({ pours, onChange, note, onNoteChange }: Prop
             onPress={() => setShowNote(true)}
             style={styles.linkBtn}
             accessibilityRole="button"
-            accessibilityLabel="Add pour notes"
+            accessibilityLabel="Add a note"
           >
-            <Text style={styles.linkBtnText}>+ Add notes</Text>
+            <Text style={styles.linkBtnText}>+ Add note</Text>
           </Pressable>
         ) : null}
       </View>
 
       {showNote ? (
-        <TextInput
-          style={[fieldInputStyle, styles.freeNoteInput]}
-          value={note}
-          onChangeText={onNoteChange}
-          placeholder="Agitation, timing, anything else"
-          placeholderTextColor={colors.greyDark}
-          multiline
-          textAlignVertical="top"
-          returnKeyType="done"
-          accessibilityLabel="Pour notes"
-        />
+        <View style={styles.row}>
+          <Text style={styles.rowLabel}>Note</Text>
+          <TextInput
+            style={[fieldInputStyle, styles.freeNoteInput]}
+            value={note}
+            onChangeText={onNoteChange}
+            placeholder="Agitation, timing, etc."
+            placeholderTextColor={colors.greyDark}
+            multiline
+            textAlignVertical="top"
+            returnKeyType="done"
+            accessibilityLabel="Pour notes"
+          />
+        </View>
       ) : null}
     </View>
   );
@@ -199,5 +225,5 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.burgundy,
   },
-  freeNoteInput: { minHeight: 72, paddingTop: 12 },
+  freeNoteInput: { flex: 1 },
 });
