@@ -84,8 +84,8 @@ export function PourStructureField({ pours, onChange, note, onNoteChange }: Prop
       </View>
 
       {showNote ? (
-        <View style={styles.row}>
-          <Text style={styles.rowLabel}>Note</Text>
+        <View style={styles.noteRow}>
+          <Text style={[styles.rowLabel, styles.noteRowLabel]}>Note</Text>
           <TextInput
             style={[fieldInputStyle, styles.freeNoteInput]}
             value={note}
@@ -287,6 +287,9 @@ function RemovablePourRow({
 const styles = StyleSheet.create({
   wrap: { gap: 10 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  // Top-aligns the label with the note field's first line instead of centering
+  // against its full (growable, multiline) height.
+  noteRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
   rowLabel: {
     width: 92,
     flexShrink: 0,
@@ -295,6 +298,9 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.black,
   },
+  // Nudges the label down to match fieldInputStyle's paddingVertical + border,
+  // so "Note" lines up with the top of the input's text, not the input's edge.
+  noteRowLabel: { paddingTop: 11 },
   amountInput: { width: 80, paddingHorizontal: 10 },
   noteInput: { flex: 1, paddingHorizontal: 10 },
   swipeOuter: { overflow: 'hidden' },
