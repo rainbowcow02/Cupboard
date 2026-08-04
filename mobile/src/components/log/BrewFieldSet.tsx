@@ -13,10 +13,10 @@ import {
 } from '../../lib/notesStructure';
 import { defaultPours, pourFormFromRecipeText, PourFormEntry, serializePourStructure } from '../../lib/pourStructure';
 import { ComboBoxField } from '../ComboBoxField';
+import { CupRatingField } from '../CupRatingField';
 import { Divider } from '../Divider';
 import { FieldDiffHint } from '../FieldDiffHint';
 import { FormField } from '../FormField';
-import { RatingInput } from '../RatingInput';
 import { CascadeItem } from './CascadeItem';
 import { PourStructureField } from './PourStructureField';
 import { StructuredNotesField } from './StructuredNotesField';
@@ -415,9 +415,7 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
           surfaces on the BrewCard. */}
       <CascadeItem index={12}>
         <FormField label="Rating" horizontal>
-          <View style={styles.ratingWrap}>
-            <RatingInput value={values.rating} onChange={(rating) => onChange({ rating })} />
-          </View>
+          <CupRatingField value={values.rating} onChange={(rating) => onChange({ rating })} />
         </FormField>
       </CascadeItem>
     </View>
@@ -427,7 +425,6 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
 const styles = StyleSheet.create({
   fields: { gap: 10 },
   sectionDivider: { paddingVertical: 24 },
-  ratingWrap: { alignItems: 'flex-start' },
   ratioValue: {
     fontFamily: fonts.sans,
     fontSize: 15,
