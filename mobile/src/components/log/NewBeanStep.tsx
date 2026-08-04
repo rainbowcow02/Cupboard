@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { bagImgFor, coffeeId, Coffee } from '@shared/lib/coffees';
-import { colors, fonts } from '@shared/theme';
+import { colors, fonts, surfaces } from '@shared/theme';
 import { BeanFields, NewBeanDraft, blankBeanDraft } from './BeanFields';
 import { ErrorBox } from '../ErrorBox';
 import { PrimaryButton } from '../PrimaryButton';
@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     borderWidth: 0.5,
     borderColor: 'rgba(0,0,0,0.12)',
-    backgroundColor: 'rgba(255,255,255,0.7)',
+    backgroundColor: surfaces.pillFill,
     marginBottom: 32,
   },
   linkRowPressed: { opacity: 0.85 },

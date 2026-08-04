@@ -1,8 +1,16 @@
-import { useState } from 'react';
-import { Animated, Keyboard, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { Swipeable } from 'react-native-gesture-handler';
+import { useMemo, useState } from 'react';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import Animated, {
+  Extrapolation,
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { colors, fonts } from '@shared/theme';
 import { fieldInputStyle } from '../FormField';
+import { useKeyboardAwareUpdate } from '../../lib/keyboardAwareUpdate';
 import { defaultPours, emptyPour, pourDisplayLabel, PourFormEntry } from '../../lib/pourStructure';
 
 interface Props {
@@ -20,6 +28,9 @@ export function PourStructureField({ pours, onChange, note, onNoteChange }: Prop
   // Hidden by default for a new recipe; auto-shown when editing/duplicating one that already has a note.
   const [showNote, setShowNote] = useState(() => note.trim().length > 0);
   const rows = pours.length ? pours : defaultPours();
+  // Growing the free-note field only re-triggers the keyboard-aware scroll on
+  // content-size change — the library itself only measures on initial focus.
+  const keepInView = useKeyboardAwareUpdate();
 
   const updatePour = (index: number, patch: Partial<PourFormEntry>) => {
     onChange(rows.map((pour, i) => (i === index ? { ...pour, ...patch } : pour)));
@@ -32,70 +43,44 @@ export function PourStructureField({ pours, onChange, note, onNoteChange }: Prop
     <View style={styles.wrap}>
       {rows.map((pour, index) => {
         const label = pourDisplayLabel(index);
-        const removable = index >= FIXED_ROW_COUNT;
 
-        const row = (
-          <View style={styles.row}>
-            <Text style={styles.rowLabel}>{label}</Text>
-            <TextInput
-              style={[fieldInputStyle, styles.amountInput]}
-              value={pour.amount}
-              onChangeText={(v) => updatePour(index, { amount: v })}
-              placeholder="ml"
-              placeholderTextColor={colors.greyDark}
-              keyboardType="decimal-pad"
-              returnKeyType="done"
-              accessibilityLabel={`${label} amount`}
-            />
-            <TextInput
-              style={[fieldInputStyle, styles.noteInput]}
-              value={pour.note}
-              onChangeText={(v) => updatePour(index, { note: v })}
-              placeholder="Notes"
-              placeholderTextColor={colors.greyDark}
-              returnKeyType="done"
-              accessibilityLabel={`${label} notes`}
-            />
-          </View>
-        );
-
-        if (!removable) {
-          return <View key={pour.id}>{row}</View>;
+        if (index < FIXED_ROW_COUNT) {
+          return (
+            <View key={pour.id} style={styles.row}>
+              <Text style={styles.rowLabel}>{label}</Text>
+              <TextInput
+                style={[fieldInputStyle, styles.amountInput]}
+                value={pour.amount}
+                onChangeText={(v) => updatePour(index, { amount: v })}
+                placeholder="ml"
+                placeholderTextColor={colors.greyDark}
+                keyboardType="decimal-pad"
+                returnKeyType="done"
+                accessibilityLabel={`${label} amount`}
+              />
+              <TextInput
+                style={[fieldInputStyle, styles.noteInput]}
+                value={pour.note}
+                onChangeText={(v) => updatePour(index, { note: v })}
+                placeholder="Notes"
+                placeholderTextColor={colors.greyDark}
+                returnKeyType="done"
+                accessibilityLabel={`${label} notes`}
+              />
+            </View>
+          );
         }
 
         return (
-          // Dismiss the keyboard the instant a touch on this row starts moving (a real
-          // drag, not a stationary tap) — this fires well before the swipe gesture
-          // itself activates, pre-empting the race where the note/amount TextInput's
-          // own tap recognizer grabs focus first. Returning false means it's purely a
-          // side effect; it never steals the touch from the Swipeable or the inputs.
-          <View
+          <RemovablePourRow
             key={pour.id}
-            onMoveShouldSetResponderCapture={() => {
-              Keyboard.dismiss();
-              return false;
-            }}
-          >
-            <Swipeable
-              overshootFriction={8}
-              rightThreshold={40}
-              dragOffsetFromLeftEdge={20}
-              dragOffsetFromRightEdge={20}
-              onSwipeableOpenStartDrag={() => Keyboard.dismiss()}
-              onSwipeableCloseStartDrag={() => Keyboard.dismiss()}
-              // The focus race actually resolves on release, not mid-drag: the
-              // note/amount TextInput's own tap recognizer can win right as the
-              // finger lifts. These fire synchronously the moment release is
-              // handled, before the settle animation starts, to catch that.
-              onSwipeableWillOpen={() => Keyboard.dismiss()}
-              onSwipeableWillClose={() => Keyboard.dismiss()}
-              renderRightActions={(progress) => (
-                <PourRemoveAction progress={progress} label={label} onPress={() => removePour(index)} />
-              )}
-            >
-              {row}
-            </Swipeable>
-          </View>
+            label={label}
+            amount={pour.amount}
+            note={pour.note}
+            onChangeAmount={(v) => updatePour(index, { amount: v })}
+            onChangeNote={(v) => updatePour(index, { note: v })}
+            onRemove={() => removePour(index)}
+          />
         );
       })}
 
@@ -127,6 +112,7 @@ export function PourStructureField({ pours, onChange, note, onNoteChange }: Prop
             style={[fieldInputStyle, styles.freeNoteInput]}
             value={note}
             onChangeText={onNoteChange}
+            onContentSizeChange={keepInView}
             placeholder="Agitation, timing, etc."
             placeholderTextColor={colors.greyDark}
             multiline
@@ -140,46 +126,138 @@ export function PourStructureField({ pours, onChange, note, onNoteChange }: Prop
   );
 }
 
+/** How far the row settles open, and the point past which the icon starts growing beyond full size. */
+const OPEN_WIDTH = 72;
+/** Divides overshoot distance past OPEN_WIDTH, so the further you pull, the more resistance kicks in. */
+const OVERSHOOT_DIVISOR = 3;
+const CLOSE_THRESHOLD = -40;
+
 /**
- * Revealed by swiping a removable pour row left; hidden until then. Grows in
- * size and fades in as the swipe progresses, iMessage-style, rather than
- * sliding in at a fixed size — `progress` keeps climbing past 1 the further
- * the row is overswiped, so the icon keeps growing (up to a cap) instead of
- * hitting a hard wall.
+ * A pour row that swipes left to reveal a delete icon, iMessage-style — the icon
+ * grows and fades in as you pull (rather than sliding in at a fixed size), and the
+ * row can keep being dragged past the reveal point with rubber-band resistance.
+ *
+ * The amount/notes fields each get their own `Gesture.Native()`, and the pan gesture
+ * `blocksExternalGesture`s them. Without that, a fast swipe starting on a field can
+ * still pop the keyboard: the field's own focus gesture and this pan gesture are two
+ * independent native recognizers racing the same touch, and which one wins depends on
+ * native-thread timing. Composing them this way makes the swipe win deterministically
+ * instead of leaving it to chance.
  */
-function PourRemoveAction({
-  progress,
+function RemovablePourRow({
   label,
-  onPress,
+  amount,
+  note,
+  onChangeAmount,
+  onChangeNote,
+  onRemove,
 }: {
-  progress: Animated.AnimatedInterpolation<number>;
   label: string;
-  onPress: () => void;
+  amount: string;
+  note: string;
+  onChangeAmount: (v: string) => void;
+  onChangeNote: (v: string) => void;
+  onRemove: () => void;
 }) {
-  const opacity = progress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 1],
-    extrapolate: 'clamp',
-  });
-  const scale = progress.interpolate({
-    inputRange: [0, 1, 2],
-    outputRange: [0.4, 1, 1.15],
-    extrapolate: 'clamp',
+  const translateX = useSharedValue(0);
+  const startX = useSharedValue(0);
+
+  const amountNative = useMemo(() => Gesture.Native(), []);
+  const noteNative = useMemo(() => Gesture.Native(), []);
+
+  const pan = useMemo(
+    () =>
+      Gesture.Pan()
+        .activeOffsetX([-10, 10])
+        .failOffsetY([-10, 10])
+        .blocksExternalGesture(amountNative, noteNative)
+        .onStart(() => {
+          startX.value = translateX.value;
+        })
+        .onUpdate((e) => {
+          const raw = Math.min(0, startX.value + e.translationX);
+          translateX.value =
+            raw < -OPEN_WIDTH ? -(OPEN_WIDTH + (-raw - OPEN_WIDTH) / OVERSHOOT_DIVISOR) : raw;
+        })
+        .onEnd(() => {
+          translateX.value = withSpring(translateX.value < CLOSE_THRESHOLD ? -OPEN_WIDTH : 0, {
+            damping: 20,
+            stiffness: 220,
+          });
+        }),
+    [amountNative, noteNative, startX, translateX],
+  );
+
+  const rowStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value }],
+  }));
+
+  // Kept fully off-screen until the row actually starts moving, so it can never bleed
+  // through the row's own internal gaps (label/input spacing) while closed.
+  const revealStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value < 0 ? 0 : 1000 }],
+  }));
+
+  const iconStyle = useAnimatedStyle(() => {
+    const distance = Math.abs(translateX.value);
+    return {
+      opacity: interpolate(distance, [0, OPEN_WIDTH], [0, 1], Extrapolation.CLAMP),
+      transform: [
+        {
+          scale: interpolate(distance, [0, OPEN_WIDTH, OPEN_WIDTH * 2], [0.4, 1, 1.15], Extrapolation.CLAMP),
+        },
+      ],
+    };
   });
 
   return (
-    <View style={styles.revealAction}>
-      <Animated.View style={{ opacity, transform: [{ scale }] }}>
-        <Pressable
-          onPress={onPress}
-          style={({ pressed }) => [styles.removeBtn, pressed && styles.removeBtnPressed]}
-          accessibilityRole="button"
-          accessibilityLabel={`Remove ${label}`}
-        >
-          <Text style={styles.removeBtnText}>✕</Text>
-        </Pressable>
-      </Animated.View>
-    </View>
+    <GestureDetector gesture={pan}>
+      <View style={styles.swipeOuter}>
+        <Animated.View style={[styles.revealLayer, revealStyle]}>
+          <View style={styles.revealAction}>
+            <Animated.View style={iconStyle}>
+              <Pressable
+                onPress={onRemove}
+                style={({ pressed }) => [styles.removeBtn, pressed && styles.removeBtnPressed]}
+                accessibilityRole="button"
+                accessibilityLabel={`Remove ${label}`}
+              >
+                <Text style={styles.removeBtnText}>✕</Text>
+              </Pressable>
+            </Animated.View>
+          </View>
+        </Animated.View>
+
+        <Animated.View style={rowStyle}>
+          <View style={styles.row}>
+            <Text style={styles.rowLabel}>{label}</Text>
+            <GestureDetector gesture={amountNative}>
+              <TextInput
+                style={[fieldInputStyle, styles.amountInput]}
+                value={amount}
+                onChangeText={onChangeAmount}
+                placeholder="ml"
+                placeholderTextColor={colors.greyDark}
+                keyboardType="decimal-pad"
+                returnKeyType="done"
+                accessibilityLabel={`${label} amount`}
+              />
+            </GestureDetector>
+            <GestureDetector gesture={noteNative}>
+              <TextInput
+                style={[fieldInputStyle, styles.noteInput]}
+                value={note}
+                onChangeText={onChangeNote}
+                placeholder="Notes"
+                placeholderTextColor={colors.greyDark}
+                returnKeyType="done"
+                accessibilityLabel={`${label} notes`}
+              />
+            </GestureDetector>
+          </View>
+        </Animated.View>
+      </View>
+    </GestureDetector>
   );
 }
 
@@ -196,6 +274,16 @@ const styles = StyleSheet.create({
   },
   amountInput: { width: 80, paddingHorizontal: 10 },
   noteInput: { flex: 1, paddingHorizontal: 10 },
+  swipeOuter: { overflow: 'hidden' },
+  revealLayer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+  },
   revealAction: {
     width: 72,
     alignItems: 'center',

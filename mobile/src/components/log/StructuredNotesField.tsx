@@ -1,5 +1,6 @@
 import { StyleSheet, TextInput, View } from 'react-native';
 import { colors, fonts, surfaces } from '@shared/theme';
+import { useKeyboardAwareUpdate } from '../../lib/keyboardAwareUpdate';
 import { Divider } from '../Divider';
 
 interface Section {
@@ -20,12 +21,17 @@ interface Props {
  * and Notion's "Recipe to test" column render them as structured sections.
  */
 export function StructuredNotesField({ top, bottom }: Props) {
+  // Growing a multiline field only re-triggers the keyboard-aware scroll on
+  // content-size change — the library itself only measures on initial focus.
+  const keepInView = useKeyboardAwareUpdate();
+
   return (
     <View style={styles.box}>
       <TextInput
         style={styles.input}
         value={top.value}
         onChangeText={top.onChange}
+        onContentSizeChange={keepInView}
         placeholder={top.placeholder}
         placeholderTextColor={colors.greyDark}
         multiline
@@ -38,6 +44,7 @@ export function StructuredNotesField({ top, bottom }: Props) {
         style={styles.input}
         value={bottom.value}
         onChangeText={bottom.onChange}
+        onContentSizeChange={keepInView}
         placeholder={bottom.placeholder}
         placeholderTextColor={colors.greyDark}
         multiline
