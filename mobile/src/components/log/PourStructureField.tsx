@@ -3,14 +3,16 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import Animated, {
   Extrapolation,
   interpolate,
+  runOnJS,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { colors, fonts } from '@shared/theme';
+import { colors, fonts, surfaces } from '@shared/theme';
 import { fieldInputStyle } from '../FormField';
 import { useKeyboardAwareUpdate } from '../../lib/keyboardAwareUpdate';
+import { useAutoFormatTextInput } from '../../hooks/useAutoFormatTextInput';
 import { defaultPours, emptyPour, pourDisplayLabel, PourFormEntry } from '../../lib/pourStructure';
 
 interface Props {
@@ -21,8 +23,8 @@ interface Props {
   onNoteChange: (note: string) => void;
 }
 
-/** Bloom, P1, P2, P3 — the fixed rows every recipe starts with; only rows added beyond these can be removed. */
-const FIXED_ROW_COUNT = 4;
+/** Bloom + first pour are always kept so a recipe can never be swiped down to nothing pourable. */
+const MIN_POUR_ROWS = 2;
 
 export function PourStructureField({ pours, onChange, note, onNoteChange }: Props) {
   // Hidden by default for a new recipe; auto-shown when editing/duplicating one that already has a note.
@@ -31,45 +33,23 @@ export function PourStructureField({ pours, onChange, note, onNoteChange }: Prop
   // Growing the free-note field only re-triggers the keyboard-aware scroll on
   // content-size change — the library itself only measures on initial focus.
   const keepInView = useKeyboardAwareUpdate();
+  // Unconditional despite the field itself being hidden behind `showNote` — Rules of Hooks.
+  const noteAutoFormat = useAutoFormatTextInput(note, onNoteChange);
 
   const updatePour = (index: number, patch: Partial<PourFormEntry>) => {
     onChange(rows.map((pour, i) => (i === index ? { ...pour, ...patch } : pour)));
   };
 
   const addPour = () => onChange([...rows, emptyPour()]);
-  const removePour = (index: number) => onChange(rows.filter((_, i) => i !== index));
+  const removePour = (index: number) => {
+    if (rows.length <= MIN_POUR_ROWS) return;
+    onChange(rows.filter((_, i) => i !== index));
+  };
 
   return (
     <View style={styles.wrap}>
       {rows.map((pour, index) => {
         const label = pourDisplayLabel(index);
-
-        if (index < FIXED_ROW_COUNT) {
-          return (
-            <View key={pour.id} style={styles.row}>
-              <Text style={styles.rowLabel}>{label}</Text>
-              <TextInput
-                style={[fieldInputStyle, styles.amountInput]}
-                value={pour.amount}
-                onChangeText={(v) => updatePour(index, { amount: v })}
-                placeholder="ml"
-                placeholderTextColor={colors.greyDark}
-                keyboardType="decimal-pad"
-                returnKeyType="done"
-                accessibilityLabel={`${label} amount`}
-              />
-              <TextInput
-                style={[fieldInputStyle, styles.noteInput]}
-                value={pour.note}
-                onChangeText={(v) => updatePour(index, { note: v })}
-                placeholder="Notes"
-                placeholderTextColor={colors.greyDark}
-                returnKeyType="done"
-                accessibilityLabel={`${label} notes`}
-              />
-            </View>
-          );
-        }
 
         return (
           <RemovablePourRow
@@ -80,6 +60,7 @@ export function PourStructureField({ pours, onChange, note, onNoteChange }: Prop
             onChangeAmount={(v) => updatePour(index, { amount: v })}
             onChangeNote={(v) => updatePour(index, { note: v })}
             onRemove={() => removePour(index)}
+            disabled={rows.length <= MIN_POUR_ROWS}
           />
         );
       })}
@@ -106,12 +87,11 @@ export function PourStructureField({ pours, onChange, note, onNoteChange }: Prop
       </View>
 
       {showNote ? (
-        <View style={styles.row}>
-          <Text style={styles.rowLabel}>Note</Text>
+        <View style={styles.noteRow}>
+          <Text style={[styles.rowLabel, styles.noteRowLabel]}>Note</Text>
           <TextInput
             style={[fieldInputStyle, styles.freeNoteInput]}
-            value={note}
-            onChangeText={onNoteChange}
+            {...noteAutoFormat}
             onContentSizeChange={keepInView}
             placeholder="Agitation, timing, etc."
             placeholderTextColor={colors.greyDark}
@@ -126,11 +106,23 @@ export function PourStructureField({ pours, onChange, note, onNoteChange }: Prop
   );
 }
 
-/** How far the row settles open, and the point past which the icon starts growing beyond full size. */
-const OPEN_WIDTH = 72;
-/** Divides overshoot distance past OPEN_WIDTH, so the further you pull, the more resistance kicks in. */
-const OVERSHOOT_DIVISOR = 3;
-const CLOSE_THRESHOLD = -40;
+/** How far the row settles open, and the point past which the icon starts growing beyond full size.
+ *  Wide enough for the "✕ Delete" pill (not just a small icon) — more travel also gives the swipe
+ *  more perceptible weight, since the spring has real distance to cover rather than a short hop. */
+const OPEN_WIDTH = 96;
+/** Asymptote distance for overshoot past OPEN_WIDTH. Using c=1 in the classic rubber-band
+ *  formula (distance = (1 - 1/(x/d + 1)) * d) gives slope 1 at x=0, so resistance picks up
+ *  seamlessly from the 1:1 tracking below OPEN_WIDTH with no kink, then progressively resists. */
+const OVERSHOOT_RUBBER_BAND_D = OPEN_WIDTH;
+const OPEN_DISTANCE_THRESHOLD = -50;
+/** A flick faster than this (px/s) commits open/closed immediately regardless of distance dragged. */
+const FLING_VELOCITY = 800;
+/**
+ * Spring, not timing: springs are interruptible and velocity-continuous, so rapid repeated
+ * swipes stay fluid instead of replaying an identical fixed-duration curve every release.
+ * overshootClamping keeps the single-direction, no-bounce-back settle already confirmed.
+ */
+const SWIPE_SPRING = { damping: 26, stiffness: 240, mass: 0.9, overshootClamping: true };
 
 /**
  * A pour row that swipes left to reveal a delete icon, iMessage-style — the icon
@@ -142,7 +134,9 @@ const CLOSE_THRESHOLD = -40;
  * still pop the keyboard: the field's own focus gesture and this pan gesture are two
  * independent native recognizers racing the same touch, and which one wins depends on
  * native-thread timing. Composing them this way makes the swipe win deterministically
- * instead of leaving it to chance.
+ * instead of leaving it to chance. That only resolves the first-touch race though — once
+ * the row is sitting open, a later, separate tap could still land on a field and focus it,
+ * so `locked` additionally gates the fields for as long as the row isn't fully closed.
  */
 function RemovablePourRow({
   label,
@@ -151,6 +145,7 @@ function RemovablePourRow({
   onChangeAmount,
   onChangeNote,
   onRemove,
+  disabled,
 }: {
   label: string;
   amount: string;
@@ -158,9 +153,11 @@ function RemovablePourRow({
   onChangeAmount: (v: string) => void;
   onChangeNote: (v: string) => void;
   onRemove: () => void;
+  disabled: boolean;
 }) {
   const translateX = useSharedValue(0);
   const startX = useSharedValue(0);
+  const [locked, setLocked] = useState(false);
 
   const amountNative = useMemo(() => Gesture.Native(), []);
   const noteNative = useMemo(() => Gesture.Native(), []);
@@ -173,17 +170,37 @@ function RemovablePourRow({
         .blocksExternalGesture(amountNative, noteNative)
         .onStart(() => {
           startX.value = translateX.value;
+          runOnJS(setLocked)(true);
         })
         .onUpdate((e) => {
           const raw = Math.min(0, startX.value + e.translationX);
-          translateX.value =
-            raw < -OPEN_WIDTH ? -(OPEN_WIDTH + (-raw - OPEN_WIDTH) / OVERSHOOT_DIVISOR) : raw;
+          if (raw >= -OPEN_WIDTH) {
+            translateX.value = raw;
+            return;
+          }
+          const overshoot = -raw - OPEN_WIDTH;
+          const resisted = (overshoot * OVERSHOOT_RUBBER_BAND_D) / (overshoot + OVERSHOOT_RUBBER_BAND_D);
+          translateX.value = -(OPEN_WIDTH + resisted);
         })
-        .onEnd(() => {
-          translateX.value = withSpring(translateX.value < CLOSE_THRESHOLD ? -OPEN_WIDTH : 0, {
-            damping: 20,
-            stiffness: 220,
-          });
+        .onEnd((e) => {
+          const flungOpen = e.velocityX < -FLING_VELOCITY;
+          const flungClosed = e.velocityX > FLING_VELOCITY;
+          const shouldOpen = flungClosed
+            ? false
+            : flungOpen
+              ? true
+              : translateX.value < OPEN_DISTANCE_THRESHOLD;
+          const target = shouldOpen ? -OPEN_WIDTH : 0;
+
+          translateX.value = withSpring(
+            target,
+            { ...SWIPE_SPRING, velocity: e.velocityX },
+            (finished) => {
+              if (finished && target === 0) {
+                runOnJS(setLocked)(false);
+              }
+            },
+          );
         }),
     [amountNative, noteNative, startX, translateX],
   );
@@ -217,22 +234,29 @@ function RemovablePourRow({
           <View style={styles.revealAction}>
             <Animated.View style={iconStyle}>
               <Pressable
-                onPress={onRemove}
-                style={({ pressed }) => [styles.removeBtn, pressed && styles.removeBtnPressed]}
+                onPress={disabled ? undefined : onRemove}
+                disabled={disabled}
+                style={({ pressed }) => [
+                  styles.removeBtn,
+                  pressed && styles.removeBtnPressed,
+                  disabled && styles.removeBtnDisabled,
+                ]}
                 accessibilityRole="button"
                 accessibilityLabel={`Remove ${label}`}
+                accessibilityState={{ disabled }}
               >
-                <Text style={styles.removeBtnText}>✕</Text>
+                <Text style={styles.removeBtnText}>✕ Delete</Text>
               </Pressable>
             </Animated.View>
           </View>
         </Animated.View>
 
         <Animated.View style={rowStyle}>
-          <View style={styles.row}>
+          <View style={styles.row} pointerEvents={locked ? 'none' : 'auto'}>
             <Text style={styles.rowLabel}>{label}</Text>
             <GestureDetector gesture={amountNative}>
               <TextInput
+                editable={!locked}
                 style={[fieldInputStyle, styles.amountInput]}
                 value={amount}
                 onChangeText={onChangeAmount}
@@ -245,6 +269,7 @@ function RemovablePourRow({
             </GestureDetector>
             <GestureDetector gesture={noteNative}>
               <TextInput
+                editable={!locked}
                 style={[fieldInputStyle, styles.noteInput]}
                 value={note}
                 onChangeText={onChangeNote}
@@ -264,6 +289,9 @@ function RemovablePourRow({
 const styles = StyleSheet.create({
   wrap: { gap: 10 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  // Top-aligns the label with the note field's first line instead of centering
+  // against its full (growable, multiline) height.
+  noteRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
   rowLabel: {
     width: 92,
     flexShrink: 0,
@@ -272,6 +300,9 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.black,
   },
+  // Nudges the label down to match fieldInputStyle's paddingVertical + border,
+  // so "Note" lines up with the top of the input's text, not the input's edge.
+  noteRowLabel: { paddingTop: 11 },
   amountInput: { width: 80, paddingHorizontal: 10 },
   noteInput: { flex: 1, paddingHorizontal: 10 },
   swipeOuter: { overflow: 'hidden' },
@@ -285,24 +316,25 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   revealAction: {
-    width: 72,
+    width: OPEN_WIDTH,
     alignItems: 'center',
     justifyContent: 'center',
   },
   removeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(120,120,128,0.16)',
+    height: 36,
+    paddingHorizontal: 14,
+    borderRadius: surfaces.pillRadius,
+    backgroundColor: surfaces.clearButtonFill,
     alignItems: 'center',
     justifyContent: 'center',
   },
   removeBtnPressed: { opacity: 0.6 },
+  removeBtnDisabled: { opacity: 0.3 },
   removeBtnText: {
     fontFamily: fonts.sans,
     fontSize: 13,
     fontWeight: '700',
-    color: colors.greyDark,
+    color: surfaces.clearButtonText,
     lineHeight: 16,
   },
   linkRow: { flexDirection: 'row', justifyContent: 'flex-end', gap: 16 },

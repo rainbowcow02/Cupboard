@@ -11,6 +11,7 @@ import {
 import { Brew, formatDate, parseRecipe } from '@shared/lib/coffees';
 import { colors, fonts } from '@shared/theme';
 import { BrewNotesParts, parseBrewNotes, parseTastingNotes } from '../lib/notesStructure';
+import { renderInlineBold } from '../lib/inlineBold';
 import { Card } from './Card';
 import { CupRating } from './CupRating';
 import { Divider } from './Divider';
@@ -85,7 +86,7 @@ function ThoughtHighlight({ thoughts }: { thoughts: string }) {
     <View style={styles.thoughtBlock}>
       <View style={styles.thoughtContainer}>
         <Text style={styles.thoughtContent} numberOfLines={2}>
-          {thoughts}
+          {renderInlineBold(thoughts, styles.bodyBold)}
         </Text>
       </View>
       <View style={styles.insetDivider}>
@@ -101,16 +102,16 @@ function BrewNotesBody({ parsed }: { parsed: BrewNotesParts }) {
     <Text style={styles.bodyText}>
       <Text style={styles.bodyBold}>Thoughts:</Text>
       {'\n'}
-      {parsed.thoughts}
+      {renderInlineBold(parsed.thoughts, styles.bodyBold)}
       {parsed.toTry ? (
         <>
           {'\n\n'}
           <Text style={styles.bodyBold}>To Try:</Text>
           {'\n'}
-          {intro}
-          {bullets.map((bullet) => (
-            <Text key={bullet}>
-              {'\n'}• {bullet}
+          {renderInlineBold(intro, styles.bodyBold)}
+          {bullets.map((bullet, i) => (
+            <Text key={i}>
+              {'\n'}• {renderInlineBold(bullet, styles.bodyBold)}
             </Text>
           ))}
         </>
@@ -122,21 +123,21 @@ function BrewNotesBody({ parsed }: { parsed: BrewNotesParts }) {
 function TastingNotesBody({ text }: { text: string }) {
   const parsed = parseTastingNotes(text);
   if (parsed.raw) {
-    return <Text style={styles.bodyText}>{parsed.taste}</Text>;
+    return <Text style={styles.bodyText}>{renderInlineBold(parsed.taste, styles.bodyBold)}</Text>;
   }
   return (
     <Text style={styles.bodyText}>
       {parsed.smell ? (
         <>
           <Text style={styles.bodyBold}>Smell:</Text>
-          {` ${parsed.smell}`}
+          {renderInlineBold(` ${parsed.smell}`, styles.bodyBold)}
         </>
       ) : null}
       {parsed.smell && parsed.taste ? '\n\n' : null}
       {parsed.taste ? (
         <>
           <Text style={styles.bodyBold}>Taste:</Text>
-          {` ${parsed.taste}`}
+          {renderInlineBold(` ${parsed.taste}`, styles.bodyBold)}
         </>
       ) : null}
     </Text>
@@ -209,7 +210,9 @@ function EquipmentAndRecipe({
               </View>
             ))}
             {parsed.note ? (
-              <Text style={[styles.detailLabel, styles.pourNote]}>{parsed.note}</Text>
+              <Text style={[styles.detailLabel, styles.pourNote]}>
+                {renderInlineBold(parsed.note, styles.bodyBold)}
+              </Text>
             ) : null}
           </View>
           <View style={styles.insetDivider}>
@@ -222,7 +225,7 @@ function EquipmentAndRecipe({
         <>
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Recipe</Text>
-            <Text style={styles.bodyText}>{brew.recipeToTest}</Text>
+            <Text style={styles.bodyText}>{renderInlineBold(brew.recipeToTest, styles.bodyBold)}</Text>
           </View>
           <View style={styles.insetDivider}>
             <Divider />
