@@ -10,8 +10,10 @@ import {
 } from 'react-native';
 import { Brew, formatDate, parseRecipe } from '@shared/lib/coffees';
 import { colors, fonts } from '@shared/theme';
+import { BrewNotesParts, parseBrewNotes, parseTastingNotes } from '../lib/notesStructure';
 import { Card } from './Card';
 import { CupRating } from './CupRating';
+import { Divider } from './Divider';
 import { SortChevron } from './SortChevron';
 
 const ANIMATION_DURATION = 320;
@@ -28,26 +30,8 @@ interface AnchorSnapshot {
   screenY: number;
 }
 
-interface ParsedReflections {
-  thoughts: string;
-  toTry: string;
-}
-
-function reflectionsText(brew: Brew): string | undefined {
-  return brew.reflections?.trim() || brew.brewNotes?.trim() || undefined;
-}
-
-function parseReflections(text: string | undefined): ParsedReflections | null {
-  if (!text?.trim()) return null;
-  const thoughtsMatch = text.match(/Thoughts:\s*([\s\S]*?)(?=To Try:|$)/i);
-  const toTryMatch = text.match(/To Try:\s*([\s\S]*)/i);
-  if (thoughtsMatch || toTryMatch) {
-    return {
-      thoughts: thoughtsMatch?.[1]?.trim() ?? '',
-      toTry: toTryMatch?.[1]?.trim() ?? '',
-    };
-  }
-  return { thoughts: text.trim(), toTry: '' };
+function brewNotesText(brew: Brew): string | undefined {
+  return brew.brewNotes?.trim() || undefined;
 }
 
 function parseToTryBullets(toTry: string): { intro: string; bullets: string[] } {
@@ -62,24 +46,6 @@ function parseToTryBullets(toTry: string): { intro: string; bullets: string[] } 
     }
   }
   return { intro: introLines.join('\n'), bullets };
-}
-
-function parseTastingNotes(text: string | undefined): { smell: string; taste: string; raw: boolean } {
-  if (!text?.trim()) return { smell: '', taste: '', raw: false };
-  const smellMatch = text.match(/Smell:\s*([\s\S]*?)(?=Taste:|$)/i);
-  const tasteMatch = text.match(/Taste:\s*([\s\S]*)/i);
-  if (!smellMatch && !tasteMatch) {
-    return { smell: '', taste: text.trim(), raw: true };
-  }
-  return {
-    smell: smellMatch?.[1]?.trim() ?? '',
-    taste: tasteMatch?.[1]?.trim() ?? '',
-    raw: false,
-  };
-}
-
-function Divider() {
-  return <View style={styles.divider} />;
 }
 
 function Row({ label, value }: { label: string; value?: string | null }) {
@@ -105,7 +71,7 @@ function ExpandLink({ expanded, onPress }: { expanded: boolean; onPress: () => v
       accessibilityHint={
         expanded
           ? 'Collapses brew details'
-          : 'Expands grinder, recipe, tasting notes, and reflections'
+          : 'Expands grinder, recipe, tasting notes, and brew notes'
       }
     >
       <Text style={styles.expandLinkText}>{expanded ? 'See less' : 'See more'}</Text>
@@ -122,12 +88,14 @@ function ThoughtHighlight({ thoughts }: { thoughts: string }) {
           {thoughts}
         </Text>
       </View>
-      <Divider />
+      <View style={styles.insetDivider}>
+        <Divider />
+      </View>
     </View>
   );
 }
 
-function ReflectionsBody({ parsed }: { parsed: ParsedReflections }) {
+function BrewNotesBody({ parsed }: { parsed: BrewNotesParts }) {
   const { intro, bullets } = parseToTryBullets(parsed.toTry);
   return (
     <Text style={styles.bodyText}>
@@ -185,12 +153,12 @@ function NotesSection({ title, children }: { title: string; children: ReactNode 
   );
 }
 
-function NotesAndReflections({
+function NotesAndBrewNotes({
   brew,
-  reflections,
+  brewNotes,
 }: {
   brew: Brew;
-  reflections: ParsedReflections | null;
+  brewNotes: BrewNotesParts | null;
 }) {
   return (
     <>
@@ -200,29 +168,38 @@ function NotesAndReflections({
         </NotesSection>
       ) : null}
 
-      {reflections ? (
-        <View style={styles.reflectionsSection}>
-          <Text style={styles.sectionTitle}>Reflections</Text>
-          <ReflectionsBody parsed={reflections} />
+      {brewNotes ? (
+        <View style={styles.brewNotesSection}>
+          <Text style={styles.sectionTitle}>Brew Notes</Text>
+          <BrewNotesBody parsed={brewNotes} />
         </View>
       ) : null}
     </>
   );
 }
 
-function EquipmentAndRecipe({ brew, parsed }: { brew: Brew; parsed: ReturnType<typeof parseRecipe> }) {
+function EquipmentAndRecipe({
+  brew,
+  parsed,
+  skipLeadingDivider,
+}: {
+  brew: Brew;
+  parsed: ReturnType<typeof parseRecipe>;
+  skipLeadingDivider?: boolean;
+}) {
   return (
     <>
-      <View style={styles.insetDivider}>
-        <Divider />
-      </View>
+      {skipLeadingDivider ? null : (
+        <View style={styles.insetDivider}>
+          <Divider />
+        </View>
+      )}
       <Row label="Grinder" value={brew.grinder} />
       <Row label="Dripper" value={brew.brewer} />
       <Row label="Filter paper" value={brew.filter} />
 
       {parsed && parsed.pours.length > 0 ? (
         <>
-          <Divider />
           <View style={styles.pourSection}>
             {parsed.pours.map(({ step, amount, technique }) => (
               <View key={step} style={styles.pourRow}>
@@ -231,22 +208,25 @@ function EquipmentAndRecipe({ brew, parsed }: { brew: Brew; parsed: ReturnType<t
                 {technique ? <Text style={styles.pourTechnique}>{technique}</Text> : null}
               </View>
             ))}
-            {parsed.agitation ? (
-              <Text style={[styles.detailLabel, styles.agitation]}>{parsed.agitation}</Text>
+            {parsed.note ? (
+              <Text style={[styles.detailLabel, styles.pourNote]}>{parsed.note}</Text>
             ) : null}
           </View>
-          <Divider />
+          <View style={styles.insetDivider}>
+            <Divider />
+          </View>
         </>
       ) : null}
 
       {!parsed && brew.recipeToTest ? (
         <>
-          <Divider />
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Recipe</Text>
             <Text style={styles.bodyText}>{brew.recipeToTest}</Text>
           </View>
-          <Divider />
+          <View style={styles.insetDivider}>
+            <Divider />
+          </View>
         </>
       ) : null}
     </>
@@ -276,7 +256,8 @@ export function BrewCard({ brew, onEdit, getCurrentScrollY, scrollToY }: Props) 
   const opacityAnimation = useRef(new Animated.Value(0)).current;
 
   const parsed = parseRecipe(brew.recipeToTest);
-  const reflections = parseReflections(reflectionsText(brew));
+  const rawBrewNotes = brewNotesText(brew);
+  const brewNotes = rawBrewNotes ? parseBrewNotes(rawBrewNotes) : null;
   const brewTime = parsed?.brewTime;
 
   const hasExpandableContent = Boolean(
@@ -285,7 +266,7 @@ export function BrewCard({ brew, onEdit, getCurrentScrollY, scrollToY }: Props) 
       brew.filter ||
       brew.recipeToTest ||
       brew.tastingNotes ||
-      reflections,
+      brewNotes,
   );
 
   const hasRatio = brew.beansG && brew.waterMl;
@@ -390,9 +371,8 @@ export function BrewCard({ brew, onEdit, getCurrentScrollY, scrollToY }: Props) 
 
   const bodyContent = (
     <>
-      <EquipmentAndRecipe brew={brew} parsed={parsed} />
-      {brewTime ? <BrewTimeRow brewTime={brewTime} /> : null}
-      <NotesAndReflections brew={brew} reflections={reflections} />
+      <EquipmentAndRecipe brew={brew} parsed={parsed} skipLeadingDivider={Boolean(brewTime)} />
+      <NotesAndBrewNotes brew={brew} brewNotes={brewNotes} />
     </>
   );
 
@@ -407,7 +387,7 @@ export function BrewCard({ brew, onEdit, getCurrentScrollY, scrollToY }: Props) 
         <CupRating rating={brew.rating} />
       </View>
 
-      {reflections?.thoughts ? <ThoughtHighlight thoughts={reflections.thoughts} /> : null}
+      {brewNotes?.thoughts ? <ThoughtHighlight thoughts={brewNotes.thoughts} /> : null}
 
       <View style={styles.stats}>
         {[
@@ -423,6 +403,15 @@ export function BrewCard({ brew, onEdit, getCurrentScrollY, scrollToY }: Props) 
           </View>
         ))}
       </View>
+
+      {brewTime ? (
+        <>
+          <View style={styles.insetDivider}>
+            <Divider />
+          </View>
+          <BrewTimeRow brewTime={brewTime} />
+        </>
+      ) : null}
 
       {hasExpandableContent ? (
         <>
@@ -501,7 +490,6 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
     lineHeight: 24,
   },
-  divider: { height: 0.5, backgroundColor: '#E7E7E7' },
   insetDivider: { paddingHorizontal: 24 },
   rowBlock: { paddingTop: 16, paddingHorizontal: 24, gap: 16 },
   detailRow: {
@@ -554,7 +542,7 @@ const styles = StyleSheet.create({
     color: colors.black,
     lineHeight: 20,
   },
-  agitation: { marginTop: 10},
+  pourNote: { marginTop: 10 },
   section: { padding: 16, paddingHorizontal: 24 },
   sectionTitle: {
     fontFamily: fonts.sans,
@@ -566,7 +554,7 @@ const styles = StyleSheet.create({
   },
   notesSection: { paddingTop: 16, paddingHorizontal: 24, gap: 8 },
   notesBody: { paddingBottom: 16 },
-  reflectionsSection: { paddingHorizontal: 24, paddingVertical: 16, gap: 8 },
+  brewNotesSection: { paddingHorizontal: 24, paddingVertical: 16, gap: 8 },
   bodyText: {
     fontFamily: fonts.sans,
     fontWeight: '400',

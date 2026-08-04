@@ -1,14 +1,21 @@
 import { useRef } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAwareFlatList } from 'react-native-keyboard-aware-scroll-view';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Brew, Coffee } from '@shared/lib/coffees';
 import { colors, fonts, surfaces } from '@shared/theme';
+import { KeyboardAwareUpdateContext } from '../../lib/keyboardAwareUpdate';
 import { Chevron } from '../Chevron';
 import { GlassBackButton } from '../GlassBackButton';
 import { HeaderPillButton } from '../HeaderPillButton';
 import { BrewCard } from '../BrewCard';
 import { EmbeddedRecipeForm } from './EmbeddedRecipeForm';
 import { RecipeBeanHeader } from './RecipeBeanHeader';
+
+/** The HOC attaches `update()` at runtime but the library's .d.ts omits it. */
+type KeyboardAwareFlatListHandle = InstanceType<typeof KeyboardAwareFlatList> & {
+  update: () => void;
+};
 
 interface Props {
   coffee: Coffee;
@@ -45,6 +52,7 @@ export function SetRecipeScreen({
   const listBottomPad = Math.max(insets.bottom, 16) + 48;
 
   const scrollY = useRef(new Animated.Value(0)).current;
+  const listRef = useRef<KeyboardAwareFlatListHandle>(null);
 
   return (
     <View style={styles.screen}>
@@ -59,16 +67,25 @@ export function SetRecipeScreen({
         ) : null}
       </View>
 
-      <Animated.FlatList
+      {/* KeyboardAwareFlatList (not Animated.FlatList) so the blank recipe form
+          rendered via ListEmptyComponent gets lifted above the keyboard, same as
+          LogFormScaffold. It forks onScroll internally rather than wrapping a
+          native-animated component, so the back-button fade runs on the JS
+          driver here too. */}
+      <KeyboardAwareFlatList
+        ref={listRef}
         data={brews}
         keyExtractor={(brew: Brew) => String(brew.id)}
         contentContainerStyle={[styles.list, { paddingBottom: listBottomPad }]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         scrollEventThrottle={16}
+        enableOnAndroid
+        extraHeight={32}
+        enableResetScrollToCoords={false}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-          { useNativeDriver: true },
+          { useNativeDriver: false },
         )}
         ListHeaderComponent={
           <RecipeBeanHeader
@@ -84,7 +101,11 @@ export function SetRecipeScreen({
           />
         }
         ListEmptyComponent={
-          <EmbeddedRecipeForm coffee={coffee} onSaved={onSaved} />
+          // Lets a growing multiline field (e.g. Tasting/Brew notes) re-trigger
+          // the scroll-into-view as it gains lines, not just on initial focus.
+          <KeyboardAwareUpdateContext.Provider value={() => listRef.current?.update()}>
+            <EmbeddedRecipeForm coffee={coffee} onSaved={onSaved} />
+          </KeyboardAwareUpdateContext.Provider>
         }
         renderItem={({ item }: { item: Brew }) => (
           <View style={styles.recipeItem}>

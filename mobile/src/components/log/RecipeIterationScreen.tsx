@@ -78,8 +78,8 @@ export function RecipeIterationScreen({ coffee, base, onBack, onOpenBean, onSave
         base={base}
       />
 
-      {/* Lands just after the last form row (BrewFieldSet ends at index 13). */}
-      <CascadeItem index={14}>
+      {/* Lands just after the last form row (BrewFieldSet ends at index 12). */}
+      <CascadeItem index={13}>
         <PrimaryButton
           label="Log this cup"
           busyLabel="Saving…"

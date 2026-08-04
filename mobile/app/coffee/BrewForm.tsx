@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Brew, Coffee } from '@shared/lib/coffees';
 import { colors, fonts } from '@shared/theme';
@@ -8,8 +9,15 @@ import {
   BrewFieldSet,
   BrewFormValues,
   brewFieldsPayload,
+  recipeValuesFrom,
 } from '../../src/components/log/BrewFieldSet';
 import { createCup, updateCup, deleteCup } from '../../src/lib/api';
+import { KeyboardAwareUpdateContext } from '../../src/lib/keyboardAwareUpdate';
+
+/** The HOC attaches `update()` at runtime but the library's .d.ts omits it. */
+type KeyboardAwareScrollHandle = InstanceType<typeof KeyboardAwareScrollView> & {
+  update: () => void;
+};
 
 interface Props {
   coffee: Coffee;
@@ -39,22 +47,13 @@ export function BrewForm({
   const editing = !!brew;
   const source = brew ?? templateBrew;
   const insets = useSafeAreaInsets();
+  const scrollRef = useRef<KeyboardAwareScrollHandle>(null);
 
-  const [form, setForm] = useState<BrewFormValues>({
-    brewer: source?.brewer ?? '',
-    grinder: source?.grinder ?? '',
-    filter: source?.filter ?? '',
-    grind: source?.grind ?? '',
-    beansG: source?.beansG != null ? String(source.beansG) : '',
-    waterMl: source?.waterMl != null ? String(source.waterMl) : '',
-    tempC: source?.tempC != null ? String(source.tempC) : '',
-    recipeToTest: source?.recipeToTest ?? '',
-    brewNotes: source?.brewNotes ?? '',
-    reflections: source?.reflections ?? '',
-    tastingNotes: source?.tastingNotes ?? '',
+  const [form, setForm] = useState<BrewFormValues>(() => ({
+    ...recipeValuesFrom(source),
     date: toDateInput(editing ? brew?.date : undefined),
     rating: editing ? (brew?.rating ?? 0) : 0,
-  });
+  }));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -113,13 +112,17 @@ export function BrewForm({
         </View>
       ) : null}
 
-      <ScrollView
+      <KeyboardAwareScrollView
+        ref={scrollRef}
         style={styles.scroll}
         contentContainerStyle={[
           styles.scrollContent,
           { paddingBottom: (embedded ? 24 : insets.bottom + 48) },
         ]}
         keyboardShouldPersistTaps="handled"
+        enableOnAndroid
+        extraHeight={32}
+        enableResetScrollToCoords={false}
       >
         {embedded ? null : (
           <Text style={styles.subtitle}>
@@ -129,10 +132,14 @@ export function BrewForm({
 
         {error && <View style={styles.errorBox}><Text style={styles.errorText}>{error}</Text></View>}
 
-        <BrewFieldSet
-          values={form}
-          onChange={(patch) => setForm((f) => ({ ...f, ...patch }))}
-        />
+        {/* Lets a growing multiline field (e.g. Tasting/Brew notes) re-trigger the
+            scroll-into-view as it gains lines, not just on initial focus. */}
+        <KeyboardAwareUpdateContext.Provider value={() => scrollRef.current?.update()}>
+          <BrewFieldSet
+            values={form}
+            onChange={(patch) => setForm((f) => ({ ...f, ...patch }))}
+          />
+        </KeyboardAwareUpdateContext.Provider>
 
         {editing && (
           <Pressable onPress={remove} disabled={saving} style={styles.deleteBtn}>
@@ -153,7 +160,7 @@ export function BrewForm({
             <Text style={styles.embeddedSaveBtnText}>{saving ? 'Saving…' : 'Save cup'}</Text>
           </Pressable>
         ) : null}
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </View>
   );
 }

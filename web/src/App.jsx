@@ -1415,9 +1415,9 @@ function BrewCard({ brew, onClick }) {
                     <span style={{ flex: 1, minWidth: 0, fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 13, color: '#6b6b6b', lineHeight: 1.5 }}>{technique}</span>
                   </div>
                 ))}
-                {parsed.agitation && (
+                {parsed.note && (
                   <div style={{ marginTop: 6, fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 13, color: '#6b6b6b', lineHeight: 1.5, paddingTop: 6, borderTop: '0.5px solid #E7E7E7' }}>
-                    {parsed.agitation}
+                    {parsed.note}
                   </div>
                 )}
               </div>

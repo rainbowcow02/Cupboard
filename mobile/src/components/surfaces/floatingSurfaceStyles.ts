@@ -93,10 +93,6 @@ export const floatingSurfaceStyles = StyleSheet.create({
     fontWeight: '500',
     color: surfaces.clearButtonText,
   },
-  divider: {
-    height: 0.5,
-    backgroundColor: surfaces.divider,
-  },
   optionRow: {
     flexDirection: 'row',
     alignItems: 'center',

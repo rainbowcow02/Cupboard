@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, NativeSyntheticEvent, TextLayoutEventData } from 'react-native';
 import { Coffee } from '@shared/lib/coffees';
 import { fonts } from '@shared/theme';
 
@@ -18,10 +18,24 @@ const ORIGIN_FLAGS: Record<string, string> = {
   'Yemen': '🇾🇪',
 };
 
+const BEAN_MAX_LINES = 4;
+// A roaster wrapping to this many lines is what tips the block past the bag face.
+const ROASTER_LIFT_MIN_LINES = 3;
+
 interface BagLabelProps {
   coffee: Coffee;
   bagWidth: number;
   beanNameOnly?: boolean;
+}
+
+type LineCounts = { key: string; bean: number; roaster: number };
+
+// Line counts are tagged with the coffee they were measured from: when a slot is
+// reused for a different bean the stale counts are dropped rather than briefly
+// applying the previous bean's offset.
+function withLineCount(prev: LineCounts, key: string, field: 'bean' | 'roaster', count: number): LineCounts {
+  const base = prev.key === key ? prev : { key, bean: 0, roaster: 0 };
+  return base[field] === count ? base : { ...base, [field]: count };
 }
 
 export function BagLabel({ coffee, bagWidth, beanNameOnly = false }: BagLabelProps) {
@@ -43,12 +57,33 @@ export function BagLabel({ coffee, bagWidth, beanNameOnly = false }: BagLabelPro
 
   const flag = coffee.origin ? (ORIGIN_FLAGS[coffee.origin] || '') : '';
 
+  const [lineCounts, setLineCounts] = useState<LineCounts>({ key: coffee.id, bean: 0, roaster: 0 });
+  const handleBeanTextLayout = (e: NativeSyntheticEvent<TextLayoutEventData>) => {
+    const lines = e.nativeEvent?.lines;
+    if (!lines) return;
+    setLineCounts((prev) => withLineCount(prev, coffee.id, 'bean', lines.length));
+  };
+  const handleRoasterTextLayout = (e: NativeSyntheticEvent<TextLayoutEventData>) => {
+    const lines = e.nativeEvent?.lines;
+    if (!lines) return;
+    setLineCounts((prev) => withLineCount(prev, coffee.id, 'roaster', lines.length));
+  };
+
+  // Exception: a bean name at its full line clamp plus a roaster wrapping to three
+  // lines runs the divider and origin off the bag face, so the block sits higher.
+  // beanNameOnly bags never render a roaster, so this can only fire on full labels.
+  const longText =
+    lineCounts.key === coffee.id &&
+    lineCounts.bean >= BEAN_MAX_LINES &&
+    lineCounts.roaster >= ROASTER_LIFT_MIN_LINES;
+
   return (
-    <View style={styles.container} pointerEvents="none">
+    <View style={[styles.container, longText && styles.containerLongText]} pointerEvents="none">
       <View style={{ width: labelWidth, alignItems: 'center' }}>
         <Text
           style={[styles.beanName, { fontSize: beanFontSize, lineHeight: Math.round(beanFontSize * 1.2), color: inkColor }]}
-          numberOfLines={4}
+          numberOfLines={BEAN_MAX_LINES}
+          onTextLayout={handleBeanTextLayout}
         >
           {coffee.bean}
         </Text>
@@ -56,6 +91,7 @@ export function BagLabel({ coffee, bagWidth, beanNameOnly = false }: BagLabelPro
           <>
             <Text
               style={[styles.roaster, { fontSize: subFontSize, color: subColor }]}
+              onTextLayout={handleRoasterTextLayout}
             >
               {coffee.roaster}
             </Text>
@@ -77,6 +113,11 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     alignItems: 'center',
+  },
+  // 24px higher on the 181pt-tall shelf bag (24 / 181 ≈ 13.25%), expressed as a
+  // percentage so the lift stays proportional at every bag size.
+  containerLongText: {
+    top: '10.75%',
   },
   beanName: {
     fontFamily: fonts.condensed,

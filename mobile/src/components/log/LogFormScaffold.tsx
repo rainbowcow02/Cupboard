@@ -3,6 +3,12 @@ import { Animated, StyleSheet, Text, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { colors, fonts } from '@shared/theme';
 import { GlassBackButton } from '../GlassBackButton';
+import { KeyboardAwareUpdateContext } from '../../lib/keyboardAwareUpdate';
+
+/** The HOC attaches `update()` at runtime but the library's .d.ts omits it. */
+type KeyboardAwareScrollHandle = InstanceType<typeof KeyboardAwareScrollView> & {
+  update: () => void;
+};
 
 interface Props {
   onBack: () => void;
@@ -26,6 +32,7 @@ interface Props {
  */
 export function LogFormScaffold({ onBack, title, description, header, rightAction, bottomInset, children }: Props) {
   const scrollY = useRef(new Animated.Value(0)).current;
+  const scrollRef = useRef<KeyboardAwareScrollHandle>(null);
   // Presented as a modal that covers the tab bar, so only the safe-area bottom is needed.
   const bottomPad = Math.max(bottomInset, 16) + 48;
 
@@ -53,6 +60,7 @@ export function LogFormScaffold({ onBack, title, description, header, rightActio
           the beans·water·temp row) stay put, while the tall multiline "Pour structure"
           field is measured in full and brought fully into view. */}
       <KeyboardAwareScrollView
+        ref={scrollRef}
         contentContainerStyle={[styles.content, { paddingBottom: bottomPad }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
@@ -71,7 +79,11 @@ export function LogFormScaffold({ onBack, title, description, header, rightActio
             {description ? <Text style={styles.description}>{description}</Text> : null}
           </View>
         )}
-        {children}
+        {/* Lets a growing multiline field (e.g. Tasting/Brew notes) re-trigger the
+            scroll-into-view as it gains lines, not just on initial focus. */}
+        <KeyboardAwareUpdateContext.Provider value={() => scrollRef.current?.update()}>
+          {children}
+        </KeyboardAwareUpdateContext.Provider>
       </KeyboardAwareScrollView>
     </View>
   );

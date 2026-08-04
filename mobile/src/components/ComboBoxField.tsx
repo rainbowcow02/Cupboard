@@ -18,7 +18,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, fonts } from '@shared/theme';
+import { colors, fonts, surfaces } from '@shared/theme';
 import { FilterCheckbox } from './FilterCheckbox';
 import { SearchIcon } from './SearchIcon';
 import { SortChevron } from './SortChevron';
@@ -354,12 +354,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 8,
     paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingVertical: 10,
     borderRadius: 14,
     borderWidth: 0.5,
     borderColor: 'rgba(0,0,0,0.14)',
-    backgroundColor: 'rgba(255,255,255,0.7)',
-    minHeight: 46,
+    backgroundColor: surfaces.pillFill,
+    minHeight: 43,
   },
   triggerText: {
     flex: 1,
