@@ -1,6 +1,7 @@
 import { StyleSheet, TextInput, View } from 'react-native';
 import { colors, fonts, surfaces } from '@shared/theme';
 import { useKeyboardAwareUpdate } from '../../lib/keyboardAwareUpdate';
+import { useAutoFormatTextInput } from '../../hooks/useAutoFormatTextInput';
 import { Divider } from '../Divider';
 
 interface Section {
@@ -24,13 +25,14 @@ export function StructuredNotesField({ top, bottom }: Props) {
   // Growing a multiline field only re-triggers the keyboard-aware scroll on
   // content-size change — the library itself only measures on initial focus.
   const keepInView = useKeyboardAwareUpdate();
+  const topAutoFormat = useAutoFormatTextInput(top.value, top.onChange);
+  const bottomAutoFormat = useAutoFormatTextInput(bottom.value, bottom.onChange);
 
   return (
     <View style={styles.box}>
       <TextInput
         style={styles.input}
-        value={top.value}
-        onChangeText={top.onChange}
+        {...topAutoFormat}
         onContentSizeChange={keepInView}
         placeholder={top.placeholder}
         placeholderTextColor={colors.greyDark}
@@ -42,8 +44,7 @@ export function StructuredNotesField({ top, bottom }: Props) {
       <Divider />
       <TextInput
         style={styles.input}
-        value={bottom.value}
-        onChangeText={bottom.onChange}
+        {...bottomAutoFormat}
         onContentSizeChange={keepInView}
         placeholder={bottom.placeholder}
         placeholderTextColor={colors.greyDark}

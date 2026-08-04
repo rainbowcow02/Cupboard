@@ -12,6 +12,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { colors, fonts, surfaces } from '@shared/theme';
 import { fieldInputStyle } from '../FormField';
 import { useKeyboardAwareUpdate } from '../../lib/keyboardAwareUpdate';
+import { useAutoFormatTextInput } from '../../hooks/useAutoFormatTextInput';
 import { defaultPours, emptyPour, pourDisplayLabel, PourFormEntry } from '../../lib/pourStructure';
 
 interface Props {
@@ -32,6 +33,8 @@ export function PourStructureField({ pours, onChange, note, onNoteChange }: Prop
   // Growing the free-note field only re-triggers the keyboard-aware scroll on
   // content-size change — the library itself only measures on initial focus.
   const keepInView = useKeyboardAwareUpdate();
+  // Unconditional despite the field itself being hidden behind `showNote` — Rules of Hooks.
+  const noteAutoFormat = useAutoFormatTextInput(note, onNoteChange);
 
   const updatePour = (index: number, patch: Partial<PourFormEntry>) => {
     onChange(rows.map((pour, i) => (i === index ? { ...pour, ...patch } : pour)));
@@ -88,8 +91,7 @@ export function PourStructureField({ pours, onChange, note, onNoteChange }: Prop
           <Text style={[styles.rowLabel, styles.noteRowLabel]}>Note</Text>
           <TextInput
             style={[fieldInputStyle, styles.freeNoteInput]}
-            value={note}
-            onChangeText={onNoteChange}
+            {...noteAutoFormat}
             onContentSizeChange={keepInView}
             placeholder="Agitation, timing, etc."
             placeholderTextColor={colors.greyDark}
