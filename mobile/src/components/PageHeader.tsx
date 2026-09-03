@@ -18,7 +18,6 @@ const HEADER_COLLAPSE_DISTANCE = 96;
 const LAYOUT_PHASE_START = 0.25;
 const HEADER_CONTENT_HEIGHT = 48;
 const HEADER_CONTENT_SHRINK = 0.16;
-const AVATAR_OPTICAL_OFFSET = 6;
 const HEADER_PADDING_TOP_EXPANDED = 16;
 const HEADER_PADDING_TOP_COLLAPSED = 2;
 const HEADER_PADDING_BOTTOM_COLLAPSED = 2;
@@ -92,7 +91,6 @@ export function PageHeader({ title, avatarInitial, children, stickyContent, scro
     const layoutProgress = Easing.inOut(Easing.ease)(rawLayoutProgress);
     return {
       transform: [
-        { translateY: AVATAR_OPTICAL_OFFSET },
         { scale: 1 - layoutProgress },
       ],
     };
