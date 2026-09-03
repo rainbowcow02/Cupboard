@@ -1,5 +1,6 @@
 import React from 'react';
 import { groupIntoCoffees, formatDate, parseRecipe } from './lib/coffees.js';
+import { roasterLabel, tastingNotePill } from '@shared/theme';
 
 const MAPBOX_PROD_TOKEN = 'pk.eyJ1IjoicmFpbmJvd2NvdzAyIiwiYSI6ImNtcGN0N3pmdjA1MnIyeHB2aDFqa21hdjcifQ.X3TvBj8J2kqQyeRYxzAiAQ';
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || MAPBOX_PROD_TOKEN;
@@ -1529,7 +1530,7 @@ function CoffeeDetailScreen({ cup, onBack, onRefresh }) {
 
           {/* Page title block */}
           <div style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-            <p style={{ fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 15, color: '#355c44', lineHeight: 1.1, margin: 0 }}>
+            <p style={{ ...roasterLabel, margin: 0 }}>
               {cup.roaster}
             </p>
             <p style={{ fontFamily: '"Avenir Next Condensed", Avenir, system-ui, sans-serif', fontWeight: 600, fontSize: 48, color: '#000', lineHeight: 1, letterSpacing: '-0.48px', margin: 0 }}>
@@ -1553,10 +1554,13 @@ function CoffeeDetailScreen({ cup, onBack, onRefresh }) {
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                   {tastingNotes.map(n => (
                     <span key={n} style={{
-                      padding: '8px 14px', borderRadius: 100,
-                      background: 'rgba(252,153,155,0.22)',
-                      fontFamily: 'Avenir, system-ui, sans-serif', fontWeight: 500, fontSize: 13,
-                      color: '#5d0505',
+                      padding: `${tastingNotePill.paddingVertical}px ${tastingNotePill.paddingHorizontal}px`,
+                      borderRadius: tastingNotePill.borderRadius,
+                      background: tastingNotePill.backgroundColor,
+                      fontFamily: tastingNotePill.fontFamily,
+                      fontWeight: tastingNotePill.fontWeight,
+                      fontSize: tastingNotePill.fontSize,
+                      color: tastingNotePill.color,
                     }}>{n}</span>
                   ))}
                 </div>

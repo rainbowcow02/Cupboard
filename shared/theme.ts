@@ -29,6 +29,27 @@ export const typography = {
   },
 } as const;
 
+/** Supporting label above a bean name on coffee-detail screens. */
+export const roasterLabel = {
+  fontFamily: fonts.sans,
+  fontWeight: '800',
+  fontSize: 17,
+  lineHeight: 24,
+  color: colors.moss,
+} as const;
+
+/** Bright bean-level tasting-note chips shared by mobile and web. */
+export const tastingNotePill = {
+  paddingHorizontal: 14,
+  paddingVertical: 8,
+  borderRadius: 100,
+  backgroundColor: 'rgba(252,153,155,0.4)',
+  fontFamily: fonts.sans,
+  fontWeight: '800',
+  fontSize: 15,
+  color: colors.burgundy,
+} as const;
+
 /**
  * Cup rating pill backgrounds, keyed by rating (1–5).
  * Source of truth: Figma "cup rating badge" — each rating has its own tinted pill.

@@ -15,7 +15,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Brew, Coffee } from '@shared/lib/coffees';
-import { colors, fonts } from '@shared/theme';
+import { colors, fonts, roasterLabel, tastingNotePill } from '@shared/theme';
 import { GlassBackButton } from '../../src/components/GlassBackButton';
 import { HeaderPillButton } from '../../src/components/HeaderPillButton';
 import { EditBeanStep } from '../../src/components/log/EditBeanStep';
@@ -340,7 +340,7 @@ const styles = StyleSheet.create({
   },
   bagImage: { width: 300, height: 300 },
   titleBlock: { paddingHorizontal: 24, paddingVertical: 16, gap: 16 },
-  roaster: { fontFamily: fonts.sans, fontWeight: '500', fontSize: 15, color: colors.moss, lineHeight: 17 },
+  roaster: roasterLabel,
   bean: { fontFamily: fonts.condensed, fontWeight: '600', fontSize: 48, color: colors.black, lineHeight: 54, letterSpacing: -0.5 },
   brewSummaryBlock: { paddingHorizontal: 24, paddingBottom: 12 },
   sections: { paddingHorizontal: 24, gap: 36 },
@@ -354,8 +354,18 @@ const styles = StyleSheet.create({
   detailValue: { fontFamily: fonts.sans, fontWeight: '400', fontSize: 15, color: colors.black, textAlign: 'right', lineHeight: 22, flex: 1 },
   divider: { height: 0.5, backgroundColor: '#E7E7E7' },
   chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 100, backgroundColor: 'rgba(252,153,155,0.22)' },
-  chipText: { fontFamily: fonts.sans, fontWeight: '500', fontSize: 13, color: colors.burgundy },
+  chip: {
+    paddingHorizontal: tastingNotePill.paddingHorizontal,
+    paddingVertical: tastingNotePill.paddingVertical,
+    borderRadius: tastingNotePill.borderRadius,
+    backgroundColor: tastingNotePill.backgroundColor,
+  },
+  chipText: {
+    fontFamily: tastingNotePill.fontFamily,
+    fontWeight: tastingNotePill.fontWeight,
+    fontSize: tastingNotePill.fontSize,
+    color: tastingNotePill.color,
+  },
   emptyBrews: { fontFamily: fonts.sans, fontWeight: '500', fontSize: 13, color: colors.greyDark, textAlign: 'center', padding: 24, lineHeight: 20 },
   brewList: { gap: 12 },
   notFound: { flex: 1, backgroundColor: colors.pearl, alignItems: 'center', justifyContent: 'center', gap: 12 },
