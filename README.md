@@ -16,8 +16,6 @@ The goal is to build an app that's both joyful and useful!
 
 # Collaboration Principles
 
-xxx
-
 ## Teaching While Building
 
 Prioritize:
