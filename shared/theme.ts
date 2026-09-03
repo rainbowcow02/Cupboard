@@ -16,6 +16,18 @@ export const fonts = {
   condensed: 'AvenirNextCondensed-Medium',
 } as const;
 
+export const typography = {
+  h3: {
+    fontSize: 21,
+    lineHeight: 29.4,
+    letterSpacing: -0.5,
+  },
+  metadata: {
+    fontSize: 13,
+    lineHeight: 19.5,
+  },
+} as const;
+
 /**
  * Cup rating pill backgrounds, keyed by rating (1–5).
  * Source of truth: Figma "cup rating badge" — each rating has its own tinted pill.

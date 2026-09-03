@@ -1,16 +1,16 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { Polyline, Svg } from 'react-native-svg';
 import { Brew } from '@shared/lib/coffees';
-import { colors, fonts } from '@shared/theme';
+import { colors, fonts, typography } from '@shared/theme';
 import { Divider } from './Divider';
 
 interface Props {
   brews: Brew[];
 }
 
-const SPARK_H = 24;
+const SPARK_H = 17;
 const SPARK_W = 200;
-const SPARK_PAD = 2;
+const SPARK_PAD = 1.5;
 const BUCKETS = 4;
 
 function SparkCell({ brews }: { brews: Brew[] }) {
@@ -46,11 +46,16 @@ function SparkCell({ brews }: { brews: Brew[] }) {
 
   return (
     <View style={styles.sparkCell} accessibilityLabel="Ratings">
-      <Svg width="100%" height={SPARK_H} viewBox={`0 0 ${SPARK_W} ${SPARK_H}`} preserveAspectRatio="none">
+      <Svg
+        width={57}
+        height={SPARK_H}
+        viewBox={`0 0 ${SPARK_W} ${SPARK_H}`}
+        preserveAspectRatio="none"
+      >
         <Polyline
           points={polylinePoints}
           fill="none"
-          stroke={colors.burgundy}
+          stroke={colors.black}
           strokeWidth={2.5}
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -78,16 +83,16 @@ export function BrewSummary({ brews }: Props) {
   const showSpark = brews.filter((b) => b.rating != null && b.date != null).length >= 2;
 
   return (
-    <View style={styles.card}>
+    <View style={styles.summary}>
       <View style={styles.stats}>
         <StatCell value={String(brews.length)} label="Cups" />
-        <Divider orientation="vertical" length={28} thickness={0.5} opacity={1} />
+        <Divider orientation="vertical" length={53} thickness={0.5} opacity={1} />
         <StatCell value={totalGrams > 0 ? `${totalGrams}g` : '—'} label="Brewed" />
-        <Divider orientation="vertical" length={28} thickness={0.5} opacity={1} />
+        <Divider orientation="vertical" length={53} thickness={0.5} opacity={1} />
         <StatCell value={medianRating != null ? `${medianRating.toFixed(1)} ☕️` : '—'} label="Median" />
         {showSpark && (
           <>
-            <Divider orientation="vertical" length={28} thickness={0.5} opacity={1} />
+            <Divider orientation="vertical" length={53} thickness={0.5} opacity={1} />
             <SparkCell brews={brews} />
           </>
         )}
@@ -106,34 +111,41 @@ function StatCell({ value, label }: { value: string; label: string }) {
 }
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 24,
-    overflow: 'hidden',
-    paddingVertical: 20,
+  summary: {
+    minHeight: 55,
     paddingHorizontal: 20,
   },
   stats: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-evenly',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
   },
-  statCell: { flex: 1, alignItems: 'center', gap: 4 },
-  sparkCell: { flex: 1, alignItems: 'stretch', gap: 4, paddingHorizontal: 12 },
+  statCell: {
+    minWidth: 50,
+    alignItems: 'center',
+    gap: 4,
+  },
+  sparkCell: {
+    width: 57,
+    height: 53,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 4,
+  },
   statValue: {
     fontFamily: fonts.sans,
     fontWeight: '800',
-    fontSize: 17,
+    fontSize: typography.h3.fontSize,
     color: colors.black,
-    letterSpacing: -0.5,
-    lineHeight: 24,
+    letterSpacing: typography.h3.letterSpacing,
+    lineHeight: typography.h3.lineHeight,
   },
   statLabel: {
     fontFamily: fonts.sans,
     fontWeight: '500',
-    fontSize: 13,
+    fontSize: typography.metadata.fontSize,
     color: colors.greyDark,
-    lineHeight: 20,
+    lineHeight: typography.metadata.lineHeight,
     textAlign: 'center',
   },
 

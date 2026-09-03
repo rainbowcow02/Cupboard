@@ -198,6 +198,13 @@ export default function CoffeeDetailScreen() {
           <Text style={styles.bean}>{coffee.bean}</Text>
         </View>
 
+        {/* Bean-level brew stats sit directly beneath the title, matching the detail design. */}
+        {brews.length > 0 && (
+          <View style={styles.brewSummaryBlock}>
+            <BrewSummary brews={brews} />
+          </View>
+        )}
+
         {/* Sections */}
         <View style={styles.sections}>
           {/* Details glass card */}
@@ -249,7 +256,6 @@ export default function CoffeeDetailScreen() {
           {/* Brew recipes */}
           <View style={styles.section}>
             <SectionHeader title="Brew recipes" action="+ Add" onAction={() => setAddingBrew(true)} />
-            {brews.length > 0 && <BrewSummary brews={brews} />}
             <View style={styles.brewList}>
               {brews.length === 0 ? (
                 <Card>
@@ -320,7 +326,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 24,
     paddingHorizontal: 24,
-    paddingBottom: 24,
+    paddingBottom: 44,
   },
   heroBagWrap: {
     position: 'relative',
@@ -336,6 +342,7 @@ const styles = StyleSheet.create({
   titleBlock: { paddingHorizontal: 24, paddingVertical: 16, gap: 16 },
   roaster: { fontFamily: fonts.sans, fontWeight: '500', fontSize: 15, color: colors.moss, lineHeight: 17 },
   bean: { fontFamily: fonts.condensed, fontWeight: '600', fontSize: 48, color: colors.black, lineHeight: 54, letterSpacing: -0.5 },
+  brewSummaryBlock: { paddingHorizontal: 24, paddingBottom: 32 },
   sections: { paddingHorizontal: 24, gap: 36 },
   section: { gap: 8 },
   sectionHeader: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
