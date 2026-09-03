@@ -4,6 +4,7 @@ import { floatingSurfaceStyles } from './floatingSurfaceStyles';
 
 export function DetachedSheetBackground() {
   const { animatedPosition, animatedLayoutState } = useBottomSheetInternal();
+
   const cardStyle = useAnimatedStyle(() => {
     const visible = animatedLayoutState.get().containerHeight - animatedPosition.get();
     return { height: visible > 0 ? visible : 0 };
