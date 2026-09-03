@@ -59,7 +59,7 @@ function SectionHeader({ title, action, onAction }: { title: string; action?: st
   return (
     <View style={styles.sectionHeader}>
       <Text style={styles.sectionTitle}>{title}</Text>
-      {action && onAction && <AddLink label={action} onPress={onAction} />}
+      {action && onAction && <AddLink label={action} onPress={onAction} size="large" />}
     </View>
   );
 }
@@ -344,7 +344,7 @@ const styles = StyleSheet.create({
   bean: { fontFamily: fonts.condensed, fontWeight: '600', fontSize: 48, color: colors.black, lineHeight: 54, letterSpacing: -0.5 },
   brewSummaryBlock: { paddingHorizontal: 24, paddingBottom: 32 },
   sections: { paddingHorizontal: 24, gap: 36 },
-  section: { gap: 8 },
+  section: { gap: 12 },
   sectionHeader: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
   sectionTitle: { fontFamily: fonts.serif, fontSize: 22, color: colors.black, lineHeight: 30 },
   originMapWrap: { paddingHorizontal: 24, paddingBottom: 24 },

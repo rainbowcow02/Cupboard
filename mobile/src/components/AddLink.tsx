@@ -5,16 +5,16 @@ interface Props {
   /** Visible text, already including the leading "+" (e.g. "+ Add pour"). */
   label: string;
   onPress: () => void;
+  size?: 'small' | 'large';
   /** Defaults to the label; override when the label alone reads ambiguously. */
   accessibilityLabel?: string;
 }
 
 /**
- * The one treatment for inline "+ Add …" text actions — section headers and
- * in-form row adders alike. Styling is the `links.small` design-system token
- * from `shared/theme.ts` in burgundy; don't restate the values here.
+ * Shared treatment for inline "+ Add …" text actions. Styling comes from the
+ * matching `links` design-system token in `shared/theme.ts`.
  */
-export function AddLink({ label, onPress, accessibilityLabel }: Props) {
+export function AddLink({ label, onPress, size = 'small', accessibilityLabel }: Props) {
   return (
     <Pressable
       onPress={onPress}
@@ -23,7 +23,7 @@ export function AddLink({ label, onPress, accessibilityLabel }: Props) {
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
     >
-      <Text style={styles.addLinkText}>{label}</Text>
+      <Text style={[styles.addLinkText, size === 'large' && styles.addLinkTextLarge]}>{label}</Text>
     </Pressable>
   );
 }
@@ -32,4 +32,5 @@ const styles = StyleSheet.create({
   addLink: { paddingVertical: links.paddingVertical },
   addLinkPressed: { opacity: links.pressedOpacity },
   addLinkText: { ...links.small, color: colors.burgundy },
+  addLinkTextLarge: { ...links.large },
 });

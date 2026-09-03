@@ -249,7 +249,7 @@ export function ComboBoxField(props: ComboBoxFieldProps) {
               subtitle={
                 multiple && selected.length > 0
                   ? `${selected.length} of ${baseOptions.length} selected`
-                  : `${baseOptions.length} results`
+                  : undefined
               }
               onClear={multiple ? clearAll : undefined}
               clearAccessibilityLabel={`Clear ${label} selection`}

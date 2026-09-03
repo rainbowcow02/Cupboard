@@ -75,6 +75,11 @@ export const surfaces = {
  * (`AddLink`), greyDark for secondary affordances (BrewCard's See more/See less).
  */
 export const links = {
+  large: {
+    fontFamily: fonts.sans,
+    fontSize: 15,
+    fontWeight: '800',
+  },
   small: {
     fontFamily: fonts.sans,
     fontSize: 13,
