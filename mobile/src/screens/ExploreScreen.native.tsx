@@ -3,7 +3,7 @@ import MapboxGL, { type MapState } from '@rnmapbox/maps';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Bag } from '../components/Bag';
 import { BEAN_MARKER_CENTER_OFFSET, BeanMarker } from '../components/BeanMarker';
@@ -66,7 +66,6 @@ export default function ExploreScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { height: screenH } = useWindowDimensions();
-  const mapRef    = useRef<MapboxGL.MapView>(null);
   const cameraRef = useRef<MapboxGL.Camera>(null);
   const sheetRef  = useRef<BottomSheet>(null);
   // True after a pin fly-to until the camera is restored to globe home.
@@ -110,9 +109,6 @@ export default function ExploreScreen() {
     () => [peekH, absMaxH, fullSnapH],
     [peekH, absMaxH, fullSnapH],
   );
-
-  const activeSheetH = snapPoints[Math.min(sheetIndex, snapPoints.length - 1)];
-  const zoomBtnBottom = tabBarInset + activeSheetH + 14;
 
   const handleSheetChange = useCallback((index: number) => {
     setSheetIndex(index);
@@ -182,30 +178,6 @@ export default function ExploreScreen() {
       restoreGlobePadding(300);
     }
   }, [settleToGlobe, restoreGlobePadding]);
-
-  const handleZoom = useCallback(async (delta: number) => {
-    const zoom = await mapRef.current?.getZoom();
-    if (zoom == null) return;
-
-    const nextZoom = Math.min(Math.max(zoom + delta, 0.5), 14);
-
-    if (pinViewActiveRef.current) {
-      // Coming out of a focused pin: once we cross back to globe scale, settle to a
-      // clean sphere; otherwise keep the pin's framing while zooming.
-      if (nextZoom <= GLOBE_VIEW_MAX_ZOOM) {
-        settleToGlobe(300);
-        return;
-      }
-      animateCamera({ zoomLevel: nextZoom, animationDuration: 300 });
-      return;
-    }
-
-    animateCamera({
-      zoomLevel: nextZoom,
-      animationDuration: 300,
-      padding: cameraPadding,
-    });
-  }, [cameraPadding, settleToGlobe, animateCamera]);
 
   const handleMarkerPress = useCallback((origin: string) => {
     const isDeselecting = selectedOrigin === origin;
@@ -280,7 +252,6 @@ export default function ExploreScreen() {
   return (
     <View style={styles.container}>
       <MapboxGL.MapView
-        ref={mapRef}
         style={styles.map}
         styleURL={MAPBOX_STYLE}
         projection="globe"
@@ -323,25 +294,6 @@ export default function ExploreScreen() {
           );
         })}
       </MapboxGL.MapView>
-
-      <View style={[styles.zoomControls, { bottom: zoomBtnBottom }]} pointerEvents="box-none">
-        <Pressable
-          onPress={() => handleZoom(0.75)}
-          style={styles.zoomBtn}
-          accessibilityRole="button"
-          accessibilityLabel="Zoom in"
-        >
-          <Text style={styles.zoomBtnText}>+</Text>
-        </Pressable>
-        <Pressable
-          onPress={() => handleZoom(-0.75)}
-          style={styles.zoomBtn}
-          accessibilityRole="button"
-          accessibilityLabel="Zoom out"
-        >
-          <Text style={styles.zoomBtnText}>−</Text>
-        </Pressable>
-      </View>
 
       <BottomSheet
         ref={sheetRef}
@@ -407,33 +359,6 @@ export default function ExploreScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   map: { flex: 1 },
-
-  zoomControls: {
-    position: 'absolute',
-    right: 16,
-    gap: 8,
-  },
-  zoomBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.95)',
-    borderWidth: 0.5,
-    borderColor: 'rgba(0,0,0,0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  zoomBtnText: {
-    fontFamily: fonts.sans,
-    fontSize: 26,
-    fontWeight: '500',
-    color: colors.supremeBeige,
-  },
 
   listContent: {
     flexGrow: 0,
