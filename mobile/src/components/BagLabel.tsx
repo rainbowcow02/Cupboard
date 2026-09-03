@@ -48,6 +48,10 @@ export function BagLabel({ coffee, bagWidth, beanNameOnly = false }: BagLabelPro
   // Below 80px (explore thumbnails) use lower minimums so text scales down
   // rather than overflowing a narrow bag.
   const small = bagWidth < 80;
+  // Non-small floors mirror web's BagLabel (web/src/App.jsx): at the ~89px home
+  // bag these resolve to a 70px label box at 16px, which is what keeps a long
+  // single word ("Watermelon", "Monteblanco") on one line instead of breaking
+  // mid-word. Keep them in step with web.
   const labelWidth  = small ? Math.round(115 * scale)   : Math.max(70, Math.round(115 * scale));
   const beanFontSize = small
     ? Math.max(8, Math.round(24 * scale))
@@ -124,6 +128,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
     letterSpacing: -0.9,
+    // Negative letterSpacing makes RN measure the centered text box narrower
+    // than what's actually painted, so it renders drifted right of true
+    // center. This is a pure paint-time nudge back to center — it doesn't
+    // touch layout/measurement, so wrapping and the longText line-count
+    // logic above are unaffected.
+    transform: [{ translateX: -1.5 }],
   },
   roaster: {
     fontFamily: fonts.sans,
