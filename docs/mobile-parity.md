@@ -48,6 +48,7 @@ Status key: ✅ done · ❌ missing · ⚠️ partial · — not applicable
 | Tab gap (−8px overlap) | ✅ | ✅ | — | Non-last tabs have marginRight: −8px; tabs visually overlap by 8px matching Figma |
 | Pill horizontal padding | ✅ | ✅ | — | Pill has 2px horizontal padding each side, matching web's `padding: 0 2px` |
 | Icon tap animation | ⚠️ | ✅ | — | **Mobile-only requested refinement:** each icon quickly shrinks on press, grows past full size on release, then springs back to its normal scale. Web retains its active-tab scale transition. |
+| Directional page transitions | ✅ | ❌ | — | Web slides tab pages in from the left or right. **Intentional mobile skip:** tab switches are instant. Scene animation over native maps and sheets felt laggy and inconsistent. |
 
 ### Home
 
