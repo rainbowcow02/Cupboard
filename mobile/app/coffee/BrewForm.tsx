@@ -11,6 +11,9 @@ import {
   brewFieldsPayload,
   recipeValuesFrom,
 } from '../../src/components/log/BrewFieldSet';
+import { HeaderPillButton } from '../../src/components/HeaderPillButton';
+import { LogFormScaffold } from '../../src/components/log/LogFormScaffold';
+import { SheetOverlay } from '../../src/components/surfaces/SheetOverlay';
 import { createCup, updateCup, deleteCup } from '../../src/lib/api';
 import { KeyboardAwareUpdateContext } from '../../src/lib/keyboardAwareUpdate';
 
@@ -96,100 +99,99 @@ export function BrewForm({
 
   const screenTitle = title ?? (editing ? 'Edit Brew' : templateBrew ? 'Tweak recipe' : 'New recipe');
 
-  return (
-    <View style={[embedded ? styles.embedded : styles.sheet, !embedded && { paddingTop: insets.top }]}>
-      {!embedded ? (
-        <View style={styles.header}>
-          <Pressable onPress={onClose} hitSlop={8} accessibilityRole="button" accessibilityLabel="Cancel">
-            <Text style={styles.cancel}>Cancel</Text>
-          </Pressable>
-          <Text style={styles.title}>{screenTitle}</Text>
-          <Pressable onPress={save} disabled={saving} hitSlop={8} accessibilityRole="button" accessibilityLabel="Save brew">
-            <Text style={[styles.saveBtn, saving && styles.saveBtnDisabled]}>
-              {saving ? 'Saving…' : 'Save'}
-            </Text>
-          </Pressable>
-        </View>
-      ) : null}
+  const fields = (
+    <>
+      {error && <View style={styles.errorBox}><Text style={styles.errorText}>{error}</Text></View>}
 
+      <BrewFieldSet
+        values={form}
+        onChange={(patch) => setForm((f) => ({ ...f, ...patch }))}
+      />
+
+      {editing && (
+        <Pressable onPress={remove} disabled={saving} style={styles.deleteBtn}>
+          <Text style={styles.deleteBtnText}>
+            {confirmDelete ? 'Tap again to delete this brew' : 'Delete brew'}
+          </Text>
+        </Pressable>
+      )}
+    </>
+  );
+
+  if (!embedded) {
+    // Same floating chrome as the Log flow's form steps — a glass icon button and
+    // a header pill — with the title sitting in the scroll content beneath it.
+    // The sheet is dismissed rather than navigated back from, so it takes an X.
+    // No safe-area top padding: this sheet fills a screen presented as a native
+    // modal, which already starts below the status bar, so the scaffold's own
+    // 16px header inset lands the X level with the coffee-detail back button.
+    return (
+      <SheetOverlay>
+        <LogFormScaffold
+          onBack={onClose}
+          leadingIcon="close"
+          leadingLabel="Close without saving"
+          title={screenTitle}
+          description={
+            <>
+              Brew recipe for <Text style={styles.subtitleBold}>{coffee.bean}</Text> · {coffee.roaster}
+            </>
+          }
+          rightAction={
+            <HeaderPillButton
+              label={saving ? 'Saving…' : 'Save'}
+              onPress={save}
+              disabled={saving}
+              accessibilityLabel="Save brew"
+            />
+          }
+          bottomInset={insets.bottom}
+        >
+          {fields}
+        </LogFormScaffold>
+      </SheetOverlay>
+    );
+  }
+
+  return (
+    <View style={styles.embedded}>
       <KeyboardAwareScrollView
         ref={scrollRef}
         style={styles.scroll}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: (embedded ? 24 : insets.bottom + 48) },
-        ]}
+        contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
         enableOnAndroid
         extraHeight={32}
         enableResetScrollToCoords={false}
       >
-        {embedded ? null : (
-          <Text style={styles.subtitle}>
-            Brew recipe for <Text style={styles.subtitleBold}>{coffee.bean}</Text> · {coffee.roaster}
-          </Text>
-        )}
-
-        {error && <View style={styles.errorBox}><Text style={styles.errorText}>{error}</Text></View>}
-
         {/* Lets a growing multiline field (e.g. Tasting/Brew notes) re-trigger the
             scroll-into-view as it gains lines, not just on initial focus. */}
         <KeyboardAwareUpdateContext.Provider value={() => scrollRef.current?.update()}>
-          <BrewFieldSet
-            values={form}
-            onChange={(patch) => setForm((f) => ({ ...f, ...patch }))}
-          />
+          {fields}
         </KeyboardAwareUpdateContext.Provider>
 
-        {editing && (
-          <Pressable onPress={remove} disabled={saving} style={styles.deleteBtn}>
-            <Text style={styles.deleteBtnText}>
-              {confirmDelete ? 'Tap again to delete this brew' : 'Delete brew'}
-            </Text>
-          </Pressable>
-        )}
-
-        {embedded ? (
-          <Pressable
-            onPress={save}
-            disabled={saving}
-            style={[styles.embeddedSaveBtn, saving && styles.embeddedSaveBtnDisabled]}
-            accessibilityRole="button"
-            accessibilityLabel="Save cup"
-          >
-            <Text style={styles.embeddedSaveBtnText}>{saving ? 'Saving…' : 'Save cup'}</Text>
-          </Pressable>
-        ) : null}
+        <Pressable
+          onPress={save}
+          disabled={saving}
+          style={[styles.embeddedSaveBtn, saving && styles.embeddedSaveBtnDisabled]}
+          accessibilityRole="button"
+          accessibilityLabel="Save cup"
+        >
+          <Text style={styles.embeddedSaveBtnText}>{saving ? 'Saving…' : 'Save cup'}</Text>
+        </Pressable>
       </KeyboardAwareScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  sheet: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: colors.pearl,
-    zIndex: 10,
-  },
   embedded: {
     flex: 1,
     backgroundColor: colors.pearl,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-  },
-  cancel: { fontFamily: fonts.sans, fontWeight: '500', fontSize: 15, color: colors.greyDark },
-  title: { fontFamily: fonts.serif, fontSize: 19, color: '#000' },
-  saveBtn: { fontFamily: fonts.sans, fontWeight: '800', fontSize: 15, color: colors.burgundy },
-  saveBtnDisabled: { color: '#b9a99a' },
   scroll: { flex: 1 },
-  scrollContent: { padding: 24, paddingTop: 8 },
-  subtitle: { fontFamily: fonts.sans, fontWeight: '500', fontSize: 13, color: colors.greyDark, marginBottom: 20 },
-  subtitleBold: { color: '#000', fontWeight: '700' },
+  scrollContent: { padding: 24, paddingTop: 8, paddingBottom: 24 },
+  subtitleBold: { color: colors.black, fontWeight: '700' },
   errorBox: { backgroundColor: 'rgba(252,153,155,0.22)', borderRadius: 12, padding: 12, marginBottom: 16 },
   errorText: { fontFamily: fonts.sans, fontWeight: '500', fontSize: 13, color: colors.burgundy },
   deleteBtn: {
@@ -200,7 +202,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(93,5,5,0.25)',
     alignItems: 'center',
   },
-  deleteBtnText: { fontFamily: fonts.sans, fontWeight: '600', fontSize: 14, color: colors.burgundy },
+  deleteBtnText: { fontFamily: fonts.sans, fontWeight: '800', fontSize: 14, color: colors.burgundy },
   embeddedSaveBtn: {
     marginTop: 28,
     backgroundColor: colors.burgundy,

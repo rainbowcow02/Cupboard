@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
   },
   beanName: {
     fontFamily: fonts.sans,
-    fontWeight: '700',
+    fontWeight: '800',
     fontSize: 15,
     color: colors.black,
   },

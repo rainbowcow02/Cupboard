@@ -1,13 +1,13 @@
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Coffee } from '@shared/lib/coffees';
-import { colors } from '@shared/theme';
 import { updateBeanDetails } from '../../lib/api';
 import { BeanFields, NewBeanDraft, draftFromCoffee } from './BeanFields';
 import { ErrorBox } from '../ErrorBox';
 import { PrimaryButton } from '../PrimaryButton';
 import { LogFormScaffold } from './LogFormScaffold';
+import { SheetOverlay } from '../surfaces/SheetOverlay';
 
 interface Props {
   coffee: Coffee;
@@ -62,7 +62,7 @@ export function EditBeanStep({ coffee, onClose, onSaved }: Props) {
   };
 
   return (
-    <View style={styles.sheet}>
+    <SheetOverlay>
       <LogFormScaffold
         onBack={onClose}
         title="Edit coffee"
@@ -82,16 +82,11 @@ export function EditBeanStep({ coffee, onClose, onSaved }: Props) {
           accessibilityLabel="Save coffee details"
         />
       </LogFormScaffold>
-    </View>
+    </SheetOverlay>
   );
 }
 
 const styles = StyleSheet.create({
-  sheet: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: colors.pearl,
-    zIndex: 20,
-  },
   error: { marginBottom: 16 },
   saveBtn: { marginTop: 24 },
 });

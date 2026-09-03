@@ -32,7 +32,9 @@ export function CupRating({ rating }: Props) {
 const styles = StyleSheet.create({
   pill: {
     borderRadius: surfaces.pillRadius,
-    padding: 8,
+    paddingHorizontal: 8,
+    paddingTop: 6,
+    paddingBottom: 5,
     alignItems: 'center',
     justifyContent: 'center',
   },

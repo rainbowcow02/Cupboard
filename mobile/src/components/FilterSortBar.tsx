@@ -112,7 +112,6 @@ export function FilterSortBar({
                 <SortChevron
                   flipped={flipped}
                   color={active ? '#ffffff' : colors.black}
-                  style={styles.sortChevron}
                 />
               </>
             )}
@@ -143,6 +142,7 @@ export function FilterSortBar({
                     accessibilityRole="button"
                     accessibilityLabel={`Clear ${chip.label} filter`}
                     hitSlop={8}
+                    style={styles.clearFilterButton}
                   >
                     <Animated.Text style={[styles.pillClear, textStyle]}>✕</Animated.Text>
                   </Pressable>
@@ -178,16 +178,21 @@ const styles = StyleSheet.create({
     fontFamily: fonts.sans,
     fontWeight: '500',
     fontSize: 15,
-    lineHeight: 15,
+    lineHeight: 18,
   },
   pillTextFlex: {
     flexShrink: 1,
   },
-  pillClear: {
-    fontSize: 12,
-    opacity: 0.85,
+  clearFilterButton: {
+    alignSelf: 'stretch',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: 18,
   },
-  sortChevron: {
-    marginTop: -4,
+  pillClear: {
+    fontFamily: fonts.sans,
+    fontSize: 16,
+    lineHeight: 18,
+    opacity: 0.85,
   },
 });

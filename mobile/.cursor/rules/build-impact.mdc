@@ -22,6 +22,9 @@ For every change that touches app code or config, end with a one-line **Build im
 - Global state init, module-level constants, env values read at startup
 - New asset (image/font) references added at runtime
 - Changes to `metro.config.js`, `babel.config.js` (also restart Metro)
+- Removing overlay UI (absolute-positioned controls, map chrome). Fast Refresh often leaves the old views on screen until a full reload.
+
+When in doubt between hot reload and manual refresh, prefer **manual refresh**.
 
 **📦 New .ipa build** — anything native:
 - Adding/removing/upgrading a package with native code (requires `pod install`)

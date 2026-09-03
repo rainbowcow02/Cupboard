@@ -249,7 +249,7 @@ export function ComboBoxField(props: ComboBoxFieldProps) {
               subtitle={
                 multiple && selected.length > 0
                   ? `${selected.length} of ${baseOptions.length} selected`
-                  : `${baseOptions.length} results`
+                  : undefined
               }
               onClear={multiple ? clearAll : undefined}
               clearAccessibilityLabel={`Clear ${label} selection`}
@@ -404,7 +404,7 @@ const styles = StyleSheet.create({
   clearSearchText: {
     fontFamily: fonts.sans,
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '800',
     color: colors.pearl,
     lineHeight: 14,
   },
@@ -416,7 +416,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: fonts.sans,
     fontSize: 17,
-    fontWeight: '600',
+    fontWeight: '500',
     color: colors.burgundy,
   },
   emptyText: {

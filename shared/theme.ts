@@ -1,4 +1,5 @@
 export const colors = {
+  transparent: 'transparent',
   pearl: '#f9eddd',
   black: '#000000',
   moss: '#355c44',
@@ -14,6 +15,39 @@ export const fonts = {
   serif: 'DMSerifDisplay_400Regular',
   sans: 'Avenir',
   condensed: 'AvenirNextCondensed-Medium',
+} as const;
+
+export const typography = {
+  h3: {
+    fontSize: 21,
+    lineHeight: 29.4,
+    letterSpacing: -0.5,
+  },
+  metadata: {
+    fontSize: 13,
+    lineHeight: 19.5,
+  },
+} as const;
+
+/** Supporting label above a bean name on coffee-detail screens. */
+export const roasterLabel = {
+  fontFamily: fonts.sans,
+  fontWeight: '800',
+  fontSize: 17,
+  lineHeight: 24,
+  color: colors.moss,
+} as const;
+
+/** Bright bean-level tasting-note chips shared by mobile and web. */
+export const tastingNotePill = {
+  paddingHorizontal: 14,
+  paddingVertical: 8,
+  borderRadius: 100,
+  backgroundColor: 'rgba(252,153,155,0.4)',
+  fontFamily: fonts.sans,
+  fontWeight: '700',
+  fontSize: 15,
+  color: colors.burgundy,
 } as const;
 
 /**
@@ -52,4 +86,30 @@ export const surfaces = {
   },
   scrimHeight: 160,
   scrimColors: [`${colors.pearl}00`, `${colors.chardonnay}99`] as const,
+} as const;
+
+/**
+ * Inline text-link treatments.
+ *
+ * `small` is the DS "Small link" style — Avenir Heavy 13/800, read from Figma node
+ * 741:15117. It carries no color, so each link pairs it with its own context
+ * color: burgundy for actions the user takes
+ * (`AddLink`), greyDark for secondary affordances (BrewCard's See more/See less).
+ */
+export const links = {
+  large: {
+    fontFamily: fonts.sans,
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  small: {
+    fontFamily: fonts.sans,
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  /** Press feedback shared by inline text links. */
+  pressedOpacity: 0.6,
+  /** Touch-target padding around an inline link's text. */
+  hitSlop: 8,
+  paddingVertical: 4,
 } as const;

@@ -10,9 +10,12 @@ import {
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
+  cancelAnimation,
   useSharedValue,
   useAnimatedStyle,
+  withSequence,
   withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 import { colors, surfaces } from '@shared/theme';
 
@@ -42,7 +45,11 @@ const TAB_STEP = TAB_W - 8; // = 64px per step, accounting for -8px tab gap
 
 // Matches web's cubic-bezier(0.34, 1.56, 0.64, 1) — slight overshoot bounce
 const SLIDE_SPRING = { damping: 18, stiffness: 220, mass: 0.8 };
-const SCALE_SPRING = { damping: 14, stiffness: 250 };
+const ICON_PRESSED_SCALE = 0.88;
+const ICON_PEAK_SCALE = 1.09;
+const ICON_SHRINK_DURATION = 85;
+const ICON_GROW_DURATION = 110;
+const ICON_SETTLE_SPRING = { damping: 16, stiffness: 340, mass: 0.65 };
 
 // Tab-bar-specific shadow — crisper/darker than the shared surfaces.shadow so the
 // pill reads as a distinct layer against scrolling cards. Kept local on purpose:
@@ -71,11 +78,7 @@ type TabItemProps = {
 };
 
 function TabItem({ route, descriptor, isFocused, isLast, onPress }: TabItemProps) {
-  const scale = useSharedValue(isFocused ? 1.08 : 1);
-
-  useEffect(() => {
-    scale.value = withSpring(isFocused ? 1.08 : 1, SCALE_SPRING);
-  }, [isFocused]);
+  const scale = useSharedValue(1);
 
   const iconStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -83,10 +86,22 @@ function TabItem({ route, descriptor, isFocused, isLast, onPress }: TabItemProps
 
   const Icon = TAB_ICONS[route.name];
   const label = descriptor.options.title ?? route.name;
+  const handlePressIn = () => {
+    cancelAnimation(scale);
+    scale.value = withTiming(ICON_PRESSED_SCALE, { duration: ICON_SHRINK_DURATION });
+  };
+  const handlePressOut = () => {
+    scale.value = withSequence(
+      withTiming(ICON_PEAK_SCALE, { duration: ICON_GROW_DURATION }),
+      withSpring(1, ICON_SETTLE_SPRING),
+    );
+  };
 
   return (
     <Pressable
       onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
       style={[styles.tab, { marginRight: isLast ? 0 : -8 }]}
       accessibilityRole="button"
       accessibilityState={isFocused ? { selected: true } : {}}

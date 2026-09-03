@@ -10,6 +10,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { colors, fonts, surfaces } from '@shared/theme';
+import { AddLink } from '../AddLink';
 import { fieldInputStyle } from '../FormField';
 import { useKeyboardAwareUpdate } from '../../lib/keyboardAwareUpdate';
 import { useAutoFormatTextInput } from '../../hooks/useAutoFormatTextInput';
@@ -66,23 +67,13 @@ export function PourStructureField({ pours, onChange, note, onNoteChange }: Prop
       })}
 
       <View style={styles.linkRow}>
-        <Pressable
-          onPress={addPour}
-          style={styles.linkBtn}
-          accessibilityRole="button"
-          accessibilityLabel="Add another pour"
-        >
-          <Text style={styles.linkBtnText}>+ Add pour</Text>
-        </Pressable>
+        <AddLink label="+ Add pour" onPress={addPour} accessibilityLabel="Add another pour" />
         {!showNote ? (
-          <Pressable
+          <AddLink
+            label="+ Add note"
             onPress={() => setShowNote(true)}
-            style={styles.linkBtn}
-            accessibilityRole="button"
             accessibilityLabel="Add a note"
-          >
-            <Text style={styles.linkBtnText}>+ Add note</Text>
-          </Pressable>
+          />
         ) : null}
       </View>
 
@@ -333,17 +324,10 @@ const styles = StyleSheet.create({
   removeBtnText: {
     fontFamily: fonts.sans,
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '800',
     color: surfaces.clearButtonText,
     lineHeight: 16,
   },
   linkRow: { flexDirection: 'row', justifyContent: 'flex-end', gap: 16 },
-  linkBtn: { paddingVertical: 4 },
-  linkBtnText: {
-    fontFamily: fonts.sans,
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.burgundy,
-  },
   freeNoteInput: { flex: 1 },
 });

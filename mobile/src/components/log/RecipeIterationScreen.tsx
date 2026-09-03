@@ -24,13 +24,28 @@ interface Props {
   /** Open the full bean detail page for the chosen bean. */
   onOpenBean: () => void;
   onSaved: () => Promise<void>;
+  /**
+   * Back chevron as a step inside the Log flow; a dismiss X when the screen is
+   * opened as a sheet over the bean it belongs to.
+   */
+  leadingIcon?: 'back' | 'close';
+  /** Accessibility label for the leading button when the default doesn't fit. */
+  leadingLabel?: string;
 }
 
 /**
  * Edit the recipe fields and log today's cup. Seeded from a duplicated base
  * brew (changed fields show a "was X" hint) or blank when starting fresh.
  */
-export function RecipeIterationScreen({ coffee, base, onBack, onOpenBean, onSaved }: Props) {
+export function RecipeIterationScreen({
+  coffee,
+  base,
+  onBack,
+  onOpenBean,
+  onSaved,
+  leadingIcon = 'back',
+  leadingLabel,
+}: Props) {
   const insets = useSafeAreaInsets();
   const [form, setForm] = useState<BrewFormValues>(() => recipeValuesFrom(base));
   const [saving, setSaving] = useState(false);
@@ -55,6 +70,8 @@ export function RecipeIterationScreen({ coffee, base, onBack, onOpenBean, onSave
   return (
     <LogFormScaffold
       onBack={onBack}
+      leadingIcon={leadingIcon}
+      leadingLabel={leadingLabel}
       header={
         <View style={styles.headerWrap}>
           <RecipeBeanHeader

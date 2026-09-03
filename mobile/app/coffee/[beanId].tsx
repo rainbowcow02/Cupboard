@@ -15,10 +15,13 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Brew, Coffee } from '@shared/lib/coffees';
-import { colors, fonts } from '@shared/theme';
+import { colors, fonts, roasterLabel, tastingNotePill } from '@shared/theme';
 import { GlassBackButton } from '../../src/components/GlassBackButton';
 import { HeaderPillButton } from '../../src/components/HeaderPillButton';
 import { EditBeanStep } from '../../src/components/log/EditBeanStep';
+import { RecipeIterationScreen } from '../../src/components/log/RecipeIterationScreen';
+import { SheetOverlay } from '../../src/components/surfaces/SheetOverlay';
+import { AddLink } from '../../src/components/AddLink';
 import { BagLabel } from '../../src/components/BagLabel';
 import { BrewCard } from '../../src/components/BrewCard';
 import { Card } from '../../src/components/Card';
@@ -56,11 +59,7 @@ function SectionHeader({ title, action, onAction }: { title: string; action?: st
   return (
     <View style={styles.sectionHeader}>
       <Text style={styles.sectionTitle}>{title}</Text>
-      {action && (
-        <Pressable onPress={onAction} hitSlop={8}>
-          <Text style={styles.sectionAction}>{action}</Text>
-        </Pressable>
-      )}
+      {action && onAction && <AddLink label={action} onPress={onAction} size="large" />}
     </View>
   );
 }
@@ -199,6 +198,13 @@ export default function CoffeeDetailScreen() {
           <Text style={styles.bean}>{coffee.bean}</Text>
         </View>
 
+        {/* Bean-level brew stats sit directly beneath the title, matching the detail design. */}
+        {brews.length > 0 && (
+          <View style={styles.brewSummaryBlock}>
+            <BrewSummary brews={brews} />
+          </View>
+        )}
+
         {/* Sections */}
         <View style={styles.sections}>
           {/* Details glass card */}
@@ -250,7 +256,6 @@ export default function CoffeeDetailScreen() {
           {/* Brew recipes */}
           <View style={styles.section}>
             <SectionHeader title="Brew recipes" action="+ Add" onAction={() => setAddingBrew(true)} />
-            {brews.length > 0 && <BrewSummary brews={brews} />}
             <View style={styles.brewList}>
               {brews.length === 0 ? (
                 <Card>
@@ -272,7 +277,25 @@ export default function CoffeeDetailScreen() {
         </View>
       </Animated.ScrollView>
 
-      {(addingBrew || editingBrew) && coffee && (
+      {/* Adding a recipe is the same job as the Log flow's "Set a recipe" step, so
+          it runs that exact screen — opened as a sheet over this page, hence the
+          dismiss X rather than a back chevron. Tapping its bean card returns here,
+          which is already this bean's detail page. */}
+      {addingBrew && coffee && (
+        <SheetOverlay>
+          <RecipeIterationScreen
+            coffee={coffee}
+            base={null}
+            onBack={onBrewClose}
+            onOpenBean={onBrewClose}
+            onSaved={onBrewSaved}
+            leadingIcon="close"
+            leadingLabel="Close without saving"
+          />
+        </SheetOverlay>
+      )}
+
+      {editingBrew && coffee && (
         <BrewForm coffee={coffee} brew={editingBrew} onClose={onBrewClose} onSaved={onBrewSaved} />
       )}
 
@@ -303,7 +326,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 24,
     paddingHorizontal: 24,
-    paddingBottom: 24,
+    paddingBottom: 44,
   },
   heroBagWrap: {
     position: 'relative',
@@ -317,13 +340,13 @@ const styles = StyleSheet.create({
   },
   bagImage: { width: 300, height: 300 },
   titleBlock: { paddingHorizontal: 24, paddingVertical: 16, gap: 16 },
-  roaster: { fontFamily: fonts.sans, fontWeight: '500', fontSize: 15, color: colors.moss, lineHeight: 17 },
+  roaster: roasterLabel,
   bean: { fontFamily: fonts.condensed, fontWeight: '600', fontSize: 48, color: colors.black, lineHeight: 54, letterSpacing: -0.5 },
+  brewSummaryBlock: { paddingHorizontal: 24, paddingBottom: 12 },
   sections: { paddingHorizontal: 24, gap: 36 },
-  section: { gap: 8 },
+  section: { gap: 12 },
   sectionHeader: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
   sectionTitle: { fontFamily: fonts.serif, fontSize: 22, color: colors.black, lineHeight: 30 },
-  sectionAction: { fontFamily: fonts.sans, fontWeight: '500', fontSize: 12, color: colors.burgundy },
   originMapWrap: { paddingHorizontal: 24, paddingBottom: 24 },
   detailRowOuter: { paddingHorizontal: 24, paddingTop: 16 },
   detailRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 16, paddingBottom: 16 },
@@ -331,8 +354,18 @@ const styles = StyleSheet.create({
   detailValue: { fontFamily: fonts.sans, fontWeight: '400', fontSize: 15, color: colors.black, textAlign: 'right', lineHeight: 22, flex: 1 },
   divider: { height: 0.5, backgroundColor: '#E7E7E7' },
   chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 100, backgroundColor: 'rgba(252,153,155,0.22)' },
-  chipText: { fontFamily: fonts.sans, fontWeight: '500', fontSize: 13, color: colors.burgundy },
+  chip: {
+    paddingHorizontal: tastingNotePill.paddingHorizontal,
+    paddingVertical: tastingNotePill.paddingVertical,
+    borderRadius: tastingNotePill.borderRadius,
+    backgroundColor: tastingNotePill.backgroundColor,
+  },
+  chipText: {
+    fontFamily: tastingNotePill.fontFamily,
+    fontWeight: tastingNotePill.fontWeight,
+    fontSize: tastingNotePill.fontSize,
+    color: tastingNotePill.color,
+  },
   emptyBrews: { fontFamily: fonts.sans, fontWeight: '500', fontSize: 13, color: colors.greyDark, textAlign: 'center', padding: 24, lineHeight: 20 },
   brewList: { gap: 12 },
   notFound: { flex: 1, backgroundColor: colors.pearl, alignItems: 'center', justifyContent: 'center', gap: 12 },

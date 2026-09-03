@@ -1,22 +1,26 @@
-import { ReactNode, useCallback, useEffect, useRef, useState } from 'react';
+import { ReactNode, useState } from 'react';
 import {
-  NativeScrollEvent,
-  NativeSyntheticEvent,
-  ScrollView,
   ScrollViewProps,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, {
+  Easing,
+  runOnJS,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+} from 'react-native-reanimated';
 import { colors, fonts } from '@shared/theme';
 
-const SCROLL_COLLAPSE_THRESHOLD = 40;
-const SCROLL_EXPAND_THRESHOLD = 40;
+const HEADER_COLLAPSE_DISTANCE = 96;
+const LAYOUT_PHASE_START = 0.25;
 const HEADER_CONTENT_HEIGHT = 48;
-const COLLAPSED_TITLE_OFFSET = 10;
-const EXPANDED_ROW_RISE = 8;
-const EXPANDED_ROW_MIN_SCALE = 0.92;
+const HEADER_CONTENT_SHRINK = 0.16;
+const HEADER_PADDING_TOP_EXPANDED = 16;
+const HEADER_PADDING_TOP_COLLAPSED = 2;
+const HEADER_PADDING_BOTTOM_COLLAPSED = 2;
 const STICKY_CONTENT_GAP_EXPANDED = 16;
 const STICKY_CONTENT_GAP_COLLAPSED = 4;
 
@@ -29,92 +33,112 @@ interface PageHeaderProps {
 }
 
 export function PageHeader({ title, avatarInitial, children, stickyContent, scrollViewProps }: PageHeaderProps) {
-  const [isScrolled, setIsScrolled] = useState(false);
-  const isScrolledRef = useRef(false);
-  const lastY = useRef(0);
-  const upwardAccum = useRef(0);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const collapseProgress = useSharedValue(0);
+  const collapsedState = useSharedValue(false);
 
-  useEffect(() => {
-    collapseProgress.value = withTiming(isScrolled ? 1 : 0, { duration: 200 });
-  }, [isScrolled, collapseProgress]);
+  const handleScroll = useAnimatedScrollHandler((event) => {
+    const y = Math.max(event.contentOffset.y, 0);
+    const nextProgress = Math.min(y / HEADER_COLLAPSE_DISTANCE, 1);
+    collapseProgress.value = nextProgress;
 
-  const handleScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const y = e.nativeEvent.contentOffset.y;
-    const diff = y - lastY.current;
-    lastY.current = y;
-
-    if (diff > 0) {
-      upwardAccum.current = 0;
-      if (!isScrolledRef.current && y > SCROLL_COLLAPSE_THRESHOLD) {
-        isScrolledRef.current = true;
-        setIsScrolled(true);
-      }
-    } else if (diff < 0) {
-      upwardAccum.current += -diff;
-      if (isScrolledRef.current && upwardAccum.current > SCROLL_EXPAND_THRESHOLD) {
-        isScrolledRef.current = false;
-        setIsScrolled(false);
-      }
+    const nextCollapsedState = nextProgress >= 1;
+    if (nextCollapsedState !== collapsedState.value) {
+      collapsedState.value = nextCollapsedState;
+      runOnJS(setIsCollapsed)(nextCollapsedState);
     }
-  }, []);
+  });
 
-  const expandedStyle = useAnimatedStyle(() => ({
-    opacity: 1 - collapseProgress.value,
-    transform: [
-      { translateY: -EXPANDED_ROW_RISE * collapseProgress.value },
-      { scale: 1 - (1 - EXPANDED_ROW_MIN_SCALE) * collapseProgress.value },
-    ],
-  }));
+  const expandedStyle = useAnimatedStyle(() => {
+    const titleProgress = Easing.inOut(Easing.ease)(collapseProgress.value);
+    return {
+      opacity: 1 - titleProgress,
+      transform: [
+        { scale: 1 - HEADER_CONTENT_SHRINK * titleProgress },
+      ],
+    };
+  });
 
-  const collapsedStyle = useAnimatedStyle(() => ({
-    opacity: collapseProgress.value,
-    transform: [{ translateY: COLLAPSED_TITLE_OFFSET * (1 - collapseProgress.value) }],
-  }));
+  const headerStyle = useAnimatedStyle(() => {
+    const rawLayoutProgress = Math.max(
+      (collapseProgress.value - LAYOUT_PHASE_START) / (1 - LAYOUT_PHASE_START),
+      0,
+    );
+    const layoutProgress = Easing.inOut(Easing.ease)(rawLayoutProgress);
+    return {
+      paddingTop: HEADER_PADDING_TOP_EXPANDED -
+        (HEADER_PADDING_TOP_EXPANDED - HEADER_PADDING_TOP_COLLAPSED) * layoutProgress,
+      paddingBottom: HEADER_PADDING_BOTTOM_COLLAPSED * layoutProgress,
+    };
+  });
 
-  const stickyContentStyle = useAnimatedStyle(() => ({
-    marginTop: STICKY_CONTENT_GAP_EXPANDED -
-      (STICKY_CONTENT_GAP_EXPANDED - STICKY_CONTENT_GAP_COLLAPSED) * collapseProgress.value,
-  }));
+  const contentStyle = useAnimatedStyle(() => {
+    const rawLayoutProgress = Math.max(
+      (collapseProgress.value - LAYOUT_PHASE_START) / (1 - LAYOUT_PHASE_START),
+      0,
+    );
+    const layoutProgress = Easing.inOut(Easing.ease)(rawLayoutProgress);
+    return {
+      height: HEADER_CONTENT_HEIGHT * (1 - layoutProgress),
+    };
+  });
+
+  const avatarStyle = useAnimatedStyle(() => {
+    const rawLayoutProgress = Math.max(
+      (collapseProgress.value - LAYOUT_PHASE_START) / (1 - LAYOUT_PHASE_START),
+      0,
+    );
+    const layoutProgress = Easing.inOut(Easing.ease)(rawLayoutProgress);
+    return {
+      transform: [
+        { scale: 1 - layoutProgress },
+      ],
+    };
+  });
+
+  const stickyContentStyle = useAnimatedStyle(() => {
+    const rawLayoutProgress = Math.max(
+      (collapseProgress.value - LAYOUT_PHASE_START) / (1 - LAYOUT_PHASE_START),
+      0,
+    );
+    const layoutProgress = Easing.inOut(Easing.ease)(rawLayoutProgress);
+    return {
+      marginTop: STICKY_CONTENT_GAP_EXPANDED -
+        (STICKY_CONTENT_GAP_EXPANDED - STICKY_CONTENT_GAP_COLLAPSED) * layoutProgress,
+    };
+  });
 
   return (
     <View style={styles.container}>
-      <View
-        style={[styles.header, isScrolled && styles.headerCollapsed]}
+      <Animated.View
+        style={[styles.header, headerStyle]}
         accessibilityRole="header"
       >
-        <View style={styles.content}>
+        <Animated.View style={[styles.content, contentStyle]}>
           <Animated.View
             style={[styles.expandedRow, expandedStyle]}
-            pointerEvents={isScrolled ? 'none' : 'auto'}
-            importantForAccessibility={isScrolled ? 'no-hide-descendants' : 'auto'}
+            pointerEvents={isCollapsed ? 'none' : 'auto'}
+            importantForAccessibility={isCollapsed ? 'no-hide-descendants' : 'auto'}
           >
             <Text style={styles.title}>{title}</Text>
             {avatarInitial ? (
-              <View style={styles.avatar}>
+              <Animated.View style={[styles.avatar, avatarStyle]}>
                 <Text style={styles.avatarText}>{avatarInitial}</Text>
-              </View>
+              </Animated.View>
             ) : null}
           </Animated.View>
-          <Animated.View
-            style={[styles.collapsedRow, collapsedStyle]}
-            pointerEvents={isScrolled ? 'auto' : 'none'}
-            importantForAccessibility={isScrolled ? 'auto' : 'no-hide-descendants'}
-          >
-            <Text style={styles.collapsedTitle}>{title}</Text>
-          </Animated.View>
-        </View>
+        </Animated.View>
         {stickyContent && (
           <Animated.View style={[styles.stickyContent, stickyContentStyle]}>{stickyContent}</Animated.View>
         )}
-      </View>
-      <ScrollView
+      </Animated.View>
+      <Animated.ScrollView
         {...scrollViewProps}
         onScroll={handleScroll}
         scrollEventThrottle={16}
       >
         {children}
-      </ScrollView>
+      </Animated.ScrollView>
     </View>
   );
 }
@@ -126,16 +150,13 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 24,
-    paddingTop: 16,
+    paddingTop: HEADER_PADDING_TOP_EXPANDED,
     paddingBottom: 0,
     backgroundColor: colors.pearl,
   },
-  headerCollapsed: {
-    paddingTop: 2,
-    paddingBottom: 2,
-  },
   content: {
     height: HEADER_CONTENT_HEIGHT,
+    overflow: 'hidden',
   },
   stickyContent: {
     marginHorizontal: -24,
@@ -146,21 +167,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  collapsedRow: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   title: {
     fontFamily: fonts.serif,
     fontSize: 38,
     color: colors.black,
     letterSpacing: -1,
-  },
-  collapsedTitle: {
-    fontFamily: fonts.serif,
-    fontSize: 17,
-    color: colors.black,
   },
   avatar: {
     width: 48,
@@ -172,7 +183,7 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     fontFamily: fonts.sans,
-    fontWeight: '700',
+    fontWeight: '800',
     fontSize: 21,
     color: colors.pearl,
   },

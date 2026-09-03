@@ -2,11 +2,11 @@ import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import MapboxGL, { type MapState } from '@rnmapbox/maps';
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Bag } from '../components/Bag';
-import { BeanMarker } from '../components/BeanMarker';
+import { BEAN_MARKER_CENTER_OFFSET, BeanMarker } from '../components/BeanMarker';
 import { DetachedSheetBackground } from '../components/surfaces/DetachedSheetBackground';
 import { DetachedSheetContentClip } from '../components/surfaces/DetachedSheetContentClip';
 import { SheetHeader } from '../components/surfaces/SheetHeader';
@@ -50,12 +50,22 @@ const GLOBE_HOME = {
 const GLOBE_VIEW_MAX_ZOOM = 1.5; // at or below = fully zoomed-out globe home
 const PIN_VIEW_MAX_ZOOM = 3;     // above this, stale pin padding may still apply
 
+// Mapbox centres the target coordinate in the rect left over after padding, so
+// the focal point depends only on the DIFFERENCE between top and bottom padding.
+// Expressing it this way keeps padding bounded by the viewport no matter how
+// tall the sheet is.
+function paddingForFocalY(focusY: number, viewH: number) {
+  const delta = 2 * focusY - viewH; // paddingTop − paddingBottom
+  return delta >= 0
+    ? { paddingTop: delta, paddingBottom: 0, paddingLeft: 0, paddingRight: 0 }
+    : { paddingTop: 0, paddingBottom: -delta, paddingLeft: 0, paddingRight: 0 };
+}
+
 export default function ExploreScreen() {
   const { coffees } = useCoffees();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { height: screenH } = useWindowDimensions();
-  const mapRef    = useRef<MapboxGL.MapView>(null);
   const cameraRef = useRef<MapboxGL.Camera>(null);
   const sheetRef  = useRef<BottomSheet>(null);
   // True after a pin fly-to until the camera is restored to globe home.
@@ -92,41 +102,13 @@ export default function ExploreScreen() {
     ? coffees.filter(c => c.origin === selectedOrigin)
     : coffees;
 
-  const snapPoints = useMemo(() => {
-    const contentH = HEADER_H + filteredCoffees.length * ROW_H + SHEET_BOTTOM_PAD;
-
-    if (!selectedOrigin) {
-      return [peekH, absMaxH, fullSnapH];
-    }
-
-    // Pin selected: hug full list height, capped only by available screen space
-    const hugH = Math.min(contentH, fullSnapH);
-
-    if (filteredCoffees.length === 1) {
-      return [hugH];
-    }
-    if (hugH <= peekH) {
-      return [hugH];
-    }
-    return [peekH, hugH];
-  }, [selectedOrigin, filteredCoffees.length, peekH, absMaxH, fullSnapH]);
-
-  const activeSheetH = snapPoints[Math.min(sheetIndex, snapPoints.length - 1)];
-  const zoomBtnBottom = tabBarInset + activeSheetH + 14;
-
-  useEffect(() => {
-    if (!selectedOrigin) {
-      setSheetIndex(0);
-      sheetRef.current?.snapToIndex(0);
-      return;
-    }
-
-    const contentH = HEADER_H + filteredCoffees.length * ROW_H + SHEET_BOTTOM_PAD;
-    const hugH = Math.min(contentH, fullSnapH);
-    const targetIndex = filteredCoffees.length === 1 || hugH <= peekH ? 0 : 1;
-    setSheetIndex(targetIndex);
-    sheetRef.current?.snapToIndex(targetIndex);
-  }, [selectedOrigin, filteredCoffees.length, peekH, fullSnapH]);
+  // Selection-independent: the sheet always rests at the same standard peek
+  // height so the pin's framing never depends on how many coffees an origin has.
+  // Longer lists scroll inside the sheet; the user drags up for more.
+  const snapPoints = useMemo(
+    () => [peekH, absMaxH, fullSnapH],
+    [peekH, absMaxH, fullSnapH],
+  );
 
   const handleSheetChange = useCallback((index: number) => {
     setSheetIndex(index);
@@ -146,6 +128,17 @@ export default function ExploreScreen() {
     paddingLeft: 0,
     paddingRight: 0,
   }), [sheetTopInset, tabBarInset, peekH]);
+
+  // Pin framing: centre the marker's pill in the map window left above the
+  // resting sheet, correcting for the fact that the pill draws above its
+  // anchored coordinate. Independent of the selected origin's coffee count.
+  const pinCameraPadding = useMemo(() => {
+    const sheetTopY = screenH - tabBarInset - peekH;
+    return paddingForFocalY(
+      (insets.top + sheetTopY) / 2 + BEAN_MARKER_CENTER_OFFSET,
+      screenH,
+    );
+  }, [insets.top, screenH, tabBarInset, peekH]);
 
   const animateCamera = useCallback((config: Parameters<NonNullable<typeof cameraRef.current>['setCamera']>[0]) => {
     programmaticAnimRef.current = true;
@@ -186,30 +179,6 @@ export default function ExploreScreen() {
     }
   }, [settleToGlobe, restoreGlobePadding]);
 
-  const handleZoom = useCallback(async (delta: number) => {
-    const zoom = await mapRef.current?.getZoom();
-    if (zoom == null) return;
-
-    const nextZoom = Math.min(Math.max(zoom + delta, 0.5), 14);
-
-    if (pinViewActiveRef.current) {
-      // Coming out of a focused pin: once we cross back to globe scale, settle to a
-      // clean sphere; otherwise keep the pin's framing while zooming.
-      if (nextZoom <= GLOBE_VIEW_MAX_ZOOM) {
-        settleToGlobe(300);
-        return;
-      }
-      animateCamera({ zoomLevel: nextZoom, animationDuration: 300 });
-      return;
-    }
-
-    animateCamera({
-      zoomLevel: nextZoom,
-      animationDuration: 300,
-      padding: cameraPadding,
-    });
-  }, [cameraPadding, settleToGlobe, animateCamera]);
-
   const handleMarkerPress = useCallback((origin: string) => {
     const isDeselecting = selectedOrigin === origin;
 
@@ -225,22 +194,20 @@ export default function ExploreScreen() {
 
     const coords = ORIGIN_COORDS[origin];
     if (coords) {
-      const originCount = originGroups[origin]?.length ?? 0;
-      const contentH = HEADER_H + originCount * ROW_H + SHEET_BOTTOM_PAD;
-      const hugH = Math.min(contentH, fullSnapH);
+      // Bring the sheet back to peek so a sheet the user had dragged up can't
+      // cover the pin we're about to fly to.
+      setSheetIndex(0);
+      sheetRef.current?.snapToIndex(0);
       pinViewActiveRef.current = true;
-      // Same paddingTop as the globe profile — only the bottom grows to clear the
-      // taller pin sheet — so entering/leaving a pin shifts the focal point as
-      // little as possible.
       animateCamera({
         centerCoordinate: [coords[1], coords[0]],
         zoomLevel: 8,
         animationDuration: 900,
         animationMode: 'flyTo',
-        padding: { paddingBottom: tabBarInset + hugH, paddingTop: sheetTopInset, paddingLeft: 0, paddingRight: 0 },
+        padding: pinCameraPadding,
       });
     }
-  }, [selectedOrigin, tabBarInset, sheetTopInset, originGroups, fullSnapH, settleToGlobe, animateCamera]);
+  }, [selectedOrigin, pinCameraPadding, settleToGlobe, animateCamera]);
 
   const handleMapIdle = useCallback((state: MapState) => {
     // Our own animation has come to rest; stop suppressing corrections.
@@ -285,7 +252,6 @@ export default function ExploreScreen() {
   return (
     <View style={styles.container}>
       <MapboxGL.MapView
-        ref={mapRef}
         style={styles.map}
         styleURL={MAPBOX_STYLE}
         projection="globe"
@@ -329,32 +295,12 @@ export default function ExploreScreen() {
         })}
       </MapboxGL.MapView>
 
-      <View style={[styles.zoomControls, { bottom: zoomBtnBottom }]} pointerEvents="box-none">
-        <Pressable
-          onPress={() => handleZoom(0.75)}
-          style={styles.zoomBtn}
-          accessibilityRole="button"
-          accessibilityLabel="Zoom in"
-        >
-          <Text style={styles.zoomBtnText}>+</Text>
-        </Pressable>
-        <Pressable
-          onPress={() => handleZoom(-0.75)}
-          style={styles.zoomBtn}
-          accessibilityRole="button"
-          accessibilityLabel="Zoom out"
-        >
-          <Text style={styles.zoomBtnText}>−</Text>
-        </Pressable>
-      </View>
-
       <BottomSheet
         ref={sheetRef}
         index={sheetIndex}
         snapPoints={snapPoints}
         enableDynamicSizing={false}
         onChange={handleSheetChange}
-        key={selectedOrigin ?? 'all'}
         detached
         topInset={sheetTopInset}
         bottomInset={tabBarInset}
@@ -413,33 +359,6 @@ export default function ExploreScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   map: { flex: 1 },
-
-  zoomControls: {
-    position: 'absolute',
-    right: 16,
-    gap: 8,
-  },
-  zoomBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.95)',
-    borderWidth: 0.5,
-    borderColor: 'rgba(0,0,0,0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  zoomBtnText: {
-    fontFamily: fonts.sans,
-    fontSize: 26,
-    fontWeight: '500',
-    color: colors.supremeBeige,
-  },
 
   listContent: {
     flexGrow: 0,
