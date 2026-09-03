@@ -2,6 +2,11 @@ import { StyleSheet, Text, View } from 'react-native';
 import { fonts } from '@shared/theme';
 import BeanIcon from '../../assets/icon-bean.svg';
 
+// The marker is anchored at the tip of its pointer, so the whole pill renders
+// above the coordinate. This is the pill centre's offset from that coordinate —
+// pill height 29 (6 + 17 + 6) plus pointer height 5 (6 borderTop − 1 marginTop).
+export const BEAN_MARKER_CENTER_OFFSET = 5 + 29 / 2;
+
 interface Props {
   count: number;
   selected: boolean;
