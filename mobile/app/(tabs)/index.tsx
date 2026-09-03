@@ -22,14 +22,18 @@ import { useCoffees } from '../../src/hooks/useCoffees';
 import { EMPTY_FILTERS, FilterKey, sortAndFilterCoffees, SortDir, SortMode } from '../../src/lib/coffeeFilters';
 
 const SHELF_DESIGN_WIDTH = 370;
+const SHELF_CORNER_RADIUS = 24;
+const SHELF_TAB_BAR_GAP = -4;
 
 function ShelvesStart({
   coffees,
   scale,
+  isBottomShelf,
   onPressCoffee,
 }: {
   coffees: (Coffee | null)[];
   scale: number;
+  isBottomShelf: boolean;
   onPressCoffee: (id: string) => void;
 }) {
   const c = [...coffees, ...Array(8).fill(null)].slice(0, 8) as (Coffee | null)[];
@@ -37,7 +41,13 @@ function ShelvesStart({
   const shelfH = Math.round(998 * scale);
 
   return (
-    <View style={{ width: shelfW, height: shelfH }}>
+    <View
+      style={[
+        styles.firstShelfImageFrame,
+        isBottomShelf && styles.bottomShelfImageFrame,
+        { width: shelfW, height: shelfH },
+      ]}
+    >
       <Image
         source={require('../../../shared/assets/shelf-v2-whole.png')}
         style={[StyleSheet.absoluteFill, { width: shelfW, height: shelfH }]}
@@ -64,10 +74,12 @@ function ShelvesStart({
 function ShelfContinued({
   coffees,
   scale,
+  isBottomShelf,
   onPressCoffee,
 }: {
   coffees: (Coffee | null)[];
   scale: number;
+  isBottomShelf: boolean;
   onPressCoffee: (id: string) => void;
 }) {
   const c = [...coffees, ...Array(6).fill(null)].slice(0, 6) as (Coffee | null)[];
@@ -75,7 +87,7 @@ function ShelfContinued({
   const shelfH = Math.round(733 * scale);
 
   return (
-    <View style={{ width: shelfW, height: shelfH }}>
+    <View style={[isBottomShelf && styles.bottomShelfImageFrame, { width: shelfW, height: shelfH }]}>
       <Image
         source={require('../../../shared/assets/shelfcontinue-v2-whole.png')}
         style={[StyleSheet.absoluteFill, { width: shelfW, height: shelfH }]}
@@ -102,6 +114,8 @@ export default function HomeScreen() {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const scale = (width - 32) / SHELF_DESIGN_WIDTH;
+  const shelfBottomPadding =
+    TAB_BAR_HEIGHT + Math.max(insets.bottom, 16) - 16 + SHELF_TAB_BAR_GAP;
   const router = useRouter();
   const { coffees, loading } = useCoffees();
   const [sortMode, setSortMode] = useState<SortMode>('recent');
@@ -156,7 +170,7 @@ export default function HomeScreen() {
           />
         }
         scrollViewProps={{
-          contentContainerStyle: { alignItems: 'center', paddingBottom: TAB_BAR_HEIGHT + insets.bottom },
+          contentContainerStyle: { alignItems: 'center', paddingBottom: shelfBottomPadding },
           showsVerticalScrollIndicator: false,
         }}
       >
@@ -169,9 +183,20 @@ export default function HomeScreen() {
         )}
 
         {/* Shelves */}
-        <ShelvesStart coffees={startCoffees} scale={scale} onPressCoffee={onPressCoffee} />
+        <ShelvesStart
+          coffees={startCoffees}
+          scale={scale}
+          isBottomShelf={continuedGroups.length === 0}
+          onPressCoffee={onPressCoffee}
+        />
         {continuedGroups.map((group, i) => (
-          <ShelfContinued key={i} coffees={group} scale={scale} onPressCoffee={onPressCoffee} />
+          <ShelfContinued
+            key={i}
+            coffees={group}
+            scale={scale}
+            isBottomShelf={i === continuedGroups.length - 1}
+            onPressCoffee={onPressCoffee}
+          />
         ))}
       </PageHeader>
       <FilterSheet
@@ -192,6 +217,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.pearl,
+  },
+  firstShelfImageFrame: {
+    marginTop: 16,
+  },
+  bottomShelfImageFrame: {
+    borderBottomLeftRadius: SHELF_CORNER_RADIUS,
+    borderBottomRightRadius: SHELF_CORNER_RADIUS,
+    overflow: 'hidden',
   },
   loadingBadge: {
     flexDirection: 'row',

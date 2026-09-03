@@ -54,6 +54,8 @@ Status key: ✅ done · ❌ missing · ⚠️ partial · — not applicable
 |---|---|---|---|---|
 | "Cupboard" title + avatar header | ✅ | ✅ | 2 | Top of screen shows "Cupboard" in serif display font on the left and a moss-green circle with "L" on the right |
 | Shelf side margins | ✅ | ✅ | 2 | Shelf image has ~16px of pearl background visible on each side; doesn't bleed to screen edges |
+| Filter-to-shelf spacing | ❌ | ✅ | — | **Mobile-only requested refinement:** the first shelf starts 16px below the filter/sort pill row in the default state. |
+| Bottom-shelf rounded corners + tab-bar clearance | ❌ | ✅ | — | **Mobile-only requested refinement:** only the final shelf segment's bottom corners have a 24px radius; all shelf top corners remain square. Its maximum-scroll bottom padding is reduced by 16px to tighten the visible gap above the floating tab bar. Web shelf images remain square. |
 | Shelf background imagery | ✅ | ✅ | 2 | Whole-shelf background assets render behind the coffee bags via `expo-image`; using React Native's core `Image` caused the background layer to fall behind the pearl screen surface |
 | Bag images not cropped | ✅ | ✅ | 2 | Full bag silhouette is visible in its shelf slot; no bag appears clipped or zoomed-in |
 | Sort: Recent / A-Z + direction | ✅ | ✅ | — | A sort pill near the header lets you toggle Recent vs A-Z and flip the direction (chevron flips, 0.15s); shelf reorders instantly |
