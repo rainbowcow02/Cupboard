@@ -22,6 +22,7 @@ import { SearchIcon } from './SearchIcon';
 import { DetachedSheetBackground } from './surfaces/DetachedSheetBackground';
 import { DetachedSheetContentClip } from './surfaces/DetachedSheetContentClip';
 import { SheetHeader } from './surfaces/SheetHeader';
+import { SheetLayoutHeightSync } from './surfaces/SheetLayoutHeightSync';
 import { floatingSurfaceStyles } from './surfaces/floatingSurfaceStyles';
 
 const GRABBER_ROW_H = 10 + 5 + 4; // grabberRow paddingTop + grabber + paddingBottom
@@ -167,6 +168,7 @@ export function FilterSheet({
       onDismiss={handleDismiss}
       style={floatingSurfaceStyles.sheetDetached}
     >
+      <SheetLayoutHeightSync topInset={sheetTopInset} bottomInset={sheetBottomInset} />
       <DetachedSheetContentClip>
         <SheetHeader
           title={FILTER_TITLE[renderedKey]}

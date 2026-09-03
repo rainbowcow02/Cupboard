@@ -1,7 +1,10 @@
 import { Tabs } from 'expo-router';
 import TabBar from '../../src/components/TabBar';
+import { usePinSheetContainerOnFocus } from '../../src/components/surfaces/SheetLayoutHeightSync';
 
 export default function TabLayout() {
+  usePinSheetContainerOnFocus();
+
   return (
     <Tabs
       tabBar={(props) => <TabBar {...props} />}

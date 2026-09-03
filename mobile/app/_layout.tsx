@@ -4,6 +4,7 @@ import { Stack } from 'expo-router';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SheetProviderLayoutSync } from '../src/components/surfaces/SheetLayoutHeightSync';
 import { CoffeesContext, useCoffeesProvider } from '../src/hooks/useCoffees';
 
 function CoffeesProvider({ children }: { children: React.ReactNode }) {
@@ -27,15 +28,32 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <CoffeesProvider>
           <BottomSheetModalProvider>
+            {/*
+              Pins the root sheet container to the device height. Native page
+              sheets scale the presenter and leave gorhom's one-shot onLayout
+              short; without this, detached Home sheets float above the tab bar.
+              Do not copy into bean detail / log-flow — those have their own
+              providers that must measure the page sheet, not the window.
+            */}
+            <SheetProviderLayoutSync />
+            {/*
+              `pageSheet`, not `modal`, on purpose. iOS 18 remapped
+              `UIModalPresentationAutomatic` — which is what react-native-screens
+              uses for `modal` — from page sheet to *form sheet*, and a form sheet
+              does not scale its presenter. That's why these used to slide up over
+              a flat, full-size tab screen instead of the native card stack.
+              `pageSheet` sets `UIModalPresentationPageSheet` explicitly, which
+              restores the scale-back. See react-native-screens#2793.
+            */}
             <Stack screenOptions={{ headerShown: false }}>
               <Stack.Screen name="(tabs)" />
               <Stack.Screen
                 name="coffee/[beanId]"
-                options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+                options={{ presentation: 'pageSheet', animation: 'slide_from_bottom' }}
               />
               <Stack.Screen
                 name="log-flow"
-                options={{ presentation: 'modal', animation: 'slide_from_bottom' }}
+                options={{ presentation: 'pageSheet', animation: 'slide_from_bottom' }}
               />
             </Stack>
           </BottomSheetModalProvider>
