@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
-import { SafeAreaView, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Coffee } from '@shared/lib/coffees';
 import { colors } from '@shared/theme';
 import { LogHomeScreen } from '../../src/components/log/LogHomeScreen';
@@ -19,7 +20,7 @@ export default function LogScreen() {
   const addNew = () => router.push({ pathname: '/log-flow', params: { mode: 'new' } });
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <LogHomeScreen coffees={coffees} onSelectCoffee={openRecipe} onAddNew={addNew} />
     </SafeAreaView>
   );

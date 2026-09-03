@@ -2,7 +2,6 @@ import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
   Pressable,
-  SafeAreaView,
   StyleSheet,
   Text,
   View,
@@ -20,7 +19,7 @@ import Animated, {
   withDelay,
   withTiming,
 } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Line, Polygon, Polyline } from 'react-native-svg';
 import { Coffee, ORIGIN_FLAGS } from '@shared/lib/coffees';
 import { colors, fonts, surfaces } from '@shared/theme';
@@ -917,7 +916,7 @@ export default function BeansScreen() {
   const maxProcess = Math.max(1, ...insights.processes.map((s) => s.count));
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <BottomChromeScrim />
       <PageHeader
         title="Insights"

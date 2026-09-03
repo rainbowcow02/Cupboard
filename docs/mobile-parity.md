@@ -38,7 +38,7 @@ Status key: ✅ done · ❌ missing · ⚠️ partial · — not applicable
 
 | Item | Web | Mobile | Batch | Success looks like |
 |---|---|---|---|---|
-| Floating glass pill design | ✅ | ✅ | 1 | Tab bar hovers above content as an opaque rounded pill (`#f7f7f7`) with drop shadow; bottom scrim fades content behind it — intentional move from frosted glass for web-readable contrast |
+| Floating glass pill design | ✅ | ✅ | 1 | Tab bar hovers above content as an opaque rounded pill (`#f7f7f7`) with drop shadow; the navigator backing surface is transparent with no border or shadow, while the separate bottom scrim fades content behind the controls |
 | Custom SVG icons | ✅ | ✅ | 1 | Each tab shows a clean line-drawn icon (shelf, pin, mug, bean) instead of emoji; active icon fills in moss green |
 | Active tab highlight | ✅ | ⚠️ | 1 | The active tab label turns Vintage Burgundy and sits inside a soft Blossom Pink tinted highlight within the pill — pill + burgundy label done; SVG icons don't change fill/color on active state |
 | Tab order (Home → Explore → Log Cup → Beans) | ✅ | ✅ | — | Tabs appear left-to-right in correct order matching Figma and web |
@@ -47,15 +47,16 @@ Status key: ✅ done · ❌ missing · ⚠️ partial · — not applicable
 | Active pill dimensions | ✅ | ✅ | — | Active pill is 76px wide with a 64px step per tab, matching web |
 | Tab gap (−8px overlap) | ✅ | ✅ | — | Non-last tabs have marginRight: −8px; tabs visually overlap by 8px matching Figma |
 | Pill horizontal padding | ✅ | ✅ | — | Pill has 2px horizontal padding each side, matching web's `padding: 0 2px` |
+| Icon tap animation | ⚠️ | ✅ | — | **Mobile-only requested refinement:** each icon quickly shrinks on press, grows past full size on release, then springs back to its normal scale. Web retains its active-tab scale transition. |
 
 ### Home
 
 | Item | Web | Mobile | Batch | Success looks like |
 |---|---|---|---|---|
-| "Cupboard" title + avatar header | ✅ | ✅ | 2 | Top of screen shows "Cupboard" in serif display font on the left and a moss-green circle with "L" on the right |
+| "Cupboard" title + avatar header | ✅ | ✅ | 2 | At the top of the screen, "Cupboard" appears in serif display type on the left with a moss-green "L" avatar on the right. On mobile, the title fades and shrinks by 16% in direct response to the first 96px of scrolling, building on the Log Cup search treatment; the avatar additionally scales with the collapsing header height so it remains a small circle instead of being clipped into a band. No compact title bar remains, and the sticky filter/sort controls rise into the reclaimed space. |
 | Shelf side margins | ✅ | ✅ | 2 | Shelf image has ~16px of pearl background visible on each side; doesn't bleed to screen edges |
 | Filter-to-shelf spacing | ❌ | ✅ | — | **Mobile-only requested refinement:** the first shelf starts 16px below the filter/sort pill row in the default state. |
-| Bottom-shelf rounded corners + tab-bar clearance | ❌ | ✅ | — | **Mobile-only requested refinement:** only the final shelf segment's bottom corners have a 24px radius; all shelf top corners remain square. Its maximum-scroll bottom padding is reduced by 16px to tighten the visible gap above the floating tab bar. Web shelf images remain square. |
+| Bottom-shelf rounded corners + tab-bar clearance | ❌ | ✅ | — | **Mobile-only requested refinement:** only the final shelf segment's bottom corners have a 24px radius; all shelf top corners remain square. Home excludes the bottom safe-area edge so the shelf remains visible behind the floating tab bar and home indicator, while scroll padding preserves access to its end. Web shelf images remain square. |
 | Shelf background imagery | ✅ | ✅ | 2 | Whole-shelf background assets render behind the coffee bags via `expo-image`; using React Native's core `Image` caused the background layer to fall behind the pearl screen surface |
 | Bag images not cropped | ✅ | ✅ | 2 | Full bag silhouette is visible in its shelf slot; no bag appears clipped or zoomed-in |
 | Sort: Recent / A-Z + direction | ✅ | ✅ | — | A sort pill near the header lets you toggle Recent vs A-Z and flip the direction (chevron flips, 0.15s); shelf reorders instantly |
@@ -109,7 +110,7 @@ Mobile intentionally diverges from web here. Web is a single flat "coffee + brew
 
 | Item | Web | Mobile | Batch | Success looks like |
 |---|---|---|---|---|
-| Cupboard-first log home | ❌ | ✅ | — | Log tab opens on `LogHomeScreen`: a list of bean cards (bag · name · roaster · flag+origin · date) with a floating "Search your cupboard" pill docked 8px above the tab bar that only raises the keyboard on tap |
+| Cupboard-first log home | ❌ | ✅ | — | Log tab opens on `LogHomeScreen`: a list of bean cards (bag · name · roaster · flag+origin · date) with a floating "Search your cupboard" pill docked 8px above the tab bar that only raises the keyboard on tap. The list extends through the bottom safe area behind the floating chrome. |
 | Collapsing brew CTA header | ❌ | ✅ | — | "What are we brewing today?" is the content CTA (Avenir Heavy 21px / H3, centered) placed lower on the page for breathing room; a fixed top bar keeps the "Add" pill, and once the CTA scrolls past it the collapsed DM Serif 17px title fades into the bar — matches Figma `987:2889` |
 | Recipe iteration screen | ❌ | ✅ | — | Tapping a bean → `RecipeIterationScreen`: a horizontal strip of recent recipe cards (base selector) above an editable `BrewFieldSet`; picking a base prefills the form, Date defaults to today, Rating empty, then "Log this cup". Shares the `RecipeBeanHeader` ("Set a recipe" title + description + tappable `BeanCard` + divider) with `SetRecipeScreen` so the two steps lead with an identical header/coffee card (Figma `1011:3392`) |
 | Previous-value diff hints | ❌ | ✅ | — | Editing a field that differs from the chosen base recipe shows a burgundy "was 18 g" hint beneath it (via `FieldDiffHint`), so it's obvious what changed for this test; unchanged fields show no hint |
@@ -132,5 +133,6 @@ Mobile intentionally diverges from web here. Web is a single flat "coffee + brew
 
 | Item | Web | Mobile | Batch | Success looks like |
 |---|---|---|---|---|
+| Scrolled page header | — | ✅ | — | The expanded "Insights" title fades and shrinks by 16% in direct response to the first 96px of scrolling, building on the Log Cup search treatment; no compact title bar remains, and content extends through the bottom safe area behind the floating chrome. |
 | "Working on" carousel | ✅ | ❌ | Future | The 3 most recently brewed coffees appear as a swipeable stacked card carousel at the top of the tab |
 | Top Recipes section (4+ stars) | ✅ | ❌ | Future | Brews rated 4–5 ☕ are grouped by roast level with selectable pills; each shows a compact recipe card with key brew params |

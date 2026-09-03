@@ -1,4 +1,5 @@
 export const colors = {
+  transparent: 'transparent',
   pearl: '#f9eddd',
   black: '#000000',
   moss: '#355c44',

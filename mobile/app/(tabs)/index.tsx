@@ -3,13 +3,12 @@ import { Image } from 'expo-image';
 import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  SafeAreaView,
   StyleSheet,
   Text,
   View,
   useWindowDimensions,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Coffee } from '@shared/lib/coffees';
 import { colors, fonts } from '@shared/theme';
 import { FilterSheet } from '../../src/components/FilterSheet';
@@ -154,7 +153,7 @@ export default function HomeScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <BottomChromeScrim />
       <PageHeader
         title="Cupboard"
