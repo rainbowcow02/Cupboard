@@ -21,6 +21,7 @@ export function SheetClearButton({
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: showClear ? 1 : 0,
     transform: [{ scale: showClear ? 1 : 0.5 }],
+    width: showClear ? 44 : 0,
   }));
 
   const buttonProps = {

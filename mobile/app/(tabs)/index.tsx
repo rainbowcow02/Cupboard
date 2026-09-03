@@ -1,8 +1,8 @@
 import { useRouter } from 'expo-router';
+import { Image } from 'expo-image';
 import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Image,
   SafeAreaView,
   StyleSheet,
   Text,
@@ -41,7 +41,7 @@ function ShelvesStart({
       <Image
         source={require('../../../shared/assets/shelf-v2-whole.png')}
         style={[StyleSheet.absoluteFill, { width: shelfW, height: shelfH }]}
-        resizeMode="cover"
+        contentFit="cover"
       />
       <View
         style={{
@@ -79,7 +79,7 @@ function ShelfContinued({
       <Image
         source={require('../../../shared/assets/shelfcontinue-v2-whole.png')}
         style={[StyleSheet.absoluteFill, { width: shelfW, height: shelfH }]}
-        resizeMode="cover"
+        contentFit="cover"
       />
       <View
         style={{

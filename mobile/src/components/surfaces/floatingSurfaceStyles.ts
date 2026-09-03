@@ -61,6 +61,14 @@ export const floatingSurfaceStyles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 8,
   },
+  headerTitleWrapInline: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+  },
+  headerTitleWrapFlush: {
+    marginRight: 0,
+  },
   headerTitleWrapExplore: {
     minHeight: 58,
   },
@@ -86,6 +94,7 @@ export const floatingSurfaceStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
+    overflow: 'hidden',
   },
   clearButtonText: {
     fontFamily: fonts.sans,

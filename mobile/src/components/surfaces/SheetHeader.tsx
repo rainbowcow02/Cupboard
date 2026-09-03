@@ -24,20 +24,29 @@ export function SheetHeader({
   const headerStyle = variant === 'explore'
     ? floatingSurfaceStyles.headerExplore
     : floatingSurfaceStyles.header;
+  const stackedSubtitle = variant === 'explore' && !!subtitle;
+  const inlineSubtitle = variant !== 'explore' && !!subtitle;
 
   return (
     <View style={headerStyle}>
       <View
         style={[
           floatingSurfaceStyles.headerTitleWrap,
-          subtitle ? floatingSurfaceStyles.headerTitleWrapExplore : undefined,
+          stackedSubtitle && floatingSurfaceStyles.headerTitleWrapExplore,
+          inlineSubtitle && floatingSurfaceStyles.headerTitleWrapInline,
+          inlineSubtitle && !showClear && floatingSurfaceStyles.headerTitleWrapFlush,
         ]}
       >
         <Text style={floatingSurfaceStyles.title} numberOfLines={subtitle ? 1 : undefined}>
           {title}
         </Text>
         {subtitle ? (
-          <Text style={floatingSurfaceStyles.subtitle}>{subtitle}</Text>
+          <Text
+            style={floatingSurfaceStyles.subtitle}
+            numberOfLines={inlineSubtitle ? 1 : undefined}
+          >
+            {subtitle}
+          </Text>
         ) : null}
       </View>
       {onClear && clearAccessibilityLabel ? (

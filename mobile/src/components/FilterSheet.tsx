@@ -26,7 +26,7 @@ import { SheetLayoutHeightSync } from './surfaces/SheetLayoutHeightSync';
 import { floatingSurfaceStyles } from './surfaces/floatingSurfaceStyles';
 
 const GRABBER_ROW_H = 10 + 5 + 4; // grabberRow paddingTop + grabber + paddingBottom
-const FILTER_HEADER_H = 10 + 58 + 10; // header paddingVertical + titleWrapper minHeight (subtitle always present)
+const FILTER_HEADER_H = 10 + 44 + 10; // header paddingVertical + clear button (taller than inline title + results)
 const SEARCH_ROW_H = 10 + 20 + 10 + 8; // searchRow paddingVertical + input + marginBottom
 const ROW_H = 14 + 14 + 20 + StyleSheet.hairlineWidth * 2; // option row padding + label
 const SHEET_BOTTOM_PAD = 16;
@@ -217,7 +217,8 @@ export function FilterSheet({
           {showSelectAll ? (
             <Pressable
               onPress={handleToggleAll}
-              accessibilityRole="button"
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: allFilteredSelected }}
               accessibilityLabel={
                 allFilteredSelected
                   ? `Deselect all ${filtered.length} results`
@@ -228,7 +229,7 @@ export function FilterSheet({
               <Text style={filterSheetStyles.selectAllLabel}>
                 {allFilteredSelected ? 'Deselect all' : 'Select all'}
               </Text>
-              <Text style={filterSheetStyles.selectAllCount}>{filtered.length}</Text>
+              <FilterCheckbox checked={allFilteredSelected} />
             </Pressable>
           ) : null}
           {filtered.map((val, i) => {
@@ -311,12 +312,6 @@ const filterSheetStyles = StyleSheet.create({
     flex: 1,
     fontFamily: fonts.sans,
     fontSize: 17,
-    fontWeight: '500',
-    color: colors.burgundy,
-  },
-  selectAllCount: {
-    fontFamily: fonts.sans,
-    fontSize: 15,
     fontWeight: '500',
     color: colors.burgundy,
   },
