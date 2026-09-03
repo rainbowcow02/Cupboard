@@ -49,6 +49,6 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   pillPressed: { opacity: 0.7 },
-  pillText: { fontFamily: fonts.sans, fontWeight: '700', fontSize: 15, color: colors.black },
+  pillText: { fontFamily: fonts.sans, fontWeight: '800', fontSize: 15, color: colors.black },
   pillTextDisabled: { color: colors.greyDark },
 });

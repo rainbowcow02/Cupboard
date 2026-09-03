@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
   linkText: { flex: 1, minWidth: 0 },
   linkTitle: {
     fontFamily: fonts.sans,
-    fontWeight: '700',
+    fontWeight: '800',
     fontSize: 15,
     color: colors.black,
   },

@@ -21,6 +21,7 @@ import { HeaderPillButton } from '../../src/components/HeaderPillButton';
 import { EditBeanStep } from '../../src/components/log/EditBeanStep';
 import { RecipeIterationScreen } from '../../src/components/log/RecipeIterationScreen';
 import { SheetOverlay } from '../../src/components/surfaces/SheetOverlay';
+import { AddLink } from '../../src/components/AddLink';
 import { BagLabel } from '../../src/components/BagLabel';
 import { BrewCard } from '../../src/components/BrewCard';
 import { Card } from '../../src/components/Card';
@@ -58,11 +59,7 @@ function SectionHeader({ title, action, onAction }: { title: string; action?: st
   return (
     <View style={styles.sectionHeader}>
       <Text style={styles.sectionTitle}>{title}</Text>
-      {action && (
-        <Pressable onPress={onAction} hitSlop={8}>
-          <Text style={styles.sectionAction}>{action}</Text>
-        </Pressable>
-      )}
+      {action && onAction && <AddLink label={action} onPress={onAction} />}
     </View>
   );
 }
@@ -343,7 +340,6 @@ const styles = StyleSheet.create({
   section: { gap: 8 },
   sectionHeader: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
   sectionTitle: { fontFamily: fonts.serif, fontSize: 22, color: colors.black, lineHeight: 30 },
-  sectionAction: { fontFamily: fonts.sans, fontWeight: '500', fontSize: 12, color: colors.burgundy },
   originMapWrap: { paddingHorizontal: 24, paddingBottom: 24 },
   detailRowOuter: { paddingHorizontal: 24, paddingTop: 16 },
   detailRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 16, paddingBottom: 16 },

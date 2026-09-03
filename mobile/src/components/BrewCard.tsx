@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { Brew, formatDate, parseRecipe } from '@shared/lib/coffees';
-import { colors, fonts } from '@shared/theme';
+import { colors, fonts, links } from '@shared/theme';
 import { BrewNotesParts, parseBrewNotes, parseTastingNotes } from '../lib/notesStructure';
 import { renderInlineBold } from '../lib/inlineBold';
 import { Card } from './Card';
@@ -598,10 +598,11 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
     paddingHorizontal: 24,
   },
+  // links.small (13/800, DS "Small link") in greyDark. The explicit lineHeight is
+  // held at the pre-token 21 so the row keeps its height and BrewCard's
+  // collapse-anchor scroll math stays put.
   expandLinkText: {
-    fontFamily: fonts.sans,
-    fontWeight: '500',
-    fontSize: 14,
+    ...links.small,
     color: colors.greyDark,
     lineHeight: 21,
   },

@@ -1069,7 +1069,7 @@ const styles = StyleSheet.create({
   heroSweet: { backgroundColor: colors.moss },
   heroSweetText: {
     fontFamily: fonts.sans,
-    fontWeight: '600',
+    fontWeight: '800',
     fontSize: 17,
     lineHeight: 25,
     color: colors.pearl,
@@ -1094,7 +1094,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 13,
     paddingVertical: 7,
   },
-  tagValue: { fontFamily: fonts.sans, fontWeight: '700', fontSize: 12.5, color: colors.pearl },
+  tagValue: { fontFamily: fonts.sans, fontWeight: '800', fontSize: 12.5, color: colors.pearl },
 
   sweetStatRow: { flexDirection: 'row', gap: 10, marginTop: 18 },
   sweetStat: {
@@ -1106,10 +1106,10 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   sweetStatValue: { fontFamily: fonts.sans, fontWeight: '800', fontSize: 16, color: colors.pearl },
-  sweetStatLabel: { fontFamily: fonts.sans, fontWeight: '600', fontSize: 11, color: 'rgba(249,237,221,0.7)', letterSpacing: 0.5 },
+  sweetStatLabel: { fontFamily: fonts.sans, fontWeight: '500', fontSize: 11, color: 'rgba(249,237,221,0.7)', letterSpacing: 0.5 },
 
   sparkWrap: { marginTop: 18 },
-  sparkCaption: { fontFamily: fonts.sans, fontWeight: '600', fontSize: 11, color: 'rgba(0,0,0,0.45)', marginTop: 6, letterSpacing: 0.3 },
+  sparkCaption: { fontFamily: fonts.sans, fontWeight: '500', fontSize: 11, color: 'rgba(0,0,0,0.45)', marginTop: 6, letterSpacing: 0.3 },
 
   dotsRow: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, marginTop: -12 },
   dot: { height: 7, borderRadius: 4, backgroundColor: colors.burgundy },
@@ -1126,14 +1126,14 @@ const styles = StyleSheet.create({
   stripItem: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   stripDivider: { position: 'absolute', left: 0, top: 4, bottom: 4, width: StyleSheet.hairlineWidth, backgroundColor: surfaces.divider },
   stripValue: { fontFamily: fonts.serif, fontSize: 24, color: colors.black, letterSpacing: -0.5 },
-  stripLabel: { fontFamily: fonts.sans, fontWeight: '600', fontSize: 11, color: colors.greyDark, letterSpacing: 0.4, marginTop: 2 },
+  stripLabel: { fontFamily: fonts.sans, fontWeight: '500', fontSize: 11, color: colors.greyDark, letterSpacing: 0.4, marginTop: 2 },
 
   // Recipe rows
   roastRow: { marginBottom: 6 },
   roastLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: GUTTER, marginBottom: 4 },
   roastSwatch: { width: 12, height: 12, borderRadius: 6 },
   roastLabel: { fontFamily: fonts.sans, fontWeight: '800', fontSize: 15, color: colors.black, letterSpacing: -0.2 },
-  roastCount: { fontFamily: fonts.sans, fontWeight: '700', fontSize: 13, color: colors.greyDark },
+  roastCount: { fontFamily: fonts.sans, fontWeight: '800', fontSize: 13, color: colors.greyDark },
   // Vertical padding gives the recipe-card shadow (offset 8, radius 18) room
   // to render without being clipped by the horizontal ScrollView's bounds.
   rowContent: { paddingHorizontal: GUTTER, gap: 12, paddingTop: 8, paddingBottom: 28 },
@@ -1152,11 +1152,11 @@ const styles = StyleSheet.create({
   recipeHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, minHeight: 18 },
   accentDot: { width: 9, height: 9, borderRadius: 5 },
   recipeBean: { fontFamily: fonts.condensed, fontWeight: '600', fontSize: 20, color: colors.black, letterSpacing: -0.4, lineHeight: 24 },
-  recipeRoaster: { fontFamily: fonts.sans, fontWeight: '600', fontSize: 11, color: colors.greyDark, textTransform: 'uppercase', letterSpacing: 0.6 },
+  recipeRoaster: { fontFamily: fonts.sans, fontWeight: '500', fontSize: 11, color: colors.greyDark, textTransform: 'uppercase', letterSpacing: 0.6 },
   recipeStatRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 18, marginBottom: 10 },
   recipeStat: { alignItems: 'flex-start', gap: 2 },
   recipeStatValue: { fontFamily: fonts.sans, fontWeight: '800', fontSize: 14, color: colors.black },
-  recipeStatLabel: { fontFamily: fonts.sans, fontWeight: '600', fontSize: 10, color: colors.greyDark, letterSpacing: 0.3 },
+  recipeStatLabel: { fontFamily: fonts.sans, fontWeight: '500', fontSize: 10, color: colors.greyDark, letterSpacing: 0.3 },
   recipeNote: { fontFamily: fonts.sans, fontWeight: '500', fontSize: 12.5, color: colors.moss, fontStyle: 'italic' },
 
   baselineCard: {
@@ -1179,14 +1179,14 @@ const styles = StyleSheet.create({
 
   // Radar
   radarWrap: { alignItems: 'center', justifyContent: 'center', height: 230, marginTop: 4 },
-  radarLabel: { position: 'absolute', textAlign: 'center', fontFamily: fonts.sans, fontWeight: '700', fontSize: 11, color: colors.greyDark },
+  radarLabel: { position: 'absolute', textAlign: 'center', fontFamily: fonts.sans, fontWeight: '800', fontSize: 11, color: colors.greyDark },
 
   // Ranked bars
   rankList: { gap: 14 },
   rankRow: { gap: 6 },
   rankLabelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
-  rankLabel: { fontFamily: fonts.sans, fontWeight: '700', fontSize: 14, color: colors.black, flex: 1, marginRight: 8 },
-  rankMeta: { fontFamily: fonts.sans, fontWeight: '600', fontSize: 12, color: colors.greyDark },
+  rankLabel: { fontFamily: fonts.sans, fontWeight: '800', fontSize: 14, color: colors.black, flex: 1, marginRight: 8 },
+  rankMeta: { fontFamily: fonts.sans, fontWeight: '500', fontSize: 12, color: colors.greyDark },
   barTrack: { height: 8, borderRadius: 4, backgroundColor: 'rgba(0,0,0,0.05)', overflow: 'hidden' },
   barFill: { height: 8, borderRadius: 4 },
 
@@ -1195,7 +1195,7 @@ const styles = StyleSheet.create({
   legendRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 14 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   legendSwatch: { width: 10, height: 10, borderRadius: 5 },
-  legendLabel: { fontFamily: fonts.sans, fontWeight: '600', fontSize: 12.5, color: colors.black },
+  legendLabel: { fontFamily: fonts.sans, fontWeight: '500', fontSize: 12.5, color: colors.black },
   legendPct: { fontFamily: fonts.sans, fontWeight: '800', fontSize: 12.5, color: colors.greyDark },
 
   // Chips
@@ -1209,8 +1209,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 9,
   },
-  chipText: { fontFamily: fonts.sans, fontWeight: '700', fontSize: 13, color: colors.black },
-  chipMeta: { fontFamily: fonts.sans, fontWeight: '700', fontSize: 11.5, color: colors.moss },
+  chipText: { fontFamily: fonts.sans, fontWeight: '800', fontSize: 13, color: colors.black },
+  chipMeta: { fontFamily: fonts.sans, fontWeight: '800', fontSize: 11.5, color: colors.moss },
 
   // Sparse state
   sparseWrap: { paddingHorizontal: GUTTER, paddingTop: 24, alignItems: 'center' },

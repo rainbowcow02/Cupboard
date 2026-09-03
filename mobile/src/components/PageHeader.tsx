@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
   },
   avatarText: {
     fontFamily: fonts.sans,
-    fontWeight: '700',
+    fontWeight: '800',
     fontSize: 21,
     color: colors.pearl,
   },

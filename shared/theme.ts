@@ -53,3 +53,24 @@ export const surfaces = {
   scrimHeight: 160,
   scrimColors: [`${colors.pearl}00`, `${colors.chardonnay}99`] as const,
 } as const;
+
+/**
+ * Inline text-link treatments.
+ *
+ * `small` is the DS "Small link" style — Avenir Heavy 13/800, read from Figma node
+ * 741:15117. It carries no color, so each link pairs it with its own context
+ * color: burgundy for actions the user takes
+ * (`AddLink`), greyDark for secondary affordances (BrewCard's See more/See less).
+ */
+export const links = {
+  small: {
+    fontFamily: fonts.sans,
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  /** Press feedback shared by inline text links. */
+  pressedOpacity: 0.6,
+  /** Touch-target padding around an inline link's text. */
+  hitSlop: 8,
+  paddingVertical: 4,
+} as const;

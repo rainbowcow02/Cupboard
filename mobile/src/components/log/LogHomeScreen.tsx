@@ -405,7 +405,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.sans,
     fontSize: 16,
     lineHeight: 18,
-    fontWeight: '600',
+    fontWeight: '500',
     color: colors.greyDark,
   },
 });

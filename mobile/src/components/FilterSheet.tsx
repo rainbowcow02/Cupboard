@@ -298,7 +298,7 @@ const filterSheetStyles = StyleSheet.create({
   clearSearchText: {
     fontFamily: fonts.sans,
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '800',
     color: colors.pearl,
     lineHeight: 14,
   },
@@ -309,13 +309,13 @@ const filterSheetStyles = StyleSheet.create({
     flex: 1,
     fontFamily: fonts.sans,
     fontSize: 17,
-    fontWeight: '600',
+    fontWeight: '500',
     color: colors.burgundy,
   },
   selectAllCount: {
     fontFamily: fonts.sans,
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: '500',
     color: colors.burgundy,
   },
   optionRowLast: {

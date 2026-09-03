@@ -428,7 +428,7 @@ const styles = StyleSheet.create({
   ratioValue: {
     fontFamily: fonts.sans,
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: '500',
     color: colors.black,
   },
   brewTimeField: {
