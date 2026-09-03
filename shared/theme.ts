@@ -45,7 +45,7 @@ export const tastingNotePill = {
   borderRadius: 100,
   backgroundColor: 'rgba(252,153,155,0.4)',
   fontFamily: fonts.sans,
-  fontWeight: '800',
+  fontWeight: '700',
   fontSize: 15,
   color: colors.burgundy,
 } as const;
