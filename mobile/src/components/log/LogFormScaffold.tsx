@@ -3,6 +3,7 @@ import { Animated, StyleSheet, Text, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { colors, fonts } from '@shared/theme';
 import { GlassBackButton } from '../GlassBackButton';
+import { GlassCloseButton } from '../GlassCloseButton';
 import { KeyboardAwareUpdateContext } from '../../lib/keyboardAwareUpdate';
 
 /** The HOC attaches `update()` at runtime but the library's .d.ts omits it. */
@@ -12,9 +13,16 @@ type KeyboardAwareScrollHandle = InstanceType<typeof KeyboardAwareScrollView> & 
 
 interface Props {
   onBack: () => void;
+  /**
+   * Leading affordance: a back chevron for a step inside a flow, or a dismiss X
+   * for a sheet the user cancels out of (the iOS convention).
+   */
+  leadingIcon?: 'back' | 'close';
+  /** Accessibility label for the leading button when the default doesn't fit. */
+  leadingLabel?: string;
   /** Plain title / description block. Ignored when `header` is provided. */
   title?: string;
-  description?: string;
+  description?: React.ReactNode;
   /** Custom header node rendered in place of the title / description block. */
   header?: React.ReactNode;
   /** Optional action rendered opposite the back button (e.g. a HeaderPillButton). */
@@ -30,7 +38,17 @@ interface Props {
  * it, plus a left-aligned title / description block. Mirrors the Set recipe and
  * coffee detail pages so the back affordance is consistent across the app.
  */
-export function LogFormScaffold({ onBack, title, description, header, rightAction, bottomInset, children }: Props) {
+export function LogFormScaffold({
+  onBack,
+  leadingIcon = 'back',
+  leadingLabel,
+  title,
+  description,
+  header,
+  rightAction,
+  bottomInset,
+  children,
+}: Props) {
   const scrollY = useRef(new Animated.Value(0)).current;
   const scrollRef = useRef<KeyboardAwareScrollHandle>(null);
   // Presented as a modal that covers the tab bar, so only the safe-area bottom is needed.
@@ -42,13 +60,24 @@ export function LogFormScaffold({ onBack, title, description, header, rightActio
         {/* Offset + gentle ramp so the frosted circle eases in smoothly on scroll
             rather than snapping in immediately. Size/spacing mirror the coffee-detail
             header so the back affordance is identical across the app. */}
-        <GlassBackButton
-          onPress={onBack}
-          scrollY={scrollY}
-          fadeStart={16}
-          fadeEnd={64}
-          size={40}
-        />
+        {leadingIcon === 'close' ? (
+          <GlassCloseButton
+            onPress={onBack}
+            scrollY={scrollY}
+            fadeStart={16}
+            fadeEnd={64}
+            size={40}
+            accessibilityLabel={leadingLabel}
+          />
+        ) : (
+          <GlassBackButton
+            onPress={onBack}
+            scrollY={scrollY}
+            fadeStart={16}
+            fadeEnd={64}
+            size={40}
+          />
+        )}
         {rightAction}
       </View>
 

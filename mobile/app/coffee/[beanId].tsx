@@ -19,6 +19,8 @@ import { colors, fonts } from '@shared/theme';
 import { GlassBackButton } from '../../src/components/GlassBackButton';
 import { HeaderPillButton } from '../../src/components/HeaderPillButton';
 import { EditBeanStep } from '../../src/components/log/EditBeanStep';
+import { RecipeIterationScreen } from '../../src/components/log/RecipeIterationScreen';
+import { SheetOverlay } from '../../src/components/surfaces/SheetOverlay';
 import { BagLabel } from '../../src/components/BagLabel';
 import { BrewCard } from '../../src/components/BrewCard';
 import { Card } from '../../src/components/Card';
@@ -272,7 +274,25 @@ export default function CoffeeDetailScreen() {
         </View>
       </Animated.ScrollView>
 
-      {(addingBrew || editingBrew) && coffee && (
+      {/* Adding a recipe is the same job as the Log flow's "Set a recipe" step, so
+          it runs that exact screen — opened as a sheet over this page, hence the
+          dismiss X rather than a back chevron. Tapping its bean card returns here,
+          which is already this bean's detail page. */}
+      {addingBrew && coffee && (
+        <SheetOverlay>
+          <RecipeIterationScreen
+            coffee={coffee}
+            base={null}
+            onBack={onBrewClose}
+            onOpenBean={onBrewClose}
+            onSaved={onBrewSaved}
+            leadingIcon="close"
+            leadingLabel="Close without saving"
+          />
+        </SheetOverlay>
+      )}
+
+      {editingBrew && coffee && (
         <BrewForm coffee={coffee} brew={editingBrew} onClose={onBrewClose} onSaved={onBrewSaved} />
       )}
 

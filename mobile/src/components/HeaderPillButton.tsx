@@ -5,6 +5,8 @@ interface Props {
   label: string;
   onPress: () => void;
   accessibilityLabel?: string;
+  /** Dims the label and blocks presses (e.g. while a save is in flight). */
+  disabled?: boolean;
   /** Extra positioning (e.g. absolute placement) merged onto the pill. */
   style?: StyleProp<ViewStyle>;
 }
@@ -14,16 +16,18 @@ interface Props {
  * action on the coffee-detail, set-recipe, and log-form headers. Solid pill fill
  * with a hairline border and soft shadow, 14px horizontal padding.
  */
-export function HeaderPillButton({ label, onPress, accessibilityLabel, style }: Props) {
+export function HeaderPillButton({ label, onPress, accessibilityLabel, disabled = false, style }: Props) {
   return (
     <Pressable
       onPress={onPress}
+      disabled={disabled}
       style={({ pressed }) => [styles.pill, pressed && styles.pillPressed, style]}
       hitSlop={8}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
+      accessibilityState={{ disabled }}
     >
-      <Text style={styles.pillText}>{label}</Text>
+      <Text style={[styles.pillText, disabled && styles.pillTextDisabled]}>{label}</Text>
     </Pressable>
   );
 }
@@ -46,4 +50,5 @@ const styles = StyleSheet.create({
   },
   pillPressed: { opacity: 0.7 },
   pillText: { fontFamily: fonts.sans, fontWeight: '700', fontSize: 15, color: colors.black },
+  pillTextDisabled: { color: colors.greyDark },
 });

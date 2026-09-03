@@ -1,7 +1,6 @@
 import { Animated, StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
-import { BlurView } from 'expo-blur';
-import { surfaces } from '@shared/theme';
 import { BackButton } from './BackButton';
+import { GlassCircle } from './surfaces/GlassCircle';
 
 interface Props {
   onPress: () => void;
@@ -24,13 +23,6 @@ interface Props {
  * centered inside the circle. Shared by Set recipe and the bean detail page.
  */
 export function GlassBackButton({ onPress, scrollY, fadeStart = 0, fadeEnd = 32, size = 44, style }: Props) {
-  const glassOpacity = scrollY.interpolate({
-    inputRange: [fadeStart, fadeEnd],
-    outputRange: [0, 1],
-    extrapolate: 'clamp',
-  });
-
-  const radius = size / 2;
   // Chevron scales with the circle, keeping its original 14×22 proportions,
   // sitting 2px in from half-height so it reads a touch smaller in the circle.
   const iconHeight = Math.round(size / 2) - 2;
@@ -38,11 +30,7 @@ export function GlassBackButton({ onPress, scrollY, fadeStart = 0, fadeEnd = 32,
 
   return (
     <View style={[styles.hitArea, { width: size, height: size }, style]}>
-      <Animated.View style={[styles.glass, { borderRadius: radius, opacity: glassOpacity }]} pointerEvents="none">
-        <View style={[styles.glassFill, { borderRadius: radius }]}>
-          <BlurView intensity={28} tint="light" style={StyleSheet.absoluteFill} />
-        </View>
-      </Animated.View>
+      <GlassCircle size={size} scrollY={scrollY} fadeStart={fadeStart} fadeEnd={fadeEnd} />
       <BackButton onPress={onPress} width={iconWidth} height={iconHeight} style={styles.icon} />
     </View>
   );
@@ -52,22 +40,6 @@ const styles = StyleSheet.create({
   hitArea: {
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  glass: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#ffffff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 2,
-  },
-  glassFill: {
-    ...StyleSheet.absoluteFillObject,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: surfaces.pillHairline,
-    backgroundColor: 'rgba(255,255,255,0.72)',
   },
   // Nudge the back chevron left so it sits optically centered in the glass circle.
   icon: { transform: [{ translateX: -1.5 }] },
