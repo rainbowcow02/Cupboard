@@ -342,7 +342,7 @@ const styles = StyleSheet.create({
   titleBlock: { paddingHorizontal: 24, paddingVertical: 16, gap: 16 },
   roaster: { fontFamily: fonts.sans, fontWeight: '500', fontSize: 15, color: colors.moss, lineHeight: 17 },
   bean: { fontFamily: fonts.condensed, fontWeight: '600', fontSize: 48, color: colors.black, lineHeight: 54, letterSpacing: -0.5 },
-  brewSummaryBlock: { paddingHorizontal: 24, paddingBottom: 32 },
+  brewSummaryBlock: { paddingHorizontal: 24, paddingBottom: 12 },
   sections: { paddingHorizontal: 24, gap: 36 },
   section: { gap: 12 },
   sectionHeader: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },

@@ -2,6 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { Polyline, Svg } from 'react-native-svg';
 import { Brew } from '@shared/lib/coffees';
 import { colors, fonts, typography } from '@shared/theme';
+import { Card } from './Card';
 import { Divider } from './Divider';
 
 interface Props {
@@ -83,7 +84,7 @@ export function BrewSummary({ brews }: Props) {
   const showSpark = brews.filter((b) => b.rating != null && b.date != null).length >= 2;
 
   return (
-    <View style={styles.summary}>
+    <Card style={styles.summary}>
       <View style={styles.stats}>
         <StatCell value={String(brews.length)} label="Cups" />
         <Divider orientation="vertical" length={53} thickness={0.5} opacity={1} />
@@ -97,7 +98,7 @@ export function BrewSummary({ brews }: Props) {
           </>
         )}
       </View>
-    </View>
+    </Card>
   );
 }
 
@@ -114,6 +115,7 @@ const styles = StyleSheet.create({
   summary: {
     minHeight: 55,
     paddingHorizontal: 20,
+    paddingVertical: 16,
   },
   stats: {
     flexDirection: 'row',
