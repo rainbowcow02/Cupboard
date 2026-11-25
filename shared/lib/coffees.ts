@@ -66,20 +66,9 @@ export interface Coffee {
   brews: Brew[];
 }
 
-export const ORIGIN_FLAGS: Record<string, string> = {
-  Ethiopia: '🇪🇹',
-  Colombia: '🇨🇴',
-  Panama: '🇵🇦',
-  Peru: '🇵🇪',
-  Guatemala: '🇬🇹',
-  Kenya: '🇰🇪',
-  Brazil: '🇧🇷',
-  'Costa Rica': '🇨🇷',
-  Bolivia: '🇧🇴',
-  Honduras: '🇭🇳',
-  Rwanda: '🇷🇼',
-  Yemen: '🇾🇪',
-};
+// Re-exported so existing `ORIGIN_FLAGS` imports keep working; the list itself
+// lives in ./origins.
+export { ORIGIN_FLAGS } from './origins';
 
 const BAG_IMGS: BagImg[] = ['white', 'blue', 'green', 'orange'];
 

@@ -2,25 +2,15 @@ import MapboxGL from '@rnmapbox/maps';
 import Constants from 'expo-constants';
 import { StyleSheet, View } from 'react-native';
 import BeanIcon from '../../assets/icon-bean.svg';
+import { useOriginLocation } from '../lib/geocode';
 
 MapboxGL.setAccessToken(Constants.expoConfig?.extra?.mapboxToken ?? '');
 
-const ORIGIN_COORDS: Record<string, [number, number]> = {
-  Ethiopia: [8.6, 39.6],
-  Colombia: [4.5, -74.3],
-  Panama: [8.9, -79.5],
-  Peru: [-9.2, -75.0],
-  Guatemala: [15.5, -90.2],
-  Kenya: [0.0, 37.9],
-  Brazil: [-14.2, -51.9],
-  'Costa Rica': [9.7, -83.8],
-  Bolivia: [-16.3, -63.6],
-  Honduras: [15.2, -86.2],
-  Rwanda: [-1.9, 29.9],
-  Yemen: [15.5, 48.5],
-};
-
 const MAPBOX_STYLE = 'mapbox://styles/rainbowcow02/cmpbsoxbv002n01qhe2v56lsw';
+
+// Closer in when the pin marks a growing region rather than a whole country.
+const REGION_ZOOM = 6;
+const COUNTRY_ZOOM = 4.5;
 
 interface Props {
   country?: string | null;
@@ -28,8 +18,9 @@ interface Props {
 }
 
 export function OriginMap({ country, region }: Props) {
-  const coords = country ? ORIGIN_COORDS[country] : undefined;
-  if (!coords) return null;
+  const location = useOriginLocation(country, region);
+  if (!location) return null;
+  const { coords, level } = location;
   const label = region || country;
 
   return (
@@ -47,7 +38,7 @@ export function OriginMap({ country, region }: Props) {
       >
         <MapboxGL.Camera
           centerCoordinate={[coords[1], coords[0]]}
-          zoomLevel={4.5}
+          zoomLevel={level === 'region' ? REGION_ZOOM : COUNTRY_ZOOM}
           animationDuration={0}
         />
         <MapboxGL.MarkerView coordinate={[coords[1], coords[0]]} anchor={{ x: 0.5, y: 0.5 }}>

@@ -1,6 +1,7 @@
 // Shared Notion helpers for the serverless API routes.
 // Underscore-prefixed: Vercel treats this as a module, not an HTTP route.
 import { Client } from '@notionhq/client';
+import { countryOptionName } from './_origins.js';
 
 export const notion = new Client({
   auth: process.env.NOTION_TOKEN,
@@ -139,14 +140,6 @@ export function rowToCup(page) {
 
 // ─── Writing ────────────────────────────────────────────────────────────────
 
-// Country → flag, so writes use the flag-prefixed option names the DB already
-// has (rather than creating bare-name duplicates).
-const COUNTRY_FLAGS = {
-  Bolivia: '🇧🇴', Brazil: '🇧🇷', Colombia: '🇨🇴', 'Costa Rica': '🇨🇷',
-  Ethiopia: '🇪🇹', Guatemala: '🇬🇹', Honduras: '🇭🇳', Kenya: '🇰🇪',
-  Panama: '🇵🇦', Peru: '🇵🇪', Rwanda: '🇷🇼', Yemen: '🇾🇪',
-};
-
 // Notion caps a single rich-text object at 2,000 characters, so longer notes
 // are split across several objects (rowToCup joins them back on read).
 const RICH_TEXT_CHUNK = 2000;
@@ -215,8 +208,7 @@ export function cupToProperties(cup) {
   if (cup.origin) {
     // Flag-prefixed option names ("🇮🇳 India") match the options the DB
     // already has, rather than creating bare-name duplicates.
-    const flag = COUNTRY_FLAGS[cup.origin];
-    props[c.origin] = { multi_select: [{ name: flag ? `${flag} ${cup.origin}` : cup.origin }] };
+    props[c.origin] = { multi_select: [{ name: countryOptionName(cup.origin) }] };
   } else if (cup.origin === null) {
     props[c.origin] = { multi_select: [] };
   }

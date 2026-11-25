@@ -33,6 +33,7 @@ const ORIGIN_COORDS = {
   'Costa Rica':[9.7, -83.8],
   'Bolivia':   [-16.3, -63.6],
   'Honduras':  [15.2, -86.2],
+  'India':     [20.6,  78.9],
   'Rwanda':    [-1.9,  29.9],
   'Yemen':     [15.5,  48.5],
 };
@@ -48,6 +49,7 @@ const ORIGIN_FLAGS = {
   'Costa Rica': '🇨🇷',
   'Bolivia':    '🇧🇴',
   'Honduras':   '🇭🇳',
+  'India':      '🇮🇳',
   'Rwanda':     '🇷🇼',
   'Yemen':      '🇾🇪',
 };

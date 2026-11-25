@@ -26,16 +26,11 @@ import { BagLabel } from '../../src/components/BagLabel';
 import { BrewCard } from '../../src/components/BrewCard';
 import { Card } from '../../src/components/Card';
 import { OriginMap } from '../../src/components/OriginMap';
+import { withFlag } from '@shared/lib/origins';
 import { useCoffees } from '../../src/hooks/useCoffees';
 import { useSuspendDismissGesture } from '../../src/hooks/useSuspendDismissGesture';
 import { BrewSummary } from '../../src/components/BrewSummary';
 import { BrewForm } from './BrewForm';
-
-const ORIGIN_FLAGS: Record<string, string> = {
-  Ethiopia: '🇪🇹', Colombia: '🇨🇴', Panama: '🇵🇦', Peru: '🇵🇪',
-  Guatemala: '🇬🇹', Kenya: '🇰🇪', Brazil: '🇧🇷', 'Costa Rica': '🇨🇷',
-  Bolivia: '🇧🇴', Honduras: '🇭🇳', Rwanda: '🇷🇼', Yemen: '🇾🇪',
-};
 
 const BAG_IMAGES: Record<string, ReturnType<typeof require>> = {
   white: require('../../../shared/assets/bag-white-lrg.png'),
@@ -149,7 +144,6 @@ export default function CoffeeDetailScreen() {
 
   const tastingNotes = (coffee.notes || '').split(',').map((n) => n.trim()).filter(Boolean);
   const brews = coffee.brews || [];
-  const flag = ORIGIN_FLAGS[coffee.origin ?? ''] ?? '';
 
   return (
     <GestureHandlerRootView style={styles.screen}>
@@ -244,7 +238,7 @@ export default function CoffeeDetailScreen() {
                 {coffee.origin && (
                   <DetailRow
                     label="Country"
-                    value={`${flag} ${coffee.origin}`}
+                    value={withFlag(coffee.origin)}
                     last={!coffee.region && !coffee.altitude}
                   />
                 )}

@@ -258,7 +258,13 @@ export function ComboBoxField(props: ComboBoxFieldProps) {
           numberOfLines={1}
         >
           {selected.length
-            ? selected.map(display).join(', ')
+            ? selected
+                .map((option) => {
+                  // Lead with the option's flag (e.g. "🇮🇳 India"), matching the list rows.
+                  const flag = flagFor?.(option);
+                  return flag ? `${flag} ${display(option)}` : display(option);
+                })
+                .join(', ')
             : placeholder || `Select ${label.toLowerCase()}`}
         </Text>
         <SortChevron flipped={false} color={colors.greyDark} />

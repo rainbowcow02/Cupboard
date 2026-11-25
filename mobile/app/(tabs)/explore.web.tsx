@@ -10,25 +10,11 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Coffee, formatDate } from '@shared/lib/coffees';
+import { withFlag } from '@shared/lib/origins';
 import { colors, fonts } from '@shared/theme';
 import { Bag } from '../../src/components/Bag';
 import { TAB_BAR_HEIGHT } from '../../src/components/TabBar';
 import { useCoffees } from '../../src/hooks/useCoffees';
-
-const ORIGIN_FLAGS: Record<string, string> = {
-  Ethiopia: '🇪🇹',
-  Colombia: '🇨🇴',
-  Panama: '🇵🇦',
-  Peru: '🇵🇪',
-  Guatemala: '🇬🇹',
-  Kenya: '🇰🇪',
-  Brazil: '🇧🇷',
-  'Costa Rica': '🇨🇷',
-  Bolivia: '🇧🇴',
-  Honduras: '🇭🇳',
-  Rwanda: '🇷🇼',
-  Yemen: '🇾🇪',
-};
 
 function groupByOrigin(coffees: Coffee[]): [string, Coffee[]][] {
   const groups = new Map<string, Coffee[]>();
@@ -66,7 +52,7 @@ export default function ExploreScreen() {
         {grouped.map(([origin, originCoffees]) => (
           <View key={origin} style={styles.originSection}>
             <Text style={styles.originHeader}>
-              {ORIGIN_FLAGS[origin] ?? ''} {origin}
+              {withFlag(origin)}
             </Text>
             {originCoffees.map((coffee, index) => (
               <View key={coffee.id}>
