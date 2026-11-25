@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { applyAutoFormat } from '../lib/textAutoFormat';
+import { useKeyboardAwareUpdate } from '../lib/keyboardAwareUpdate';
 
 export interface AutoFormatTextInputProps {
   value: string;
@@ -20,6 +21,11 @@ export function useAutoFormatTextInput(
   onChangeText: (next: string) => void,
 ): AutoFormatTextInputProps {
   const [selection, setSelection] = useState<{ start: number; end: number } | undefined>(undefined);
+  // Re-checks on every keystroke (not just when a new line grows the field), so
+  // typing into a field you'd scrolled behind the keyboard nudges it back into
+  // view right away. A no-op outside a keyboard-aware form, and it only scrolls
+  // when the field is actually covered.
+  const keepInView = useKeyboardAwareUpdate();
 
   const handleChangeText = useCallback(
     (next: string) => {
@@ -30,8 +36,9 @@ export function useAutoFormatTextInput(
       } else {
         onChangeText(next);
       }
+      keepInView();
     },
-    [value, onChangeText],
+    [value, onChangeText, keepInView],
   );
 
   // Releases the transient forced cursor back to the OS the moment it reports

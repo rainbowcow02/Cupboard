@@ -4,7 +4,11 @@ import { KeyboardAwareFlatList } from 'react-native-keyboard-aware-scroll-view';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Brew, Coffee } from '@shared/lib/coffees';
 import { colors, fonts, surfaces } from '@shared/theme';
-import { KeyboardAwareUpdateContext } from '../../lib/keyboardAwareUpdate';
+import {
+  KeyboardAwareScrollHandle,
+  KeyboardAwareUpdateContext,
+  useKeepFocusedInputAboveKeyboard,
+} from '../../lib/keyboardAwareUpdate';
 import { Chevron } from '../Chevron';
 import { GlassBackButton } from '../GlassBackButton';
 import { HeaderPillButton } from '../HeaderPillButton';
@@ -12,10 +16,7 @@ import { BrewCard } from '../BrewCard';
 import { EmbeddedRecipeForm } from './EmbeddedRecipeForm';
 import { RecipeBeanHeader } from './RecipeBeanHeader';
 
-/** The HOC attaches `update()` at runtime but the library's .d.ts omits it. */
-type KeyboardAwareFlatListHandle = InstanceType<typeof KeyboardAwareFlatList> & {
-  update: () => void;
-};
+type ScrollHandle = InstanceType<typeof KeyboardAwareFlatList> & KeyboardAwareScrollHandle;
 
 interface Props {
   coffee: Coffee;
@@ -52,7 +53,8 @@ export function SetRecipeScreen({
   const listBottomPad = Math.max(insets.bottom, 16) + 48;
 
   const scrollY = useRef(new Animated.Value(0)).current;
-  const listRef = useRef<KeyboardAwareFlatListHandle>(null);
+  const listRef = useRef<ScrollHandle>(null);
+  const keepInView = useKeepFocusedInputAboveKeyboard(listRef);
 
   return (
     <View style={styles.screen}>
@@ -103,7 +105,7 @@ export function SetRecipeScreen({
         ListEmptyComponent={
           // Lets a growing multiline field (e.g. Tasting/Brew notes) re-trigger
           // the scroll-into-view as it gains lines, not just on initial focus.
-          <KeyboardAwareUpdateContext.Provider value={() => listRef.current?.update()}>
+          <KeyboardAwareUpdateContext.Provider value={keepInView}>
             <EmbeddedRecipeForm coffee={coffee} onSaved={onSaved} />
           </KeyboardAwareUpdateContext.Provider>
         }

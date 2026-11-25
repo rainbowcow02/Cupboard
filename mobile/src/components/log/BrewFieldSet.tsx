@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Brew, Coffee } from '@shared/lib/coffees';
 import { colors, fonts, surfaces } from '@shared/theme';
 import { useCoffees } from '../../hooks/useCoffees';
+import { CupPatch } from '../../lib/api';
 import {
   BrewNotesParts,
   parseBrewNotes,
@@ -20,6 +21,7 @@ import { FormField } from '../FormField';
 import { CascadeItem } from './CascadeItem';
 import { PourStructureField } from './PourStructureField';
 import { StructuredNotesField } from './StructuredNotesField';
+import { useKeepInViewOnChange } from '../../lib/keyboardAwareUpdate';
 
 /** Orders numeric strings numerically (so "20" precedes "100"), text A–Z. */
 function compareOptions(a: string, b: string): number {
@@ -139,6 +141,61 @@ export function brewFieldsPayload(values: BrewFormValues) {
   };
 }
 
+/** Comparable form of the pour builder, ignoring the per-row React ids. */
+function poursSignature(values: BrewFormValues): string {
+  return JSON.stringify([
+    values.pours.map((p) => [p.amount.trim(), p.note.trim()]),
+    values.pourNote.trim(),
+    values.brewTime.trim(),
+  ]);
+}
+
+/**
+ * The PATCH body for editing an existing brew. Unlike `brewFieldsPayload`:
+ * - an emptied field is sent as `null`, so the deletion actually saves;
+ * - the recipe and the two notes fields are only rewritten when the user changed
+ *   them, so opening and saving a brew can't reformat or drop free-form text the
+ *   structured form couldn't fully parse;
+ * - the date is left alone (the form doesn't show it, so it can't have changed).
+ */
+export function brewEditPatch(values: BrewFormValues, initial: BrewFormValues): CupPatch {
+  const p = brewFieldsPayload(values);
+  const patch: CupPatch = {
+    brewer: p.brewer ?? null,
+    grinder: p.grinder ?? null,
+    filter: p.filter ?? null,
+    grind: p.grind ?? null,
+    beansG: p.beansG ?? null,
+    waterMl: p.waterMl ?? null,
+    tempC: p.tempC ?? null,
+    rating: p.rating ?? null,
+  };
+  if (poursSignature(values) !== poursSignature(initial)) {
+    patch.recipeToTest = p.recipeToTest ?? null;
+  }
+  if (
+    values.tastingSmell.trim() !== initial.tastingSmell.trim() ||
+    values.tastingTaste.trim() !== initial.tastingTaste.trim()
+  ) {
+    patch.tastingNotes = p.tastingNotes ?? null;
+  }
+  if (
+    values.brewThoughts.trim() !== initial.brewThoughts.trim() ||
+    values.brewToTry.trim() !== initial.brewToTry.trim()
+  ) {
+    patch.brewNotes = p.brewNotes ?? null;
+  }
+  return patch;
+}
+
+/** True when the form differs from its starting values (drives "Discard changes?"). */
+export function brewFormDirty(values: BrewFormValues, initial: BrewFormValues): boolean {
+  return (
+    JSON.stringify(brewFieldsPayload({ ...values, date: initial.date })) !==
+    JSON.stringify(brewFieldsPayload(initial)) || poursSignature(values) !== poursSignature(initial)
+  );
+}
+
 interface Props {
   values: BrewFormValues;
   onChange: (patch: Partial<BrewFormValues>) => void;
@@ -166,6 +223,7 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
   const { coffees } = useCoffees();
   const set = (k: TextKey) => (v: string) => onChange({ [k]: v } as Partial<BrewFormValues>);
   const brewTimeInputRef = useRef<TextInput>(null);
+  const withKeepInView = useKeepInViewOnChange();
 
   // Picker options sourced from the user's own brew history (so the values they
   // always reach for are one tap away) plus a sensible range for numeric fields.
@@ -228,6 +286,7 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
         <FormField label="Brewer" horizontal>
           <ComboBoxField
             label="Brewer"
+            rejectCommas
             value={values.brewer}
             options={options.brewer}
             placeholder="Which brewer?"
@@ -241,6 +300,7 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
         <FormField label="Filter" horizontal>
           <ComboBoxField
             label="Filter"
+            rejectCommas
             value={values.filter}
             options={options.filter}
             placeholder="Which filter?"
@@ -254,6 +314,7 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
         <FormField label="Grinder" horizontal>
           <ComboBoxField
             label="Grinder"
+            rejectCommas
             value={values.grinder}
             options={options.grinder}
             placeholder="Which grinder?"
@@ -267,6 +328,7 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
         <FormField label="Grind size" horizontal>
           <ComboBoxField
             label="Grind size"
+            rejectCommas
             value={values.grind}
             options={options.grind}
             placeholder="How fine?"
@@ -352,7 +414,7 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
               ref={brewTimeInputRef}
               style={styles.brewTimeInput}
               value={values.brewTime}
-              onChangeText={set('brewTime')}
+              onChangeText={withKeepInView(set('brewTime'))}
               placeholder="3:20"
               placeholderTextColor={colors.greyDark}
               keyboardType="numbers-and-punctuation"
@@ -383,6 +445,8 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
               placeholder: 'Taste',
               accessibilityLabel: 'Tasting notes, taste',
             }}
+            onClear={() => onChange({ tastingSmell: '', tastingTaste: '' })}
+            clearAccessibilityLabel="Clear tasting notes"
           />
         </FormField>
       </CascadeItem>
@@ -402,6 +466,8 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
               placeholder: 'To Try',
               accessibilityLabel: 'Brew notes, to try',
             }}
+            onClear={() => onChange({ brewThoughts: '', brewToTry: '' })}
+            clearAccessibilityLabel="Clear brew notes"
           />
         </FormField>
       </CascadeItem>

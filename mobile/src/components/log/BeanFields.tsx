@@ -5,6 +5,7 @@ import { colors } from '@shared/theme';
 import { useCoffees } from '../../hooks/useCoffees';
 import { ComboBoxField } from '../ComboBoxField';
 import { FormField, fieldInputStyle } from '../FormField';
+import { useKeepInViewOnChange } from '../../lib/keyboardAwareUpdate';
 
 /** The editable bean-detail fields shared by the new-bean and edit-bean forms. */
 export interface NewBeanDraft {
@@ -68,6 +69,7 @@ interface Props {
  */
 export function BeanFields({ form, set }: Props) {
   const { coffees } = useCoffees();
+  const withKeepInView = useKeepInViewOnChange();
 
   const options = useMemo(
     () => ({
@@ -93,7 +95,7 @@ export function BeanFields({ form, set }: Props) {
         <TextInput
           style={fieldInputStyle}
           value={form.bean}
-          onChangeText={set('bean')}
+          onChangeText={withKeepInView(set('bean'))}
           placeholder="Add bean name"
           placeholderTextColor={colors.greyDark}
           returnKeyType="next"
@@ -102,6 +104,7 @@ export function BeanFields({ form, set }: Props) {
       <FormField label="Roaster" horizontal>
         <ComboBoxField
           label="Roaster"
+          rejectCommas
           value={form.roaster}
           options={options.roaster}
           placeholder="Who's the roaster?"
@@ -111,6 +114,7 @@ export function BeanFields({ form, set }: Props) {
       <FormField label="Country" horizontal>
         <ComboBoxField
           label="Country"
+          rejectCommas
           value={form.origin}
           options={options.origin}
           placeholder="Where was it sourced?"
@@ -121,6 +125,7 @@ export function BeanFields({ form, set }: Props) {
       <FormField label="Process" horizontal>
         <ComboBoxField
           label="Process"
+          rejectCommas
           value={form.process}
           options={options.process}
           placeholder="How was it processed?"
@@ -130,6 +135,7 @@ export function BeanFields({ form, set }: Props) {
       <FormField label="Roast" horizontal>
         <ComboBoxField
           label="Roast"
+          rejectCommas
           value={form.roastLevel}
           options={options.roastLevel}
           placeholder="What's the roast-level?"
@@ -159,7 +165,7 @@ export function BeanFields({ form, set }: Props) {
         <TextInput
           style={fieldInputStyle}
           value={form.altitude}
-          onChangeText={set('altitude')}
+          onChangeText={withKeepInView(set('altitude'))}
           placeholder="e.g. 1,800 masl"
           placeholderTextColor={colors.greyDark}
           returnKeyType="next"
@@ -170,7 +176,7 @@ export function BeanFields({ form, set }: Props) {
         <TextInput
           style={fieldInputStyle}
           value={form.notes}
-          onChangeText={set('notes')}
+          onChangeText={withKeepInView(set('notes'))}
           placeholder="e.g. Rose Tea, Oolong, Cantalope"
           placeholderTextColor={colors.greyDark}
           returnKeyType="done"

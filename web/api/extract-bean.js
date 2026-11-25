@@ -2,6 +2,7 @@
 //   POST { url } — fetch a roaster's coffee page and extract structured bean
 //   details with Claude, for review before saving as a new cup.
 import Anthropic from '@anthropic-ai/sdk';
+import { normalizeCountry } from './_origins.js';
 
 const MAX_PAGE_CHARS = 14000;
 
@@ -22,8 +23,18 @@ const SAVE_BEAN_TOOL = {
           'Santa Monica", not "Castillo - Lychee Washed - Santa Monica").',
       },
       roaster: { type: 'string', description: 'The roaster or brand name.' },
-      origin: { type: 'string', description: 'Country of origin, e.g. "Ethiopia".' },
-      region: { type: 'string', description: 'Growing region, e.g. "Yirgacheffe".' },
+      origin: {
+        type: 'string',
+        description:
+          'Country of origin as its common English name only, e.g. "Ethiopia", ' +
+          '"India", "Costa Rica" — no flag, region, or "Republic of" prefix.',
+      },
+      region: {
+        type: 'string',
+        description:
+          'Growing region within the country, as specific as the page states, e.g. ' +
+          '"Yirgacheffe" or "Chikmagalur, Karnataka". Do not repeat the country.',
+      },
       process: { type: 'string', description: 'Process, e.g. "Washed", "Natural".' },
       roastLevel: { type: 'string', description: 'Roast level, e.g. "Light".' },
       variety: { type: 'string', description: 'Variety / cultivar, e.g. "Heirloom".' },
@@ -112,6 +123,7 @@ export default async function handler(req, res) {
     const toolUse = message.content.find((block) => block.type === 'tool_use');
     const bean = toolUse && toolUse.input ? toolUse.input : {};
     if (typeof bean.bean === 'string') bean.bean = cleanBeanName(bean.bean);
+    if (typeof bean.origin === 'string') bean.origin = normalizeCountry(bean.origin);
     return res.status(200).json({ bean });
   } catch (err) {
     console.error('[api/extract-bean] extraction failed:', err);

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,19 +8,25 @@ import {
   beanFieldsPayload,
   BrewFieldSet,
   BrewFormValues,
+  brewEditPatch,
   brewFieldsPayload,
+  brewFormDirty,
   recipeValuesFrom,
 } from '../../src/components/log/BrewFieldSet';
 import { HeaderPillButton } from '../../src/components/HeaderPillButton';
 import { LogFormScaffold } from '../../src/components/log/LogFormScaffold';
 import { SheetOverlay } from '../../src/components/surfaces/SheetOverlay';
+import { useCoffees } from '../../src/hooks/useCoffees';
+import { useSuspendDismissGesture } from '../../src/hooks/useSuspendDismissGesture';
 import { createCup, updateCup, deleteCup } from '../../src/lib/api';
-import { KeyboardAwareUpdateContext } from '../../src/lib/keyboardAwareUpdate';
+import { confirmDiscard } from '../../src/lib/confirmDiscard';
+import {
+  KeyboardAwareScrollHandle,
+  KeyboardAwareUpdateContext,
+  useKeepFocusedInputAboveKeyboard,
+} from '../../src/lib/keyboardAwareUpdate';
 
-/** The HOC attaches `update()` at runtime but the library's .d.ts omits it. */
-type KeyboardAwareScrollHandle = InstanceType<typeof KeyboardAwareScrollView> & {
-  update: () => void;
-};
+type ScrollHandle = InstanceType<typeof KeyboardAwareScrollView> & KeyboardAwareScrollHandle;
 
 interface Props {
   coffee: Coffee;
@@ -50,14 +56,23 @@ export function BrewForm({
   const editing = !!brew;
   const source = brew ?? templateBrew;
   const insets = useSafeAreaInsets();
-  const scrollRef = useRef<KeyboardAwareScrollHandle>(null);
+  const scrollRef = useRef<ScrollHandle>(null);
+  const keepInView = useKeepFocusedInputAboveKeyboard(scrollRef);
 
-  const [form, setForm] = useState<BrewFormValues>(() => ({
+  const { applyCups, removeCup } = useCoffees();
+  // The values the form opened with: drives "Discard changes?" and lets an
+  // edit save only the free-text fields that actually changed.
+  const [initial] = useState<BrewFormValues>(() => ({
     ...recipeValuesFrom(source),
     date: toDateInput(editing ? brew?.date : undefined),
     rating: editing ? (brew?.rating ?? 0) : 0,
   }));
+  const [form, setForm] = useState<BrewFormValues>(initial);
   const [saving, setSaving] = useState(false);
+  const dirty = useMemo(() => brewFormDirty(form, initial), [form, initial]);
+  // While this sheet is up, a pull-down must not dismiss the page underneath it.
+  useSuspendDismissGesture(true);
+  const close = () => confirmDiscard(dirty && !saving, onClose);
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -66,16 +81,14 @@ export function BrewForm({
     setSaving(true);
     setError(null);
     try {
-      const brewFields = brewFieldsPayload(form);
-
-      if (editing && brew?.id) {
-        await updateCup(String(brew.id), brewFields);
-      } else {
-        await createCup({
-          ...beanFieldsPayload(coffee),
-          ...brewFields,
-        });
-      }
+      const saved =
+        editing && brew?.id
+          ? await updateCup(String(brew.id), brewEditPatch(form, initial))
+          : await createCup({
+              ...beanFieldsPayload(coffee),
+              ...brewFieldsPayload(form),
+            });
+      applyCups([saved]);
       await onSaved();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Save failed');
@@ -90,6 +103,7 @@ export function BrewForm({
     setError(null);
     try {
       await deleteCup(String(brew.id));
+      removeCup(brew.id);
       await onSaved();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Delete failed');
@@ -128,7 +142,7 @@ export function BrewForm({
     return (
       <SheetOverlay>
         <LogFormScaffold
-          onBack={onClose}
+          onBack={close}
           leadingIcon="close"
           leadingLabel="Close without saving"
           title={screenTitle}
@@ -166,7 +180,7 @@ export function BrewForm({
       >
         {/* Lets a growing multiline field (e.g. Tasting/Brew notes) re-trigger the
             scroll-into-view as it gains lines, not just on initial focus. */}
-        <KeyboardAwareUpdateContext.Provider value={() => scrollRef.current?.update()}>
+        <KeyboardAwareUpdateContext.Provider value={keepInView}>
           {fields}
         </KeyboardAwareUpdateContext.Provider>
 

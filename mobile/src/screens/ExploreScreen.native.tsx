@@ -14,29 +14,26 @@ import { floatingSurfaceStyles } from '../components/surfaces/floatingSurfaceSty
 import { Divider } from '../components/Divider';
 import { useCoffees } from '../hooks/useCoffees';
 import { tabBarChromeInset } from '../lib/chromeInsets';
+import { type LatLng, originKey, useOriginLocations } from '../lib/geocode';
 import { colors, fonts, surfaces } from '@shared/theme';
-import { Coffee, ORIGIN_FLAGS, formatDate } from '@shared/lib/coffees';
+import { Coffee, formatDate } from '@shared/lib/coffees';
+import { withFlag } from '@shared/lib/origins';
 
 MapboxGL.setAccessToken(
   Constants.expoConfig?.extra?.mapboxToken ?? ''
 );
 
-const ORIGIN_COORDS: Record<string, [number, number]> = {
-  Ethiopia:    [8.6,   39.6],
-  Colombia:    [4.5,  -74.3],
-  Panama:      [8.9,  -79.5],
-  Peru:        [-9.2, -75.0],
-  Guatemala:   [15.5, -90.2],
-  Kenya:       [0.0,   37.9],
-  Brazil:      [-14.2, -51.9],
-  'Costa Rica': [9.7,  -83.8],
-  Bolivia:     [-16.3, -63.6],
-  Honduras:    [15.2,  -86.2],
-  Rwanda:      [-1.9,   29.9],
-  Yemen:       [15.5,   48.5],
-};
-
 const MAPBOX_STYLE = 'mapbox://styles/rainbowcow02/cmpbsoxbv002n01qhe2v56lsw';
+
+/** One globe pin: the beans that share a growing region (or, failing that, a country). */
+interface OriginPin {
+  key: string;
+  origin: string;
+  /** Regions on this pin; empty when it sits on the country center. */
+  regions: string[];
+  coords: LatLng;
+  coffees: Coffee[];
+}
 
 const HEADER_H = 84;  // grabber 16 + title section 58 + paddingBottom 10
 const ROW_H    = 104; // paddingVertical 16×2 + 72px bag
@@ -73,7 +70,7 @@ export default function ExploreScreen() {
   // True while one of our own setCamera animations is in flight, so the
   // camera-change listeners don't react to (and fight) the animation frames.
   const programmaticAnimRef = useRef(false);
-  const [selectedOrigin, setSelectedOrigin] = useState<string | null>(null);
+  const [selectedPinKey, setSelectedPinKey] = useState<string | null>(null);
   const [sheetIndex, setSheetIndex] = useState(0);
 
   const tabBarInset = tabBarChromeInset(insets);
@@ -89,18 +86,38 @@ export default function ExploreScreen() {
     [screenH, tabBarInset, sheetTopInset],
   );
 
-  const originGroups = useMemo(() =>
-    coffees.reduce<Record<string, Coffee[]>>((acc, coffee) => {
-      if (!coffee.origin) return acc;
-      acc[coffee.origin] = acc[coffee.origin] || [];
-      acc[coffee.origin].push(coffee);
-      return acc;
-    }, {}),
-  [coffees]);
+  const originPairs = useMemo(
+    () => coffees
+      .filter((c): c is Coffee & { origin: string } => !!c.origin)
+      .map((c) => ({ country: c.origin, region: c.region })),
+    [coffees],
+  );
+  const locations = useOriginLocations(originPairs);
 
-  const filteredCoffees = selectedOrigin
-    ? coffees.filter(c => c.origin === selectedOrigin)
-    : coffees;
+  // One pin per growing region; beans without a region (or whose region
+  // couldn't be found) share their country's pin. Pins are keyed by location,
+  // so two spellings of the same region land on one pin.
+  const pins = useMemo(() => {
+    const byKey = new Map<string, OriginPin>();
+    for (const coffee of coffees) {
+      if (!coffee.origin) continue;
+      const loc = locations[originKey(coffee.origin, coffee.region)];
+      if (!loc) continue;
+      const key = `${coffee.origin}|${loc.coords[0].toFixed(2)},${loc.coords[1].toFixed(2)}`;
+      let pin = byKey.get(key);
+      if (!pin) {
+        pin = { key, origin: coffee.origin, regions: [], coords: loc.coords, coffees: [] };
+        byKey.set(key, pin);
+      }
+      pin.coffees.push(coffee);
+      const region = coffee.region?.trim();
+      if (loc.level === 'region' && region && !pin.regions.includes(region)) pin.regions.push(region);
+    }
+    return [...byKey.values()];
+  }, [coffees, locations]);
+
+  const selectedPin = pins.find((p) => p.key === selectedPinKey) ?? null;
+  const filteredCoffees = selectedPin ? selectedPin.coffees : coffees;
 
   // Selection-independent: the sheet always rests at the same standard peek
   // height so the pin's framing never depends on how many coffees an origin has.
@@ -179,35 +196,32 @@ export default function ExploreScreen() {
     }
   }, [settleToGlobe, restoreGlobePadding]);
 
-  const handleMarkerPress = useCallback((origin: string) => {
-    const isDeselecting = selectedOrigin === origin;
+  const handleMarkerPress = useCallback((pin: OriginPin) => {
+    const isDeselecting = selectedPinKey === pin.key;
 
     if (isDeselecting) {
       setSheetIndex(0);
-      setSelectedOrigin(null);
+      setSelectedPinKey(null);
       sheetRef.current?.snapToIndex(0);
       settleToGlobe(700);
       return;
     }
 
-    setSelectedOrigin(origin);
+    setSelectedPinKey(pin.key);
 
-    const coords = ORIGIN_COORDS[origin];
-    if (coords) {
-      // Bring the sheet back to peek so a sheet the user had dragged up can't
-      // cover the pin we're about to fly to.
-      setSheetIndex(0);
-      sheetRef.current?.snapToIndex(0);
-      pinViewActiveRef.current = true;
-      animateCamera({
-        centerCoordinate: [coords[1], coords[0]],
-        zoomLevel: 8,
-        animationDuration: 900,
-        animationMode: 'flyTo',
-        padding: pinCameraPadding,
-      });
-    }
-  }, [selectedOrigin, pinCameraPadding, settleToGlobe, animateCamera]);
+    // Bring the sheet back to peek so a sheet the user had dragged up can't
+    // cover the pin we're about to fly to.
+    setSheetIndex(0);
+    sheetRef.current?.snapToIndex(0);
+    pinViewActiveRef.current = true;
+    animateCamera({
+      centerCoordinate: [pin.coords[1], pin.coords[0]],
+      zoomLevel: 8,
+      animationDuration: 900,
+      animationMode: 'flyTo',
+      padding: pinCameraPadding,
+    });
+  }, [selectedPinKey, pinCameraPadding, settleToGlobe, animateCamera]);
 
   const handleMapIdle = useCallback((state: MapState) => {
     // Our own animation has come to rest; stop suppressing corrections.
@@ -228,26 +242,36 @@ export default function ExploreScreen() {
   }, [maybeRestoreFromPinView]);
 
   const handleMapPress = useCallback(() => {
-    if (selectedOrigin) {
+    if (selectedPinKey) {
       setSheetIndex(0);
-      setSelectedOrigin(null);
+      setSelectedPinKey(null);
       sheetRef.current?.snapToIndex(0);
       settleToGlobe(700);
     }
-  }, [selectedOrigin, settleToGlobe]);
+  }, [selectedPinKey, settleToGlobe]);
 
   const coffeeCount = filteredCoffees.length;
-  const countryCount = selectedOrigin ? 1 : Object.keys(originGroups).length;
+  const coffeeLabel = `${coffeeCount} ${coffeeCount === 1 ? 'coffee' : 'coffees'}`;
+  const countryCount = useMemo(
+    () => new Set(coffees.map((c) => c.origin).filter(Boolean)).size,
+    [coffees],
+  );
   const regionCount = useMemo(() => {
-    if (!selectedOrigin) return 0;
-    return new Set(filteredCoffees.map(c => c.region).filter(Boolean)).size;
-  }, [selectedOrigin, filteredCoffees]);
-  const titleText = selectedOrigin
-    ? `${ORIGIN_FLAGS[selectedOrigin] ?? ''} ${selectedOrigin}`
-    : 'All coffees';
-  const subtitleText = selectedOrigin && regionCount > 0
-    ? `${coffeeCount} ${coffeeCount === 1 ? 'coffee' : 'coffees'} · ${regionCount} ${regionCount === 1 ? 'region' : 'regions'}`
-    : `${coffeeCount} ${coffeeCount === 1 ? 'coffee' : 'coffees'} · ${countryCount} ${countryCount === 1 ? 'country' : 'countries'}`;
+    if (!selectedPin) return 0;
+    return new Set(selectedPin.coffees.map(c => c.region).filter(Boolean)).size;
+  }, [selectedPin]);
+  const titleText = selectedPin ? withFlag(selectedPin.origin) : 'All coffees';
+  let subtitleText: string;
+  if (!selectedPin) {
+    subtitleText = `${coffeeLabel} · ${countryCount} ${countryCount === 1 ? 'country' : 'countries'}`;
+  } else if (selectedPin.regions.length > 0) {
+    // A region pin names its region(s) in place of a count.
+    subtitleText = `${coffeeLabel} · ${selectedPin.regions.join(', ')}`;
+  } else if (regionCount > 0) {
+    subtitleText = `${coffeeLabel} · ${regionCount} ${regionCount === 1 ? 'region' : 'regions'}`;
+  } else {
+    subtitleText = `${coffeeLabel} · 1 country`;
+  }
 
   return (
     <View style={styles.container}>
@@ -273,22 +297,22 @@ export default function ExploreScreen() {
           maxZoomLevel={14}
         />
 
-        {Object.entries(originGroups).map(([origin, group]) => {
-          const coords = ORIGIN_COORDS[origin];
-          if (!coords) return null;
-          const isSelected = selectedOrigin === origin;
+        {pins.map((pin) => {
+          const isSelected = selectedPinKey === pin.key;
           return (
             <MapboxGL.MarkerView
-              key={origin}
-              coordinate={[coords[1], coords[0]]}
+              key={pin.key}
+              coordinate={[pin.coords[1], pin.coords[0]]}
               anchor={{ x: 0.5, y: 1 }}
               allowOverlap
             >
               <TouchableOpacity
-                onPress={(e) => { e.stopPropagation(); handleMarkerPress(origin); }}
+                onPress={(e) => { e.stopPropagation(); handleMarkerPress(pin); }}
                 activeOpacity={0.85}
+                accessibilityRole="button"
+                accessibilityLabel={`${pin.regions.length ? `${pin.regions.join(', ')}, ` : ''}${pin.origin}: ${pin.coffees.length} ${pin.coffees.length === 1 ? 'coffee' : 'coffees'}`}
               >
-                <BeanMarker count={group.length} selected={isSelected} />
+                <BeanMarker count={pin.coffees.length} selected={isSelected} />
               </TouchableOpacity>
             </MapboxGL.MarkerView>
           );
@@ -313,8 +337,8 @@ export default function ExploreScreen() {
             variant="explore"
             title={titleText}
             subtitle={subtitleText}
-            showClear={!!selectedOrigin}
-            onClear={() => selectedOrigin && handleMarkerPress(selectedOrigin)}
+            showClear={!!selectedPin}
+            onClear={() => selectedPin && handleMarkerPress(selectedPin)}
             clearAccessibilityLabel="Clear origin filter"
           />
 
@@ -332,13 +356,13 @@ export default function ExploreScreen() {
                   <View style={styles.listItemText}>
                     <Text style={styles.beanName} numberOfLines={1}>{coffee.bean}</Text>
                     <Text style={styles.roasterName} numberOfLines={1}>{coffee.roaster}</Text>
-                    {selectedOrigin
+                    {selectedPin
                       ? coffee.region && (
                           <Text style={styles.originText} numberOfLines={1}>{coffee.region}</Text>
                         )
                       : (
                           <Text style={styles.originText} numberOfLines={1}>
-                            {`${ORIGIN_FLAGS[coffee.origin ?? ''] ?? ''} ${coffee.origin}`}
+                            {withFlag(coffee.origin)}
                           </Text>
                         )}
                   </View>

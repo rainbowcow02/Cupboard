@@ -4,12 +4,13 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view
 import { colors, fonts } from '@shared/theme';
 import { GlassBackButton } from '../GlassBackButton';
 import { GlassCloseButton } from '../GlassCloseButton';
-import { KeyboardAwareUpdateContext } from '../../lib/keyboardAwareUpdate';
+import {
+  KeyboardAwareScrollHandle,
+  KeyboardAwareUpdateContext,
+  useKeepFocusedInputAboveKeyboard,
+} from '../../lib/keyboardAwareUpdate';
 
-/** The HOC attaches `update()` at runtime but the library's .d.ts omits it. */
-type KeyboardAwareScrollHandle = InstanceType<typeof KeyboardAwareScrollView> & {
-  update: () => void;
-};
+type ScrollHandle = InstanceType<typeof KeyboardAwareScrollView> & KeyboardAwareScrollHandle;
 
 interface Props {
   onBack: () => void;
@@ -50,7 +51,8 @@ export function LogFormScaffold({
   children,
 }: Props) {
   const scrollY = useRef(new Animated.Value(0)).current;
-  const scrollRef = useRef<KeyboardAwareScrollHandle>(null);
+  const scrollRef = useRef<ScrollHandle>(null);
+  const keepInView = useKeepFocusedInputAboveKeyboard(scrollRef);
   // Presented as a modal that covers the tab bar, so only the safe-area bottom is needed.
   const bottomPad = Math.max(bottomInset, 16) + 48;
 
@@ -110,7 +112,7 @@ export function LogFormScaffold({
         )}
         {/* Lets a growing multiline field (e.g. Tasting/Brew notes) re-trigger the
             scroll-into-view as it gains lines, not just on initial focus. */}
-        <KeyboardAwareUpdateContext.Provider value={() => scrollRef.current?.update()}>
+        <KeyboardAwareUpdateContext.Provider value={keepInView}>
           {children}
         </KeyboardAwareUpdateContext.Provider>
       </KeyboardAwareScrollView>

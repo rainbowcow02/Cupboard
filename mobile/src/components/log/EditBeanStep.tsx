@@ -1,8 +1,11 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Coffee } from '@shared/lib/coffees';
-import { updateBeanDetails } from '../../lib/api';
+import { useCoffees } from '../../hooks/useCoffees';
+import { useSuspendDismissGesture } from '../../hooks/useSuspendDismissGesture';
+import { PartialBeanUpdateError, updateBeanDetails } from '../../lib/api';
+import { confirmDiscard } from '../../lib/confirmDiscard';
 import { BeanFields, NewBeanDraft, draftFromCoffee } from './BeanFields';
 import { ErrorBox } from '../ErrorBox';
 import { PrimaryButton } from '../PrimaryButton';
@@ -23,9 +26,21 @@ interface Props {
  */
 export function EditBeanStep({ coffee, onClose, onSaved }: Props) {
   const insets = useSafeAreaInsets();
-  const [form, setForm] = useState<NewBeanDraft>(() => draftFromCoffee(coffee));
+  const { applyCups } = useCoffees();
+  const [initial] = useState<NewBeanDraft>(() => draftFromCoffee(coffee));
+  const [form, setForm] = useState<NewBeanDraft>(initial);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const dirty = useMemo(
+    () => JSON.stringify(form) !== JSON.stringify(initial),
+    [form, initial],
+  );
+  // While this sheet is up, a pull-down must not dismiss the page underneath it.
+  useSuspendDismissGesture(true);
+  const close = () => confirmDiscard(dirty && !saving, onClose);
+
+  /** An emptied optional field is sent as null so the deletion actually saves. */
+  const optional = (v: string) => v.trim() || null;
 
   const set = (k: keyof NewBeanDraft) => (v: string) =>
     setForm((f) => ({ ...f, [k]: v }));
@@ -43,19 +58,23 @@ export function EditBeanStep({ coffee, onClose, onSaved }: Props) {
     setError(null);
     setSaving(true);
     try {
-      const newId = await updateBeanDetails(coffee.id, {
+      const result = await updateBeanDetails(coffee.id, {
         bean: form.bean.trim(),
         roaster: form.roaster.trim(),
-        origin: form.origin.trim(),
-        process: form.process.trim(),
-        roastLevel: form.roastLevel.trim(),
-        region: form.region.trim(),
-        variety: form.variety.trim(),
-        altitude: form.altitude.trim(),
-        notes: form.notes.trim(),
+        origin: optional(form.origin),
+        process: optional(form.process),
+        roastLevel: optional(form.roastLevel),
+        region: optional(form.region),
+        variety: optional(form.variety),
+        altitude: optional(form.altitude),
+        notes: optional(form.notes),
       });
-      await onSaved(newId);
+      applyCups(result.cups);
+      await onSaved(result.id);
     } catch (e: unknown) {
+      // Show whichever cups did save, so the shelf matches Notion; Save again
+      // retries only the cups that still differ.
+      if (e instanceof PartialBeanUpdateError) applyCups(e.updated);
       setError(e instanceof Error ? e.message : 'Save failed');
       setSaving(false);
     }
@@ -64,7 +83,7 @@ export function EditBeanStep({ coffee, onClose, onSaved }: Props) {
   return (
     <SheetOverlay>
       <LogFormScaffold
-        onBack={onClose}
+        onBack={close}
         title="Edit coffee"
         description="Update the details for this bean."
         bottomInset={insets.bottom}

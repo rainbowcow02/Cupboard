@@ -15,6 +15,8 @@ export interface Cup {
   notes?: string;
   rating?: number;
   date?: string;
+  /** ISO creation timestamp — breaks ties between same-day brews. */
+  createdAt?: string;
   altitude?: string;
   bagImg?: BagImg;
   brewer?: string;
@@ -39,6 +41,7 @@ export interface Brew {
   beansG?: number;
   waterMl?: number;
   date?: string;
+  createdAt?: string;
   rating?: number;
   notes?: string;
   brewNotes?: string;
@@ -63,20 +66,9 @@ export interface Coffee {
   brews: Brew[];
 }
 
-export const ORIGIN_FLAGS: Record<string, string> = {
-  Ethiopia: '🇪🇹',
-  Colombia: '🇨🇴',
-  Panama: '🇵🇦',
-  Peru: '🇵🇪',
-  Guatemala: '🇬🇹',
-  Kenya: '🇰🇪',
-  Brazil: '🇧🇷',
-  'Costa Rica': '🇨🇷',
-  Bolivia: '🇧🇴',
-  Honduras: '🇭🇳',
-  Rwanda: '🇷🇼',
-  Yemen: '🇾🇪',
-};
+// Re-exported so existing `ORIGIN_FLAGS` imports keep working; the list itself
+// lives in ./origins.
+export { ORIGIN_FLAGS } from './origins';
 
 const BAG_IMGS: BagImg[] = ['white', 'blue', 'green', 'orange'];
 
@@ -109,6 +101,14 @@ function dateValue(d: string | undefined): number {
   return Number.isNaN(t) ? -Infinity : t;
 }
 
+// Newest first. Dates are day-only, so same-day brews fall back to creation
+// time; without it their order is whatever Notion returned.
+function newestFirst(a: { date?: string; createdAt?: string }, b: { date?: string; createdAt?: string }): number {
+  const byDay = dateValue(b.date) - dateValue(a.date);
+  if (byDay !== 0 && !Number.isNaN(byDay)) return byDay;
+  return dateValue(b.createdAt) - dateValue(a.createdAt) || 0;
+}
+
 function isRealBrew(b: Brew): boolean {
   return Boolean(b.brewer || b.beansG || b.waterMl || b.grind);
 }
@@ -123,7 +123,7 @@ export function groupIntoCoffees(rows: Cup[]): Coffee[] {
 
   const coffees: Coffee[] = [];
   for (const [id, group] of groups) {
-    const sorted = [...group].sort((a, b) => dateValue(b.date) - dateValue(a.date));
+    const sorted = [...group].sort(newestFirst);
     const latest = sorted[0];
     // Bean-level metadata is stable across cups, but any given cup may leave a
     // field blank — take the most recent non-empty value so a newer cup that
@@ -160,6 +160,7 @@ export function groupIntoCoffees(rows: Cup[]): Coffee[] {
           beansG: r.beansG,
           waterMl: r.waterMl,
           date: r.date,
+          createdAt: r.createdAt,
           rating: r.rating,
           notes: r.notes,
           brewNotes: r.brewNotes,

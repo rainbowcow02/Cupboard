@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Coffee } from '@shared/lib/coffees';
+import { useCoffees } from '../../hooks/useCoffees';
 import { createCup } from '../../lib/api';
 import { ErrorBox } from '../ErrorBox';
 import { PrimaryButton } from '../PrimaryButton';
@@ -23,6 +24,7 @@ interface Props {
  * RecipeIterationScreen, minus the full-screen scaffold and back chrome.
  */
 export function EmbeddedRecipeForm({ coffee, onSaved }: Props) {
+  const { applyCups } = useCoffees();
   const [form, setForm] = useState<BrewFormValues>(() => recipeValuesFrom(null));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,10 +34,11 @@ export function EmbeddedRecipeForm({ coffee, onSaved }: Props) {
     setSaving(true);
     setError(null);
     try {
-      await createCup({
+      const saved = await createCup({
         ...beanFieldsPayload(coffee),
         ...brewFieldsPayload(form),
       });
+      applyCups([saved]);
       await onSaved();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Save failed');

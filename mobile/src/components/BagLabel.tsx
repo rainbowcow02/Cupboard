@@ -1,22 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, NativeSyntheticEvent, TextLayoutEventData } from 'react-native';
 import { Coffee } from '@shared/lib/coffees';
+import { flagFor } from '@shared/lib/origins';
 import { fonts } from '@shared/theme';
-
-const ORIGIN_FLAGS: Record<string, string> = {
-  'Ethiopia': '🇪🇹',
-  'Colombia': '🇨🇴',
-  'Panama': '🇵🇦',
-  'Peru': '🇵🇪',
-  'Guatemala': '🇬🇹',
-  'Kenya': '🇰🇪',
-  'Brazil': '🇧🇷',
-  'Costa Rica': '🇨🇷',
-  'Bolivia': '🇧🇴',
-  'Honduras': '🇭🇳',
-  'Rwanda': '🇷🇼',
-  'Yemen': '🇾🇪',
-};
 
 const BEAN_MAX_LINES = 4;
 // A roaster wrapping to this many lines is what tips the block past the bag face.
@@ -59,7 +45,7 @@ export function BagLabel({ coffee, bagWidth, beanNameOnly = false }: BagLabelPro
   const subFontSize  = small ? Math.max(5, Math.round(9 * scale))  : Math.max(7,  Math.round(9 * scale));
   const dividerMy    = small ? Math.max(2, Math.round(12 * scale)) : Math.max(4,  Math.round(12 * scale));
 
-  const flag = coffee.origin ? (ORIGIN_FLAGS[coffee.origin] || '') : '';
+  const flag = flagFor(coffee.origin);
 
   const [lineCounts, setLineCounts] = useState<LineCounts>({ key: coffee.id, bean: 0, roaster: 0 });
   const handleBeanTextLayout = (e: NativeSyntheticEvent<TextLayoutEventData>) => {
