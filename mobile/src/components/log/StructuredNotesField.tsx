@@ -2,6 +2,7 @@ import { StyleSheet, TextInput, View } from 'react-native';
 import { colors, fonts, surfaces } from '@shared/theme';
 import { useKeyboardAwareUpdate } from '../../lib/keyboardAwareUpdate';
 import { useAutoFormatTextInput } from '../../hooks/useAutoFormatTextInput';
+import { AddLink } from '../AddLink';
 import { Divider } from '../Divider';
 
 interface Section {
@@ -14,6 +15,13 @@ interface Section {
 interface Props {
   top: Section;
   bottom: Section;
+  /**
+   * Empties both halves at once. When given, a "Clear" link shows below the box
+   * whenever either half has text — handy when a cup is prefilled from a recipe.
+   */
+  onClear?: () => void;
+  /** Screen-reader label for the Clear link, e.g. "Clear tasting notes". */
+  clearAccessibilityLabel?: string;
 }
 
 /**
@@ -21,38 +29,47 @@ interface Props {
  * Thoughts/To Try) so a user never has to hand-type the markers that make the Brew Card
  * and Notion's "Recipe to test" column render them as structured sections.
  */
-export function StructuredNotesField({ top, bottom }: Props) {
+export function StructuredNotesField({ top, bottom, onClear, clearAccessibilityLabel }: Props) {
   // Growing a multiline field only re-triggers the keyboard-aware scroll on
   // content-size change — the library itself only measures on initial focus.
   const keepInView = useKeyboardAwareUpdate();
   const topAutoFormat = useAutoFormatTextInput(top.value, top.onChange);
   const bottomAutoFormat = useAutoFormatTextInput(bottom.value, bottom.onChange);
 
+  const hasText = top.value.trim() !== '' || bottom.value.trim() !== '';
+
   return (
-    <View style={styles.box}>
-      <TextInput
-        style={styles.input}
-        {...topAutoFormat}
-        onContentSizeChange={keepInView}
-        placeholder={top.placeholder}
-        placeholderTextColor={colors.greyDark}
-        multiline
-        textAlignVertical="top"
-        returnKeyType="done"
-        accessibilityLabel={top.accessibilityLabel}
-      />
-      <Divider />
-      <TextInput
-        style={styles.input}
-        {...bottomAutoFormat}
-        onContentSizeChange={keepInView}
-        placeholder={bottom.placeholder}
-        placeholderTextColor={colors.greyDark}
-        multiline
-        textAlignVertical="top"
-        returnKeyType="done"
-        accessibilityLabel={bottom.accessibilityLabel}
-      />
+    <View>
+      <View style={styles.box}>
+        <TextInput
+          style={styles.input}
+          {...topAutoFormat}
+          onContentSizeChange={keepInView}
+          placeholder={top.placeholder}
+          placeholderTextColor={colors.greyDark}
+          multiline
+          textAlignVertical="top"
+          returnKeyType="done"
+          accessibilityLabel={top.accessibilityLabel}
+        />
+        <Divider />
+        <TextInput
+          style={styles.input}
+          {...bottomAutoFormat}
+          onContentSizeChange={keepInView}
+          placeholder={bottom.placeholder}
+          placeholderTextColor={colors.greyDark}
+          multiline
+          textAlignVertical="top"
+          returnKeyType="done"
+          accessibilityLabel={bottom.accessibilityLabel}
+        />
+      </View>
+      {onClear && hasText ? (
+        <View style={styles.linkRow}>
+          <AddLink label="Clear" onPress={onClear} accessibilityLabel={clearAccessibilityLabel} />
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -67,6 +84,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0,0,0,0.14)',
     backgroundColor: surfaces.pillFill,
   },
+  linkRow: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 6 },
   input: {
     minHeight: 20,
     padding: 0,

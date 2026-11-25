@@ -385,6 +385,8 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
               placeholder: 'Taste',
               accessibilityLabel: 'Tasting notes, taste',
             }}
+            onClear={() => onChange({ tastingSmell: '', tastingTaste: '' })}
+            clearAccessibilityLabel="Clear tasting notes"
           />
         </FormField>
       </CascadeItem>
@@ -404,6 +406,8 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
               placeholder: 'To Try',
               accessibilityLabel: 'Brew notes, to try',
             }}
+            onClear={() => onChange({ brewThoughts: '', brewToTry: '' })}
+            clearAccessibilityLabel="Clear brew notes"
           />
         </FormField>
       </CascadeItem>
