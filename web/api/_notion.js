@@ -111,6 +111,8 @@ export function rowToCup(page) {
   const c = COLUMNS;
   return {
     id:         page.id,
+    // Brew dates are day-only; creation time orders same-day brews.
+    createdAt:  page.created_time || '',
     bean:       readText(p[c.bean]).trim(),
     roaster:    readText(p[c.roaster]),
     origin:     readCountry(p[c.origin]),

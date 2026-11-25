@@ -15,13 +15,11 @@ const SPARK_PAD = 1.5;
 const BUCKETS = 4;
 
 function SparkCell({ brews }: { brews: Brew[] }) {
-  const rated = brews
-    .filter((b) => b.rating != null && b.date != null)
-    .sort((a, b) => {
-      const ta = a.date ? Date.parse(a.date) : 0;
-      const tb = b.date ? Date.parse(b.date) : 0;
-      return ta - tb;
-    });
+  // `brews` arrives newest-first — the same order as the brew list on the bean
+  // page — so reverse it for an oldest→newest line. Re-sorting by date here
+  // scrambled same-day brews: dates are day-only, so ties kept the list's
+  // newest-first order inside an otherwise oldest-first line.
+  const rated = brews.filter((b) => b.rating != null).reverse();
 
   if (rated.length < 2) return null;
 
@@ -81,7 +79,7 @@ export function BrewSummary({ brews }: Props) {
   })();
 
   const totalGrams = brews.reduce((sum, b) => sum + (b.beansG ?? 0), 0);
-  const showSpark = brews.filter((b) => b.rating != null && b.date != null).length >= 2;
+  const showSpark = ratedBrews.length >= 2;
 
   return (
     <Card style={styles.summary}>
