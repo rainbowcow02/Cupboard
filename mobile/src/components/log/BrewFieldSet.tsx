@@ -20,6 +20,7 @@ import { FormField } from '../FormField';
 import { CascadeItem } from './CascadeItem';
 import { PourStructureField } from './PourStructureField';
 import { StructuredNotesField } from './StructuredNotesField';
+import { useKeepInViewOnChange } from '../../lib/keyboardAwareUpdate';
 
 /** Orders numeric strings numerically (so "20" precedes "100"), text A–Z. */
 function compareOptions(a: string, b: string): number {
@@ -166,6 +167,7 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
   const { coffees } = useCoffees();
   const set = (k: TextKey) => (v: string) => onChange({ [k]: v } as Partial<BrewFormValues>);
   const brewTimeInputRef = useRef<TextInput>(null);
+  const withKeepInView = useKeepInViewOnChange();
 
   // Picker options sourced from the user's own brew history (so the values they
   // always reach for are one tap away) plus a sensible range for numeric fields.
@@ -352,7 +354,7 @@ export function BrewFieldSet({ values, onChange, base }: Props) {
               ref={brewTimeInputRef}
               style={styles.brewTimeInput}
               value={values.brewTime}
-              onChangeText={set('brewTime')}
+              onChangeText={withKeepInView(set('brewTime'))}
               placeholder="3:20"
               placeholderTextColor={colors.greyDark}
               keyboardType="numbers-and-punctuation"

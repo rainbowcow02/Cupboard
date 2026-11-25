@@ -12,7 +12,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { colors, fonts, surfaces } from '@shared/theme';
 import { AddLink } from '../AddLink';
 import { fieldInputStyle } from '../FormField';
-import { useKeyboardAwareUpdate } from '../../lib/keyboardAwareUpdate';
+import { useKeepInViewOnChange, useKeyboardAwareUpdate } from '../../lib/keyboardAwareUpdate';
 import { useAutoFormatTextInput } from '../../hooks/useAutoFormatTextInput';
 import { defaultPours, emptyPour, pourDisplayLabel, PourFormEntry } from '../../lib/pourStructure';
 
@@ -146,6 +146,7 @@ function RemovablePourRow({
   onRemove: () => void;
   disabled: boolean;
 }) {
+  const withKeepInView = useKeepInViewOnChange();
   const translateX = useSharedValue(0);
   const startX = useSharedValue(0);
   const [locked, setLocked] = useState(false);
@@ -250,7 +251,7 @@ function RemovablePourRow({
                 editable={!locked}
                 style={[fieldInputStyle, styles.amountInput]}
                 value={amount}
-                onChangeText={onChangeAmount}
+                onChangeText={withKeepInView(onChangeAmount)}
                 placeholder="ml"
                 placeholderTextColor={colors.greyDark}
                 keyboardType="decimal-pad"
@@ -263,7 +264,7 @@ function RemovablePourRow({
                 editable={!locked}
                 style={[fieldInputStyle, styles.noteInput]}
                 value={note}
-                onChangeText={onChangeNote}
+                onChangeText={withKeepInView(onChangeNote)}
                 placeholder="Notes"
                 placeholderTextColor={colors.greyDark}
                 returnKeyType="done"

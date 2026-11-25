@@ -15,12 +15,13 @@ import { HeaderPillButton } from '../../src/components/HeaderPillButton';
 import { LogFormScaffold } from '../../src/components/log/LogFormScaffold';
 import { SheetOverlay } from '../../src/components/surfaces/SheetOverlay';
 import { createCup, updateCup, deleteCup } from '../../src/lib/api';
-import { KeyboardAwareUpdateContext } from '../../src/lib/keyboardAwareUpdate';
+import {
+  KeyboardAwareScrollHandle,
+  KeyboardAwareUpdateContext,
+  useKeepFocusedInputAboveKeyboard,
+} from '../../src/lib/keyboardAwareUpdate';
 
-/** The HOC attaches `update()` at runtime but the library's .d.ts omits it. */
-type KeyboardAwareScrollHandle = InstanceType<typeof KeyboardAwareScrollView> & {
-  update: () => void;
-};
+type ScrollHandle = InstanceType<typeof KeyboardAwareScrollView> & KeyboardAwareScrollHandle;
 
 interface Props {
   coffee: Coffee;
@@ -50,7 +51,8 @@ export function BrewForm({
   const editing = !!brew;
   const source = brew ?? templateBrew;
   const insets = useSafeAreaInsets();
-  const scrollRef = useRef<KeyboardAwareScrollHandle>(null);
+  const scrollRef = useRef<ScrollHandle>(null);
+  const keepInView = useKeepFocusedInputAboveKeyboard(scrollRef);
 
   const [form, setForm] = useState<BrewFormValues>(() => ({
     ...recipeValuesFrom(source),
@@ -166,7 +168,7 @@ export function BrewForm({
       >
         {/* Lets a growing multiline field (e.g. Tasting/Brew notes) re-trigger the
             scroll-into-view as it gains lines, not just on initial focus. */}
-        <KeyboardAwareUpdateContext.Provider value={() => scrollRef.current?.update()}>
+        <KeyboardAwareUpdateContext.Provider value={keepInView}>
           {fields}
         </KeyboardAwareUpdateContext.Provider>
 
