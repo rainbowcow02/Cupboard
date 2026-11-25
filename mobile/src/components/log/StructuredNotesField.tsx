@@ -1,4 +1,5 @@
-import { StyleSheet, TextInput, View } from 'react-native';
+import { useRef } from 'react';
+import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { colors, fonts, surfaces } from '@shared/theme';
 import { useKeyboardAwareUpdate } from '../../lib/keyboardAwareUpdate';
 import { useAutoFormatTextInput } from '../../hooks/useAutoFormatTextInput';
@@ -30,40 +31,13 @@ interface Props {
  * and Notion's "Recipe to test" column render them as structured sections.
  */
 export function StructuredNotesField({ top, bottom, onClear, clearAccessibilityLabel }: Props) {
-  // Growing a multiline field only re-triggers the keyboard-aware scroll on
-  // content-size change — the library itself only measures on initial focus.
-  const keepInView = useKeyboardAwareUpdate();
-  const topAutoFormat = useAutoFormatTextInput(top.value, top.onChange);
-  const bottomAutoFormat = useAutoFormatTextInput(bottom.value, bottom.onChange);
-
   const hasText = top.value.trim() !== '' || bottom.value.trim() !== '';
-
   return (
     <View>
       <View style={styles.box}>
-        <TextInput
-          style={styles.input}
-          {...topAutoFormat}
-          onContentSizeChange={keepInView}
-          placeholder={top.placeholder}
-          placeholderTextColor={colors.greyDark}
-          multiline
-          textAlignVertical="top"
-          returnKeyType="done"
-          accessibilityLabel={top.accessibilityLabel}
-        />
+        <NotesSection section={top} />
         <Divider />
-        <TextInput
-          style={styles.input}
-          {...bottomAutoFormat}
-          onContentSizeChange={keepInView}
-          placeholder={bottom.placeholder}
-          placeholderTextColor={colors.greyDark}
-          multiline
-          textAlignVertical="top"
-          returnKeyType="done"
-          accessibilityLabel={bottom.accessibilityLabel}
-        />
+        <NotesSection section={bottom} />
       </View>
       {onClear && hasText ? (
         <View style={styles.linkRow}>
@@ -74,16 +48,53 @@ export function StructuredNotesField({ top, bottom, onClear, clearAccessibilityL
   );
 }
 
+/**
+ * One half of the box. The whole half — padding included — focuses its input:
+ * the input itself is only one line tall, so a tap on the box's padding or the
+ * space around the divider used to do nothing.
+ */
+function NotesSection({ section }: { section: Section }) {
+  // Growing a multiline field only re-triggers the keyboard-aware scroll on
+  // content-size change — the library itself only measures on initial focus.
+  const keepInView = useKeyboardAwareUpdate();
+  const autoFormat = useAutoFormatTextInput(section.value, section.onChange);
+  const inputRef = useRef<TextInput>(null);
+
+  return (
+    // Not an accessibility element itself: the TextInput inside is the control
+    // screen readers focus, so exposing the wrapper too would read it twice.
+    <Pressable
+      style={styles.section}
+      onPress={() => inputRef.current?.focus()}
+      accessible={false}
+    >
+      <TextInput
+        ref={inputRef}
+        style={styles.input}
+        {...autoFormat}
+        onContentSizeChange={keepInView}
+        placeholder={section.placeholder}
+        placeholderTextColor={colors.greyDark}
+        multiline
+        textAlignVertical="top"
+        returnKeyType="done"
+        accessibilityLabel={section.accessibilityLabel}
+      />
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
+  // Vertical spacing lives on each section (not the box) so it's tappable;
+  // 10px above and below each input matches the previous box padding + gap.
   box: {
-    gap: 10,
     paddingHorizontal: 14,
-    paddingVertical: 10,
     borderRadius: 14,
     borderWidth: 0.5,
     borderColor: 'rgba(0,0,0,0.14)',
     backgroundColor: surfaces.pillFill,
   },
+  section: { paddingVertical: 10 },
   linkRow: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 6 },
   input: {
     minHeight: 20,

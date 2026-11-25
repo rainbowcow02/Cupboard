@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Brew, Coffee } from '@shared/lib/coffees';
+import { useCoffees } from '../../hooks/useCoffees';
 import { createCup } from '../../lib/api';
 import { ErrorBox } from '../ErrorBox';
 import { PrimaryButton } from '../PrimaryButton';
@@ -47,6 +48,7 @@ export function RecipeIterationScreen({
   leadingLabel,
 }: Props) {
   const insets = useSafeAreaInsets();
+  const { applyCups } = useCoffees();
   const [form, setForm] = useState<BrewFormValues>(() => recipeValuesFrom(base));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,10 +58,11 @@ export function RecipeIterationScreen({
     setSaving(true);
     setError(null);
     try {
-      await createCup({
+      const saved = await createCup({
         ...beanFieldsPayload(coffee),
         ...brewFieldsPayload(form),
       });
+      applyCups([saved]);
       await onSaved();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Save failed');

@@ -27,6 +27,7 @@ import { BrewCard } from '../../src/components/BrewCard';
 import { Card } from '../../src/components/Card';
 import { OriginMap } from '../../src/components/OriginMap';
 import { useCoffees } from '../../src/hooks/useCoffees';
+import { useSuspendDismissGesture } from '../../src/hooks/useSuspendDismissGesture';
 import { BrewSummary } from '../../src/components/BrewSummary';
 import { BrewForm } from './BrewForm';
 
@@ -112,14 +113,21 @@ export default function CoffeeDetailScreen() {
     setEditingBrew(null);
   }, []);
 
+  // A new recipe sheet would lose its entries to a stray pull-down on the page,
+  // same as the edit sheets (which suspend the gesture themselves).
+  useSuspendDismissGesture(addingBrew);
+
+  // The forms hand the saved rows to the store before calling these, so the
+  // page already shows the result — refresh from Notion in the background
+  // rather than holding the sheet open on a full refetch.
   const onBrewSaved = useCallback(async () => {
-    await refresh();
+    refresh();
     onBrewClose();
   }, [refresh, onBrewClose]);
 
   const onBeanSaved = useCallback(
     async (newId: string) => {
-      await refresh();
+      refresh();
       setEditingBean(false);
       // Renaming the bean/roaster changes the derived id — re-point this screen
       // at the new id so it keeps resolving the (now renamed) coffee.
@@ -146,7 +154,7 @@ export default function CoffeeDetailScreen() {
   return (
     <GestureHandlerRootView style={styles.screen}>
       <BottomSheetModalProvider>
-        <View style={styles.screen}>
+        <View style={styles.pageLayer}>
       {/* Back button — frosted circle fades in as the hero scrolls away */}
       <GlassBackButton
         onPress={() => router.back()}
@@ -310,6 +318,16 @@ export default function CoffeeDetailScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.pearl },
+  /**
+   * The page's content layer. `isolation: 'isolate'` makes it its own stacking
+   * context: without one, React Native's new architecture hoists this View's
+   * zIndexed children (the edit sheets' SheetOverlay at 20, the floating header
+   * buttons at 10) up to sit beside the BottomSheetModalProvider's portal, so
+   * they out-rank picker sheets (no zIndex) and drew over them — pickers opened
+   * invisibly behind the edit sheet. Isolated, they stay inside this layer and
+   * the picker portal renders above it.
+   */
+  pageLayer: { flex: 1, backgroundColor: colors.pearl, isolation: 'isolate' },
   scroll: { flex: 1 },
   scrollContent: {},
   backBtn: {

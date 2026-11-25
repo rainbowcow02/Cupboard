@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import Animated, {
   Extrapolation,
@@ -30,6 +30,13 @@ const MIN_POUR_ROWS = 2;
 export function PourStructureField({ pours, onChange, note, onNoteChange }: Props) {
   // Hidden by default for a new recipe; auto-shown when editing/duplicating one that already has a note.
   const [showNote, setShowNote] = useState(() => note.trim().length > 0);
+  // Only one row sits swiped open at a time: opening another closes this one.
+  const [openRowId, setOpenRowId] = useState<string | null>(null);
+  const handleOpenChange = useCallback(
+    (rowId: string, open: boolean) =>
+      setOpenRowId((current) => (open ? rowId : current === rowId ? null : current)),
+    [],
+  );
   const rows = pours.length ? pours : defaultPours();
   // Growing the free-note field only re-triggers the keyboard-aware scroll on
   // content-size change — the library itself only measures on initial focus.
@@ -55,6 +62,9 @@ export function PourStructureField({ pours, onChange, note, onNoteChange }: Prop
         return (
           <RemovablePourRow
             key={pour.id}
+            id={pour.id}
+            openRowId={openRowId}
+            onOpenChange={handleOpenChange}
             label={label}
             amount={pour.amount}
             note={pour.note}
@@ -130,6 +140,9 @@ const SWIPE_SPRING = { damping: 26, stiffness: 240, mass: 0.9, overshootClamping
  * so `locked` additionally gates the fields for as long as the row isn't fully closed.
  */
 function RemovablePourRow({
+  id,
+  openRowId,
+  onOpenChange,
   label,
   amount,
   note,
@@ -138,6 +151,9 @@ function RemovablePourRow({
   onRemove,
   disabled,
 }: {
+  id: string;
+  openRowId: string | null;
+  onOpenChange: (rowId: string, open: boolean) => void;
   label: string;
   amount: string;
   note: string;
@@ -151,6 +167,16 @@ function RemovablePourRow({
   const startX = useSharedValue(0);
   const [locked, setLocked] = useState(false);
 
+  // Lock + report in one JS call so both state updates land in the same render.
+  const markOpen = useCallback(() => {
+    setLocked(true);
+    onOpenChange(id, true);
+  }, [id, onOpenChange]);
+  const markClosed = useCallback(() => {
+    setLocked(false);
+    onOpenChange(id, false);
+  }, [id, onOpenChange]);
+
   const amountNative = useMemo(() => Gesture.Native(), []);
   const noteNative = useMemo(() => Gesture.Native(), []);
 
@@ -162,7 +188,6 @@ function RemovablePourRow({
         .blocksExternalGesture(amountNative, noteNative)
         .onStart(() => {
           startX.value = translateX.value;
-          runOnJS(setLocked)(true);
         })
         .onUpdate((e) => {
           const raw = Math.min(0, startX.value + e.translationX);
@@ -184,18 +209,32 @@ function RemovablePourRow({
               : translateX.value < OPEN_DISTANCE_THRESHOLD;
           const target = shouldOpen ? -OPEN_WIDTH : 0;
 
+          // Fields lock only while the row actually sits open (so a tap can't
+          // focus a field hidden under the Delete reveal). A drag that springs
+          // back closed never locks them.
+          if (shouldOpen) runOnJS(markOpen)();
           translateX.value = withSpring(
             target,
             { ...SWIPE_SPRING, velocity: e.velocityX },
             (finished) => {
-              if (finished && target === 0) {
-                runOnJS(setLocked)(false);
-              }
+              if (finished && target === 0) runOnJS(markClosed)();
             },
           );
         }),
-    [amountNative, noteNative, startX, translateX],
+    [amountNative, noteNative, startX, translateX, markOpen, markClosed],
   );
+
+  /** Springs the row shut and unlocks its fields once it lands. */
+  const close = useCallback(() => {
+    translateX.value = withSpring(0, SWIPE_SPRING, (finished) => {
+      if (finished) runOnJS(markClosed)();
+    });
+  }, [translateX, markClosed]);
+
+  // Another row was swiped open — close this one.
+  useEffect(() => {
+    if (locked && openRowId !== null && openRowId !== id) close();
+  }, [locked, openRowId, id, close]);
 
   const rowStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],
@@ -272,6 +311,17 @@ function RemovablePourRow({
               />
             </GestureDetector>
           </View>
+          {/* While open the fields are locked, so tapping the row closes it
+              instead of doing nothing. Sits over the row only — the Delete
+              button in the revealed strip stays tappable. */}
+          {locked ? (
+            <Pressable
+              style={styles.closeOverlay}
+              onPress={close}
+              accessibilityRole="button"
+              accessibilityLabel={`Close ${label} delete action`}
+            />
+          ) : null}
         </Animated.View>
       </View>
     </GestureDetector>
@@ -298,6 +348,7 @@ const styles = StyleSheet.create({
   amountInput: { width: 80, paddingHorizontal: 10 },
   noteInput: { flex: 1, paddingHorizontal: 10 },
   swipeOuter: { overflow: 'hidden' },
+  closeOverlay: { ...StyleSheet.absoluteFillObject },
   revealLayer: {
     position: 'absolute',
     top: 0,

@@ -5,11 +5,12 @@ import {
   BottomSheetTextInput,
   type BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet';
-import { useNavigation } from 'expo-router';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import {
+  InputAccessoryView,
   Keyboard,
   type KeyboardTypeOptions,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -19,6 +20,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, fonts, surfaces } from '@shared/theme';
+import { useSuspendDismissGesture } from '../hooks/useSuspendDismissGesture';
 import { FilterCheckbox } from './FilterCheckbox';
 import { SearchIcon } from './SearchIcon';
 import { SortChevron } from './SortChevron';
@@ -39,6 +41,11 @@ interface CommonProps {
   align?: 'left' | 'right';
   /** Keyboard for the search/add input — e.g. 'decimal-pad' for numeric fields. */
   keyboardType?: KeyboardTypeOptions;
+  /**
+   * The saved column can't hold a comma (a Notion single-select), so a typed
+   * value containing one is flagged instead of offered as an "Add" row.
+   */
+  rejectCommas?: boolean;
 }
 
 type ComboBoxFieldProps = CommonProps &
@@ -48,7 +55,16 @@ type ComboBoxFieldProps = CommonProps &
   );
 
 export function ComboBoxField(props: ComboBoxFieldProps) {
-  const { label, options, placeholder, flagFor, formatOption, align = 'left', keyboardType } = props;
+  const {
+    label,
+    options,
+    placeholder,
+    flagFor,
+    formatOption,
+    align = 'left',
+    keyboardType,
+    rejectCommas = false,
+  } = props;
   const display = useCallback((opt: string) => formatOption?.(opt) ?? opt, [formatOption]);
   const numeric = keyboardType != null;
   const multiple = props.multiple === true;
@@ -57,7 +73,7 @@ export function ComboBoxField(props: ComboBoxFieldProps) {
     [multiple, props.value],
   );
   const insets = useSafeAreaInsets();
-  const navigation = useNavigation();
+  const accessoryId = `combo-done-${useId()}`;
   const { height: screenH } = useWindowDimensions();
   const modalRef = useRef<BottomSheetModal>(null);
   const inputRef = useRef<TextInput>(null);
@@ -93,11 +109,20 @@ export function ComboBoxField(props: ComboBoxFieldProps) {
     );
   }, [baseOptions, trimmedQuery, display]);
 
-  const showAddCustom =
-    trimmedQuery.length > 0 &&
-    !baseOptions.some((option) => option.toLowerCase() === trimmedQuery.toLowerCase());
+  const exactMatch = baseOptions.find(
+    (option) => option.toLowerCase() === trimmedQuery.toLowerCase(),
+  );
+  const queryHasComma = rejectCommas && trimmedQuery.includes(',');
+  const showAddCustom = trimmedQuery.length > 0 && !exactMatch && !queryHasComma;
 
   const present = useCallback(() => {
+    // Already open (or its close never reported back): present directly, so a
+    // tap always opens the sheet rather than waiting on a state change that
+    // won't happen.
+    if (open) {
+      modalRef.current?.present();
+      return;
+    }
     // Drop any keyboard from a previously focused field (e.g. the Bean name
     // input) so the detached sheet doesn't open hidden behind it.
     Keyboard.dismiss();
@@ -112,7 +137,7 @@ export function ComboBoxField(props: ComboBoxFieldProps) {
     setQuery(isCustom ? current : '');
     shouldFocusRef.current = isCustom;
     setOpen(true);
-  }, [props.multiple, props.value, options]);
+  }, [open, props.multiple, props.value, options]);
 
   useEffect(() => {
     if (!open) return;
@@ -130,11 +155,9 @@ export function ComboBoxField(props: ComboBoxFieldProps) {
 
   // Suspend the host modal's swipe-to-dismiss while the option sheet is open, so
   // over-dragging the sheet down only dismisses the sheet — not the whole modal
-  // underneath. Restored on close (and on unmount via the cleanup).
-  useEffect(() => {
-    navigation.setOptions({ gestureEnabled: !open });
-    return () => navigation.setOptions({ gestureEnabled: true });
-  }, [navigation, open]);
+  // underneath. Shared with the edit sheets, so closing this picker can't turn
+  // the gesture back on while an edit sheet still needs it off.
+  useSuspendDismissGesture(open);
 
   const handleDismiss = useCallback(() => {
     shouldFocusRef.current = false;
@@ -166,10 +189,25 @@ export function ComboBoxField(props: ComboBoxFieldProps) {
     if (props.multiple) setQuery('');
   }, [choose, trimmedQuery, props.multiple]);
 
-  // Multi-select only: drop every selection, matching the filter sheet's Clear.
+  // Multi-select drops every selection, matching the filter sheet's Clear;
+  // single-select empties the field and closes.
   const clearAll = useCallback(() => {
-    if (props.multiple) props.onChange([]);
+    if (props.multiple) {
+      props.onChange([]);
+    } else {
+      props.onChange('');
+      modalRef.current?.dismiss();
+    }
   }, [props]);
+
+  // The number pad has no return key, so iOS gets a "Done" bar above it:
+  // commit the typed number (or the option it matches), or just lower the keyboard.
+  const commitTyped = useCallback(() => {
+    if (showAddCustom) addCustom();
+    else if (exactMatch) choose(exactMatch);
+    else Keyboard.dismiss();
+  }, [showAddCustom, addCustom, exactMatch, choose]);
+  const showDoneBar = Platform.OS === 'ios' && numeric;
 
   const renderBackdrop = useCallback(
     (props: BottomSheetBackdropProps) => (
@@ -202,7 +240,7 @@ export function ComboBoxField(props: ComboBoxFieldProps) {
     <>
       <Pressable
         onPress={present}
-        style={styles.trigger}
+        style={({ pressed }) => [styles.trigger, pressed && styles.triggerPressed]}
         accessibilityRole="button"
         accessibilityLabel={
           selected.length
@@ -251,9 +289,9 @@ export function ComboBoxField(props: ComboBoxFieldProps) {
                   ? `${selected.length} of ${baseOptions.length} selected`
                   : undefined
               }
-              onClear={multiple ? clearAll : undefined}
+              onClear={clearAll}
               clearAccessibilityLabel={`Clear ${label} selection`}
-              showClear={multiple && selected.length > 0}
+              showClear={selected.length > 0}
               animatedClear
             />
 
@@ -270,7 +308,8 @@ export function ComboBoxField(props: ComboBoxFieldProps) {
                 autoCapitalize={numeric ? 'none' : 'words'}
                 autoCorrect={false}
                 returnKeyType="done"
-                onSubmitEditing={addCustom}
+                onSubmitEditing={commitTyped}
+                inputAccessoryViewID={showDoneBar ? accessoryId : undefined}
               />
               {query.length > 0 ? (
                 <Pressable
@@ -287,6 +326,24 @@ export function ComboBoxField(props: ComboBoxFieldProps) {
                 </Pressable>
               ) : null}
             </View>
+
+            {/* Rendered inside the sheet, after the search input: an
+                InputAccessoryView finds its input by nativeID only when it
+                mounts, so it has to mount together with that input. */}
+            {showDoneBar ? (
+              <InputAccessoryView nativeID={accessoryId}>
+                <View style={styles.doneBar}>
+                  <Pressable
+                    onPress={commitTyped}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel={showAddCustom ? `Add ${trimmedQuery}` : 'Done'}
+                  >
+                    <Text style={styles.doneBarText}>{showAddCustom ? 'Add' : 'Done'}</Text>
+                  </Pressable>
+                </View>
+              </InputAccessoryView>
+            ) : null}
 
             <BottomSheetScrollView
               contentContainerStyle={styles.listContent}
@@ -334,7 +391,13 @@ export function ComboBoxField(props: ComboBoxFieldProps) {
                 );
               })}
 
-              {filtered.length === 0 && !showAddCustom ? (
+              {queryHasComma ? (
+                <Text style={styles.commaWarning}>
+                  {label} can’t contain a comma. Remove it to add this value.
+                </Text>
+              ) : null}
+
+              {filtered.length === 0 && !showAddCustom && !queryHasComma ? (
                 <Text style={styles.emptyText}>
                   Type above to add a new {label.toLowerCase()}.
                 </Text>
@@ -343,6 +406,7 @@ export function ComboBoxField(props: ComboBoxFieldProps) {
           </DetachedSheetContentClip>
         </BottomSheetModal>
       ) : null}
+
     </>
   );
 }
@@ -371,6 +435,8 @@ const styles = StyleSheet.create({
   triggerTextRight: {
     textAlign: 'right',
   },
+  // Matches HeaderPillButton's pressed state, so a tap visibly registers.
+  triggerPressed: { opacity: 0.7 },
   triggerPlaceholder: {
     color: colors.greyDark,
   },
@@ -417,6 +483,29 @@ const styles = StyleSheet.create({
     fontFamily: fonts.sans,
     fontSize: 17,
     fontWeight: '500',
+    color: colors.burgundy,
+  },
+  commaWarning: {
+    fontFamily: fonts.sans,
+    fontSize: 14,
+    fontWeight: '500',
+    color: colors.burgundy,
+    paddingHorizontal: 24,
+    paddingVertical: 18,
+  },
+  doneBar: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: surfaces.pillFill,
+    borderTopWidth: 0.5,
+    borderTopColor: 'rgba(0,0,0,0.14)',
+  },
+  doneBarText: {
+    fontFamily: fonts.sans,
+    fontSize: 17,
+    fontWeight: '800',
     color: colors.burgundy,
   },
   emptyText: {

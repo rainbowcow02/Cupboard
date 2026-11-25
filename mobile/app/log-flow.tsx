@@ -85,7 +85,7 @@ export default function LogFlowScreen() {
   return (
     <GestureHandlerRootView style={styles.screen}>
       <BottomSheetModalProvider>
-        <View style={styles.screen}>
+        <View style={styles.pageLayer}>
           {step.name === 'newBean' && (
             <NewBeanStep
               bottomInset={insets.bottom}
@@ -131,4 +131,14 @@ export default function LogFlowScreen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.pearl },
+  /**
+   * The page's content layer. `isolation: 'isolate'` makes it its own stacking
+   * context: without one, React Native's new architecture hoists this View's
+   * zIndexed children (the edit sheets' SheetOverlay at 20, the floating header
+   * buttons at 10) up to sit beside the BottomSheetModalProvider's portal, so
+   * they out-rank picker sheets (no zIndex) and drew over them — pickers opened
+   * invisibly behind the edit sheet. Isolated, they stay inside this layer and
+   * the picker portal renders above it.
+   */
+  pageLayer: { flex: 1, backgroundColor: colors.pearl, isolation: 'isolate' },
 });

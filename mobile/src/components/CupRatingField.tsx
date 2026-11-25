@@ -4,11 +4,11 @@ import {
   BottomSheetView,
   type BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet';
-import { useNavigation } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, fonts, surfaces, type CupRatingValue } from '@shared/theme';
+import { useSuspendDismissGesture } from '../hooks/useSuspendDismissGesture';
 import { CupRating } from './CupRating';
 import { FilterCheckbox } from './FilterCheckbox';
 import { SortChevron } from './SortChevron';
@@ -31,7 +31,6 @@ const RATING_OPTIONS: CupRatingValue[] = [5, 4, 3, 2, 1];
  */
 export function CupRatingField({ value, onChange }: Props) {
   const insets = useSafeAreaInsets();
-  const navigation = useNavigation();
   const modalRef = useRef<BottomSheetModal>(null);
   const [open, setOpen] = useState(false);
 
@@ -39,7 +38,12 @@ export function CupRatingField({ value, onChange }: Props) {
   const sheetBottomInset = 16;
   const sheetTopInset = insets.top + 16;
 
-  const present = useCallback(() => setOpen(true), []);
+  // Already open (or its close never reported back): present directly, so a
+  // tap always opens the sheet.
+  const present = useCallback(() => {
+    if (open) modalRef.current?.present();
+    else setOpen(true);
+  }, [open]);
 
   useEffect(() => {
     if (open) modalRef.current?.present();
@@ -47,10 +51,7 @@ export function CupRatingField({ value, onChange }: Props) {
 
   // Suspend the host modal's swipe-to-dismiss while this sheet is open, matching
   // ComboBoxField, so over-dragging only dismisses this sheet.
-  useEffect(() => {
-    navigation.setOptions({ gestureEnabled: !open });
-    return () => navigation.setOptions({ gestureEnabled: true });
-  }, [navigation, open]);
+  useSuspendDismissGesture(open);
 
   const handleDismiss = useCallback(() => setOpen(false), []);
 
@@ -98,7 +99,7 @@ export function CupRatingField({ value, onChange }: Props) {
     <>
       <Pressable
         onPress={present}
-        style={styles.trigger}
+        style={({ pressed }) => [styles.trigger, pressed && styles.triggerPressed]}
         accessibilityRole="button"
         accessibilityLabel={value > 0 ? `Rating, ${value} out of 5 cups` : 'Rating, not yet rated'}
       >
@@ -183,6 +184,8 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'flex-start',
   },
+  // Matches HeaderPillButton's pressed state, so a tap visibly registers.
+  triggerPressed: { opacity: 0.7 },
   triggerPlaceholder: {
     fontFamily: fonts.sans,
     fontSize: 15,

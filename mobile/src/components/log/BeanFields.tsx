@@ -104,6 +104,7 @@ export function BeanFields({ form, set }: Props) {
       <FormField label="Roaster" horizontal>
         <ComboBoxField
           label="Roaster"
+          rejectCommas
           value={form.roaster}
           options={options.roaster}
           placeholder="Who's the roaster?"
@@ -113,6 +114,7 @@ export function BeanFields({ form, set }: Props) {
       <FormField label="Country" horizontal>
         <ComboBoxField
           label="Country"
+          rejectCommas
           value={form.origin}
           options={options.origin}
           placeholder="Where was it sourced?"
@@ -123,6 +125,7 @@ export function BeanFields({ form, set }: Props) {
       <FormField label="Process" horizontal>
         <ComboBoxField
           label="Process"
+          rejectCommas
           value={form.process}
           options={options.process}
           placeholder="How was it processed?"
@@ -132,6 +135,7 @@ export function BeanFields({ form, set }: Props) {
       <FormField label="Roast" horizontal>
         <ComboBoxField
           label="Roast"
+          rejectCommas
           value={form.roastLevel}
           options={options.roastLevel}
           placeholder="What's the roast-level?"
