@@ -12,27 +12,27 @@ interface Props {
 const SPARK_H = 17;
 const SPARK_W = 200;
 const SPARK_PAD = 1.5;
-const BUCKETS = 4;
+
+// The API reports an unrated cup as rating 0 (an empty Notion select has no
+// ☕), not null. Ratings run 1–5, so only count positive ones — otherwise an
+// unrated cup drags the median down and pulls the trend line to the floor.
+function isRated(b: Brew): b is Brew & { rating: number } {
+  return b.rating != null && b.rating > 0;
+}
 
 function SparkCell({ brews }: { brews: Brew[] }) {
   // `brews` arrives newest-first — the same order as the brew list on the bean
   // page — so reverse it for an oldest→newest line. Re-sorting by date here
   // scrambled same-day brews: dates are day-only, so ties kept the list's
   // newest-first order inside an otherwise oldest-first line.
-  const rated = brews.filter((b) => b.rating != null).reverse();
+  const rated = brews.filter(isRated).reverse();
 
   if (rated.length < 2) return null;
 
-  // Cap buckets at the number of ratings so no bucket is empty (an empty
-  // slice averages to NaN, which makes the SVG polyline render nothing).
-  const numBuckets = Math.min(BUCKETS, rated.length);
-  const bucketSize = rated.length / numBuckets;
-  const values = Array.from({ length: numBuckets }, (_, i) => {
-    const start = Math.floor(i * bucketSize);
-    const end = Math.min(rated.length, Math.floor((i + 1) * bucketSize));
-    const slice = rated.slice(start, end);
-    return slice.reduce((sum, b) => sum + b.rating!, 0) / slice.length;
-  });
+  // One point per rated cup, so the line traces the actual ratings. (Averaging
+  // into a few buckets flattened real swings — 2,3,1,4,2,3,4,4 drew as a flat
+  // 2.5,2.5,2.5,4 — and hid single highs like a lone 5.)
+  const values = rated.map((b) => b.rating);
 
   const step = SPARK_W / (values.length - 1);
   const polylinePoints = values
@@ -68,7 +68,7 @@ function SparkCell({ brews }: { brews: Brew[] }) {
 export function BrewSummary({ brews }: Props) {
   if (brews.length === 0) return null;
 
-  const ratedBrews = brews.filter((b) => b.rating != null);
+  const ratedBrews = brews.filter(isRated);
   const medianRating = (() => {
     if (ratedBrews.length === 0) return null;
     const sorted = [...ratedBrews].sort((a, b) => a.rating! - b.rating!);
