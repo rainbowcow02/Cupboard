@@ -145,8 +145,18 @@ const COUNTRY_FLAGS = {
   Panama: '🇵🇦', Peru: '🇵🇪', Rwanda: '🇷🇼', Yemen: '🇾🇪',
 };
 
-function richText(s) {
-  return s ? [{ text: { content: String(s) } }] : [];
+// Notion caps a single rich-text object at 2,000 characters, so longer notes
+// are split across several objects (rowToCup joins them back on read).
+const RICH_TEXT_CHUNK = 2000;
+
+export function richText(s) {
+  if (!s) return [];
+  const text = String(s);
+  const chunks = [];
+  for (let i = 0; i < text.length; i += RICH_TEXT_CHUNK) {
+    chunks.push({ text: { content: text.slice(i, i + RICH_TEXT_CHUNK) } });
+  }
+  return chunks;
 }
 
 function multiSelect(s) {
@@ -156,18 +166,33 @@ function multiSelect(s) {
 }
 
 // App cup → Notion page properties. Numbers are formatted into the select-
-// string conventions the database uses ("12g", "190ml", "93C/199F"). Only
-// fields with a value are included, so PATCH leaves the rest untouched.
+// string conventions the database uses ("12g", "190ml", "93C/199F").
+//
+// A field that is missing (or undefined / '') is left out, so PATCH leaves it
+// untouched. A field sent as `null` is an explicit clear: the column is emptied.
+// The mobile app sends `null` when a user deletes a value in an edit form.
 export function cupToProperties(cup) {
   const c = COLUMNS;
   const props = {};
-  const setText = (col, v) => { if (v) props[col] = { rich_text: richText(v) }; };
-  const setSelect = (col, v) => { if (v) props[col] = { select: { name: String(v) } }; };
+  const setText = (col, v) => {
+    if (v) props[col] = { rich_text: richText(v) };
+    else if (v === null) props[col] = { rich_text: [] };
+  };
+  const setSelect = (col, v) => {
+    if (v) props[col] = { select: { name: String(v) } };
+    else if (v === null) props[col] = { select: null };
+  };
+  const setMultiSelect = (col, v) => {
+    if (v) props[col] = { multi_select: multiSelect(v) };
+    else if (v === null) props[col] = { multi_select: [] };
+  };
+  const hasNumber = (v) => v != null && v !== '';
 
   if (cup.date) {
     // The title column holds a Notion date mention, which renders relatively
     // ("@Today", "@Jan 1, 2026"). Write a date mention for ISO dates; fall
-    // back to plain text for anything that isn't a plain ISO date.
+    // back to plain text for anything that isn't a plain ISO date. The title
+    // is never cleared.
     const d = String(cup.date).trim();
     props[c.date] = /^\d{4}-\d{2}-\d{2}$/.test(d)
       ? { title: [{ type: 'mention', mention: { type: 'date', date: { start: d } } }] }
@@ -183,18 +208,29 @@ export function cupToProperties(cup) {
   setSelect(c.filter, cup.filter);
   setSelect(c.grind, cup.grind);
 
-  if (cup.variety) props[c.variety] = { multi_select: multiSelect(cup.variety) };
-  if (cup.region)  props[c.region]  = { multi_select: multiSelect(cup.region) };
+  setMultiSelect(c.variety, cup.variety);
+  setMultiSelect(c.region, cup.region);
   if (cup.origin) {
+    // Flag-prefixed option names ("🇮🇳 India") match the options the DB
+    // already has, rather than creating bare-name duplicates.
     const flag = COUNTRY_FLAGS[cup.origin];
     props[c.origin] = { multi_select: [{ name: flag ? `${flag} ${cup.origin}` : cup.origin }] };
+  } else if (cup.origin === null) {
+    props[c.origin] = { multi_select: [] };
   }
+
   if (cup.rating) props[c.rating] = { select: { name: '☕️'.repeat(cup.rating) } };
-  if (cup.beansG != null && cup.beansG !== '') props[c.beansG] = { select: { name: `${cup.beansG}g` } };
-  if (cup.waterMl != null && cup.waterMl !== '') props[c.waterMl] = { select: { name: `${cup.waterMl}ml` } };
-  if (cup.tempC != null && cup.tempC !== '') {
+  else if (cup.rating === null) props[c.rating] = { select: null };
+
+  if (hasNumber(cup.beansG)) props[c.beansG] = { select: { name: `${cup.beansG}g` } };
+  else if (cup.beansG === null) props[c.beansG] = { select: null };
+  if (hasNumber(cup.waterMl)) props[c.waterMl] = { select: { name: `${cup.waterMl}ml` } };
+  else if (cup.waterMl === null) props[c.waterMl] = { select: null };
+  if (hasNumber(cup.tempC)) {
     const f = Math.round(Number(cup.tempC) * 9 / 5 + 32);
     props[c.tempC] = { select: { name: `${cup.tempC}C/${f}F` } };
+  } else if (cup.tempC === null) {
+    props[c.tempC] = { select: null };
   }
 
   // Free-form text columns — read back by rowToCup but historically never
@@ -204,4 +240,10 @@ export function cupToProperties(cup) {
   setText(c.brewNotes, cup.brewNotes);
   setText(c.tastingNotes, cup.tastingNotes);
   return props;
+}
+
+// Pass Notion's rate-limit status through so clients know a retry will help;
+// every other Notion failure stays a 502.
+export function notionErrorStatus(err) {
+  return err?.status === 429 ? 429 : 502;
 }

@@ -3,7 +3,7 @@
 //   POST — create a new brewed-cup row from a cup payload.
 // The browser groups GET results into coffees (see src/lib/coffees.js).
 import {
-  notion, DATABASE_ID, notionConfigured, rowToCup, cupToProperties,
+  notion, DATABASE_ID, notionConfigured, rowToCup, cupToProperties, notionErrorStatus,
 } from './_notion.js';
 
 export default async function handler(req, res) {
@@ -32,7 +32,7 @@ export default async function handler(req, res) {
       return res.status(201).json({ cup: rowToCup(page) });
     } catch (err) {
       console.error('[api/cups] Notion create failed:', err);
-      return res.status(502).json({ error: err.message || 'Notion create failed' });
+      return res.status(notionErrorStatus(err)).json({ error: err.message || 'Notion create failed' });
     }
   }
 

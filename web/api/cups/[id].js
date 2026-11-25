@@ -1,7 +1,7 @@
 // /api/cups/:id
 //   PATCH  — update a brewed-cup row (only the fields sent are changed).
 //   DELETE — archive a brewed-cup row in Notion.
-import { notion, notionConfigured, rowToCup, cupToProperties } from '../_notion.js';
+import { notion, notionConfigured, rowToCup, cupToProperties, notionErrorStatus } from '../_notion.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -35,6 +35,6 @@ export default async function handler(req, res) {
     return res.status(200).json({ cup: rowToCup(page) });
   } catch (err) {
     console.error(`[api/cups/${id}] Notion ${req.method} failed:`, err);
-    return res.status(502).json({ error: err.message || 'Notion request failed' });
+    return res.status(notionErrorStatus(err)).json({ error: err.message || 'Notion request failed' });
   }
 }
